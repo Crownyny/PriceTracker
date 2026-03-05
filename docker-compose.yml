@@ -1,0 +1,108 @@
+services:
+
+  # ── Broker de mensajería ────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: pricetracker-rabbitmq
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI → http://localhost:15672 (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # ── MongoDB — almacén de resultados raw del Scraper ─────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: pricetracker-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: pricetracker
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mongodb_data:/data/db
+
+  # ── PostgreSQL — productos normalizados e historial de precios ──────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: pricetracker-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pricetracker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ── Scraper Service ─────────────────────────────────────────────────────────
+  scrapper:
+    build:
+      context: ./backend
+      dockerfile: scrapping-service/Dockerfile
+    container_name: pricetracker-scrapper
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    environment:
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      MONGODB_URL: mongodb://mongodb:27017
+      MONGODB_DB: pricetracker
+      API_HOST: "0.0.0.0"
+      API_PORT: "8001"
+      HTTP_TIMEOUT: "30.0"
+      USER_AGENT: "PriceTrackerBot/1.0"
+    ports:
+      - "8001:8001"   # Health check: GET http://localhost:8001/health
+    restart: unless-stopped
+
+  # ── Normalizer Service ──────────────────────────────────────────────────────
+  normalizer:
+    build:
+      context: ./backend
+      dockerfile: normalization-service/Dockerfile
+    container_name: pricetracker-normalizer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      MONGODB_URL: mongodb://mongodb:27017
+      MONGODB_DB: pricetracker
+      DATABASE_URL: "postgresql+asyncpg://postgres:postgres@postgres:5432/pricetracker"
+      API_HOST: "0.0.0.0"
+      API_PORT: "8002"
+      ENABLE_ENRICHER: "false"
+      # OPENAI_API_KEY: "sk-..."     # descomentar para enriquecimiento LLM
+      # OPENAI_MODEL: "gpt-4o-mini"
+    ports:
+      - "8002:8002"   # Health check: GET http://localhost:8002/health
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+  mongodb_data:
+  postgres_data:

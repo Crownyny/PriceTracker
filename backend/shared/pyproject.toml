@@ -1,0 +1,11 @@
+[project]
+name = "pricetracker-shared"
+version = "0.1.0"
+dependencies = [
+    "pydantic>=2.0.0",
+    "aio-pika>=9.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = [".."]  # Busca paquetes en el directorio padre (backend/)
+include = ["shared*"]

@@ -1,0 +1,24 @@
+[project]
+name = "pricetracker-normalizer"
+version = "0.2.0"
+dependencies = [
+    "aio-pika>=9.0.0",
+    "motor>=3.4.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    # PostgreSQL
+    "sqlalchemy[asyncio]>=2.0.0",
+    "asyncpg>=0.29.0",
+    # LangGraph + LangChain
+    "langgraph>=0.2.0",
+    "langchain-core>=0.2.0",
+    # Opcional — descomentar si enable_enricher=True:
+    # "langchain-openai>=0.1.0",     # LLM OpenAI
+    # "langchain-anthropic>=0.1.0",  # LLM Anthropic (alternativa)
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
