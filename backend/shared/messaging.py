@@ -70,15 +70,32 @@ class BasePublisher:
     """
     Publisher genérico. Serializa el payload como JSON y lo publica en la cola
     indicada usando el exchange por defecto de RabbitMQ (direct routing).
+
+    Reutiliza un único canal AMQP y cachea las declaraciones de colas
+    para evitar overhead en ráfagas de publicación (fan-out de búsquedas).
     """
 
     def __init__(self, connection: RabbitMQConnection) -> None:
         self._conn = connection
+        self._channel: aio_pika.abc.AbstractChannel | None = None
+        self._declared_queues: set[str] = set()
+
+    async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
+        """Devuelve el canal reutilizable; lo crea si no existe o se cerró."""
+        if self._channel is None or self._channel.is_closed:
+            self._channel = await self._conn.channel()
+            self._declared_queues.clear()
+        return self._channel
+
+    async def _ensure_queue(self, channel: aio_pika.abc.AbstractChannel, queue_name: str) -> None:
+        """Declara la cola solo la primera vez por canal."""
+        if queue_name not in self._declared_queues:
+            await channel.declare_queue(queue_name, durable=True)
+            self._declared_queues.add(queue_name)
 
     async def publish(self, queue_name: str, payload: dict[str, Any]) -> None:
-        channel = await self._conn.channel()
-        # Declaración idempotente: no falla si la cola ya existe
-        await channel.declare_queue(queue_name, durable=True)
+        channel = await self._get_channel()
+        await self._ensure_queue(channel, queue_name)
         body = json.dumps(payload, default=str).encode()
         message = aio_pika.Message(
             body=body,
@@ -87,6 +104,21 @@ class BasePublisher:
         )
         await channel.default_exchange.publish(message, routing_key=queue_name)
         logger.debug("Publicado en '%s': %d bytes", queue_name, len(body))
+
+    async def publish_many(self, queue_name: str, payloads: list[dict[str, Any]]) -> None:
+        """Publica múltiples mensajes en la misma cola reutilizando un único canal.
+        Ideal para el fan-out de una búsqueda a N fuentes."""
+        channel = await self._get_channel()
+        await self._ensure_queue(channel, queue_name)
+        for payload in payloads:
+            body = json.dumps(payload, default=str).encode()
+            msg = aio_pika.Message(
+                body=body,
+                delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+                content_type="application/json",
+            )
+            await channel.default_exchange.publish(msg, routing_key=queue_name)
+        logger.debug("Publicados %d mensajes en '%s'", len(payloads), queue_name)
 
 
 class BaseConsumer(ABC):
@@ -175,8 +207,14 @@ class BaseConsumer(ABC):
                     )
                     raise  # NACK → dead-letter → DLQ
 
+    async def _get_republish_channel(self) -> aio_pika.abc.AbstractChannel:
+        """Canal dedicado para re-publicaciones de reintentos."""
+        if not hasattr(self, "_republish_ch") or self._republish_ch is None or self._republish_ch.is_closed:
+            self._republish_ch = await self._conn.channel()
+        return self._republish_ch
+
     async def _republish(self, body: bytes, retry_count: int) -> None:
-        channel = await self._conn.channel()
+        channel = await self._get_republish_channel()
         new_message = aio_pika.Message(
             body=body,
             headers={"x-retry-count": retry_count},

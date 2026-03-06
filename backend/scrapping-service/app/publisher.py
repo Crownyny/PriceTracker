@@ -25,6 +25,7 @@ class ScrapingResultPublisher(BasePublisher):
         state = ScrapingState.SCRAPED if result.status == "success" else ScrapingState.FAILED
         message = ScrapingMessage(
             job_id=result.job_id,
+            search_id=result.search_id,
             product_ref=result.product_ref,
             source_name=result.source_name,
             captured_at=result.scraped_at,

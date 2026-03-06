@@ -1,5 +1,6 @@
 from .model import (
     ScrapingState,
+    SearchRequest,
     ScrapingJob,
     ScrapingMessage,
     RawScrapingResult,

@@ -21,6 +21,7 @@ import httpx
 from shared.model import RawScrapingResult, ScrapingJob
 
 from .base import BaseScraper
+from ..sources.registry import registry
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 class HttpScraper(BaseScraper):
     """
     Scraper HTTP/S basado en httpx.
+    Delega la extracción de campos al source registrado en el SourceRegistry.
     Configurable mediante timeout y user_agent inyectados en el constructor.
     """
 
@@ -54,6 +56,7 @@ class HttpScraper(BaseScraper):
             raw_fields = self.extract_raw_fields(html_content, job)
             return RawScrapingResult(
                 job_id=job.job_id,
+                search_id=job.search_id,
                 product_ref=job.product_ref,
                 source_name=job.source_name,
                 scraped_at=datetime.datetime.now(tz=datetime.timezone.utc),
@@ -72,21 +75,22 @@ class HttpScraper(BaseScraper):
 
     def extract_raw_fields(self, content: str, job: ScrapingJob) -> dict[str, Any]:
         """
-        Punto de extensión principal: despacha al extractor específico de la fuente.
-
-        TODO: añadir extractores por fuente, por ejemplo:
-            from .extractors import get_extractor
-            return get_extractor(job.source_name).extract(content)
-
-        Por ahora devuelve un diccionario con las claves esperadas vacías,
-        para que el Normalizer pueda recibir el mensaje con estructura conocida.
+        Delega la extracción al source registrado en el SourceRegistry.
+        Si no existe source para el job, devuelve campos vacíos.
         """
-        logger.debug("[%s] extract_raw_fields stub para fuente '%s'", job.job_id, job.source_name)
+        source = registry.get(job.source_name)
+        if source:
+            return source.extract_raw_fields(content, job)
+
+        logger.warning(
+            "[%s] Sin extractor registrado para '%s', devolviendo campos vacíos",
+            job.job_id, job.source_name,
+        )
         return {
-            "raw_title": None,          # Ejemplo: parsed via BeautifulSoup/lxml
-            "raw_price": None,          # Ejemplo: "$1.999.000"
-            "raw_currency": None,       # Ejemplo: "COP"
-            "raw_availability": None,   # Ejemplo: "En stock"
+            "raw_title": None,
+            "raw_price": None,
+            "raw_currency": None,
+            "raw_availability": None,
             "raw_category": None,
             "raw_image_url": None,
             "raw_description": None,
@@ -96,6 +100,7 @@ class HttpScraper(BaseScraper):
     def _failed_result(job: ScrapingJob, error: str) -> RawScrapingResult:
         return RawScrapingResult(
             job_id=job.job_id,
+            search_id=job.search_id,
             product_ref=job.product_ref,
             source_name=job.source_name,
             scraped_at=datetime.datetime.now(tz=datetime.timezone.utc),

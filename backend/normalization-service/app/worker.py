@@ -103,6 +103,7 @@ class NormalizerWorker(BaseConsumer):
 
         event = NormalizedEventMessage(
             job_id=message.job_id,
+            search_id=message.search_id,
             product_ref=message.product_ref,
             source_name=message.source_name,
             normalized_at=datetime.datetime.now(tz=datetime.timezone.utc),

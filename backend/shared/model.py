@@ -23,11 +23,29 @@ class ScrapingState(StrEnum):
     NORMALIZATION_FAILED = "normalization_failed"
 
 
-# ── Job de scraping (entrada al Scraper Service) ──────────────────────────────
+# ── Solicitud de búsqueda (origen del fan-out) ───────────────────────────────
+class SearchRequest(BaseModel):
+    """
+    Representa la intención de búsqueda del usuario.
+    El Scraper Service usa su SourceRegistry para generar N ScrapingJobs
+    (uno por fuente registrada) que comparten el mismo search_id.
+
+    Si `sources` se especifica, solo se buscará en esas fuentes (filtro).
+    Si se omite, se busca en todas las fuentes registradas.
+    """
+    search_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    product_ref: str
+    query: str                                       # Texto libre de búsqueda
+    sources: Optional[list[str]] = None               # Filtro opcional de fuentes
+    priority: int = 5
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 # ── Job de scraping (entrada al Scraper Service) ──────────────────────────────
 class ScrapingJob(BaseModel):
     """Solicitud de scraping. Se publica en la cola de entrada del Scraper Service."""
     job_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    search_id: Optional[str] = None   # Agrupa jobs de la misma búsqueda
     source_url: str
     source_name: str        # "amazon", "mercadolibre", "exito", etc.
     product_ref: str        # Identificador interno del producto/recurso
@@ -39,6 +57,7 @@ class ScrapingJob(BaseModel):
 class RawScrapingResult(BaseModel):
     """Documento almacenado en MongoDB por el Scraper. Contiene todos los datos crudos."""
     job_id: str
+    search_id: Optional[str] = None
     product_ref: str
     source_name: str
     scraped_at: datetime.datetime
@@ -60,6 +79,7 @@ class ScrapingMessage(BaseModel):
       - `schema_version` permite evolucionar el contrato sin romper consumidores.
     """
     job_id: str
+    search_id: Optional[str] = None
     product_ref: str
     source_name: str
     captured_at: datetime.datetime
@@ -93,8 +113,11 @@ class NormalizedEventMessage(BaseModel):
     """
     Evento publicado por el Normalizer cuando completa (o falla) la normalización.
     Permite a servicios downstream (notificaciones, alertas de precio) reaccionar.
+    Con search_id, downstream puede saber cuándo se completaron todos los
+    resultados de una misma búsqueda.
     """
     job_id: str
+    search_id: Optional[str] = None
     product_ref: str
     source_name: str
     normalized_at: datetime.datetime
