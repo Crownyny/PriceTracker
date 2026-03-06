@@ -21,6 +21,7 @@ class ScrapingState(StrEnum):
     FAILED               = "failed"
     NORMALIZED           = "normalized"
     NORMALIZATION_FAILED = "normalization_failed"
+    SEARCH_COMPLETED     = "search_completed"   # Todos los jobs de una búsqueda normalizados
 
 
 # ── Solicitud de búsqueda (origen del fan-out) ───────────────────────────────
@@ -71,11 +72,11 @@ class RawScrapingResult(BaseModel):
 class ScrapingMessage(BaseModel):
     """
     Evento publicado por el Scraper cuando termina un job.
-    NO transporta raw_fields: el Normalizer los obtiene de MongoDB usando job_id.
+    Transporta raw_fields directamente para evitar dependencia de MongoDB.
 
     Diseño:
-      - Mensaje ligero: sólo el identificador del job y su estado.
-      - El Normalizer hace lookup en MongoDB con job_id.
+      - El Scraper embebe los campos extraídos en el mensaje.
+      - El Normalizer procesa los datos directamente desde el evento.
       - `schema_version` permite evolucionar el contrato sin romper consumidores.
     """
     job_id: str
@@ -84,12 +85,49 @@ class ScrapingMessage(BaseModel):
     source_name: str
     captured_at: datetime.datetime
     state: ScrapingState           # "scraped" | "failed"
+    raw_fields: dict[str, Any] = Field(default_factory=dict)  # Datos crudos del scraping
     schema_version: str = "2.0"
     error_message: Optional[str] = None
     extra: dict[str, Any] = Field(default_factory=dict)
 
 
 
+
+
+# ── Sentinel fin de búsqueda (Scraper → Normalizer) ───────────────────────────
+class SearchCompletedMessage(BaseModel):
+    """
+    Evento publicado por el Scraper inmediatamente después del fan-out.
+    Indica al Normalizer cuántos ScrapingMessages enviará para este search_id,
+    permitiendo detectar cuándo terminó de normalizar toda la búsqueda.
+
+    Flujo:
+      1. SearchRequest llega al Scraper.
+      2. El Scraper publica N ScrapingJobs y luego este sentinel.
+      3. El Normalizer acumula los N NormalizedEventMessages.
+      4. Cuando completed == total_jobs, emite SearchNormalizedMessage.
+    """
+    search_id: str
+    product_ref: str
+    total_jobs: int                # Número exacto de jobs despachados
+    dispatched_at: datetime.datetime
+    schema_version: str = "2.0"
+    extra: dict[str, Any] = Field(default_factory=dict)
+
+
+# ── Sentinel fin de normalización (Normalizer → downstream) ─────────────────
+class SearchNormalizedMessage(BaseModel):
+    """
+    Evento publicado por el Normalizer cuando TODOS los jobs de una búsqueda
+    han sido procesados (normalizados o fallidos).
+    Servicios downstream pueden consolidar resultados al recibirlo.
+    """
+    search_id: str
+    product_ref: str
+    total_normalized: int          # Cantidad de jobs procesados
+    completed_at: datetime.datetime
+    schema_version: str = "2.0"
+    extra: dict[str, Any] = Field(default_factory=dict)
 
 
 # ── Producto normalizado (salida del Normalizer Service) ──────────────────────

@@ -4,14 +4,16 @@ Flujo por mensaje:
     A) ScrapingJob (job individual):
         1. Recibe ScrapingJob desde la cola.
         2. Ejecuta el scraping (HttpScraper).
-        3. Guarda RawScrapingResult en MongoDB (MongoRawRepository).
-        4. Publica ScrapingMessage (evento puro) → cola de resultados.
+        3. Publica ScrapingMessage con raw_fields embebidos → cola de resultados.
+           (sin persistencia en MongoDB; los datos viajan en el evento)
 
     B) SearchRequest (fan-out):
         1. Recibe SearchRequest desde la cola.
         2. Usa el SourceRegistry para determinar las fuentes.
         3. Genera N ScrapingJobs (uno por fuente) con el mismo search_id.
         4. Publica cada job en la misma cola para procesamiento individual.
+        5. Publica SearchCompletedMessage(total_jobs=N) como sentinel.
+           El Normalizer necesita este mensaje para saber cuándo cerrar la búsqueda.
 """
 import logging
 from typing import Any
@@ -29,7 +31,6 @@ from .config import settings
 from .publisher import ScrapingResultPublisher
 from .scraper.http_scraper import HttpScraper
 from .sources import registry
-from .storage import MongoRawRepository
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 class ScraperWorker(BaseConsumer):
     """
     Consumer de ScrapingJob y SearchRequest.
-    Orquesta: deserialización → [fan-out |  scraping] → MongoDB → evento.
+    Orquesta: deserialización → [fan-out | scraping] → evento.
     """
 
     def __init__(self, connection: RabbitMQConnection) -> None:
@@ -49,10 +50,6 @@ class ScraperWorker(BaseConsumer):
         self._scraper = HttpScraper(
             timeout=settings.http_timeout,
             user_agent=settings.user_agent,
-        )
-        self._repository = MongoRawRepository(
-            mongo_url=settings.mongodb_url,
-            db_name=settings.mongodb_db,
         )
         self._publisher = ScrapingResultPublisher(connection)
         self._job_publisher = BasePublisher(connection)
@@ -68,7 +65,6 @@ class ScraperWorker(BaseConsumer):
         """Fan-out: genera N ScrapingJobs a partir de un SearchRequest."""
         request = SearchRequest.model_validate(payload)
 
-        # Determinar fuentes: si se especificaron, filtrar; si no, usar todas
         if request.sources:
             sources = registry.filter(request.sources)
         else:
@@ -78,6 +74,12 @@ class ScraperWorker(BaseConsumer):
             logger.warning(
                 "[%s] Sin fuentes disponibles para la búsqueda '%s'",
                 request.search_id, request.query,
+            )
+            # Sentinel con total_jobs=0 para que el Normalizer cierre de inmediato
+            await self._publisher.publish_search_completed(
+                search_id=request.search_id,
+                product_ref=request.product_ref,
+                total_jobs=0,
             )
             return
 
@@ -96,6 +98,13 @@ class ScraperWorker(BaseConsumer):
         payloads = [job.model_dump(mode="json") for job in jobs]
         await self._job_publisher.publish_many(QUEUE_SCRAPING_JOBS, payloads)
 
+        # Sentinel: permite al Normalizer saber cuántos ScrapingMessages esperar
+        await self._publisher.publish_search_completed(
+            search_id=request.search_id,
+            product_ref=request.product_ref,
+            total_jobs=len(jobs),
+        )
+
         logger.info(
             "[%s] SearchRequest fan-out: %d jobs generados para '%s' → [%s]",
             request.search_id,
@@ -112,10 +121,7 @@ class ScraperWorker(BaseConsumer):
         # 1. Ejecutar el scraping
         result = await self._scraper.scrape(job)
 
-        # 2. Persistir en MongoDB (siempre, incluso si falló, para trazabilidad)
-        await self._repository.save(result)
-
-        # 3. Publicar evento hacia el Normalizer
+        # 2. Publicar evento con raw_fields embebidos (sin pasar por MongoDB)
         await self._publisher.publish_result(result)
 
         logger.info("[%s] Job finalizado con status '%s'", job.job_id, result.status)

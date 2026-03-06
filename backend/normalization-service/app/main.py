@@ -9,7 +9,6 @@ from shared.messaging import RabbitMQConnection
 
 from .config import settings
 from .repositories.product_repository import ProductRepository
-from .repositories.raw_repository import MongoRawRepository
 from .worker import NormalizerWorker
 
 logging.basicConfig(
@@ -27,21 +26,15 @@ async def health() -> dict:
 
 
 async def start_worker() -> None:
-    # Inicializar repositorios
+    # Inicializar repositorio PostgreSQL (crea tablas si no existen)
     product_repo = ProductRepository(settings.database_url)
-    await product_repo.init_tables()  # Crea tablas en PostgreSQL si no existen
-
-    raw_repo = MongoRawRepository(
-        mongo_url=settings.mongodb_url,
-        db_name=settings.mongodb_db,
-    )
+    await product_repo.init_tables()
 
     connection = RabbitMQConnection(settings.amqp_url)
     await connection.connect()
 
     worker = NormalizerWorker(
         connection=connection,
-        raw_repo=raw_repo,
         product_repo=product_repo,
     )
     await worker.setup()

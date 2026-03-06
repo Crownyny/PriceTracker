@@ -34,10 +34,12 @@ logger = logging.getLogger(__name__)
 # ── Nombres de colas ──────────────────────────────────────────────────────────
 QUEUE_SCRAPING_JOBS = "scraping.jobs"
 QUEUE_SCRAPING_JOBS_DLQ = "scraping.jobs.dlq"
-QUEUE_SCRAPING_RESULTS = "scraping.results"        # Scraper → Normalizer
+QUEUE_SCRAPING_RESULTS = "scraping.results"        # Scraper → Normalizer (ScrapingMessage + SearchCompletedMessage)
 QUEUE_SCRAPING_RESULTS_DLQ = "scraping.results.dlq"
-QUEUE_NORMALIZED_EVENTS = "normalized.events"      # Normalizer → downstream
+QUEUE_NORMALIZED_EVENTS = "normalized.events"      # Normalizer → downstream (por job)
 QUEUE_NORMALIZED_EVENTS_DLQ = "normalized.events.dlq"
+QUEUE_SEARCH_NORMALIZED = "search.normalized"      # Normalizer → downstream (cierre de búsqueda)
+QUEUE_SEARCH_NORMALIZED_DLQ = "search.normalized.dlq"
 
 MAX_RETRIES = 3
 

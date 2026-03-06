@@ -8,10 +8,6 @@ class Settings(BaseSettings):
     # RabbitMQ
     amqp_url: str = "amqp://guest:guest@localhost:5672/"
 
-    # MongoDB — almacén de resultados raw
-    mongodb_url: str = "mongodb://localhost:27017"
-    mongodb_db: str = "pricetracker"
-
     # Servidor FastAPI de administración
     api_host: str = "0.0.0.0"
     api_port: int = 8001

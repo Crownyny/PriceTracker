@@ -5,9 +5,10 @@ El estado fluye de nodo en nodo. Cada nodo retorna un dict con SOLO
 los campos que modifica; LangGraph hace el merge con el estado anterior.
 
 Convenciones sobre campos:
-  - Campos de entrada (job_id, product_ref, source_name, captured_at):
+  - Campos de entrada (job_id, product_ref, source_name, captured_at, raw_fields):
       Populados por el worker antes de invocar al grafo.
-  - Campos de procesamiento (raw_document, cleaned_product, etc.):
+      raw_fields viene embebido en el ScrapingMessage (sin MongoDB).
+  - Campos de procesamiento (cleaned_product, etc.):
       Populados progresivamente por los nodos.
   - `error`: error fatal → desvía el flujo al nodo error_end.
   - `outcome`: resultado final del pipeline (inicializado pesimistamente).
@@ -21,10 +22,10 @@ class NormalizationState(TypedDict):
     job_id: str
     product_ref: str
     source_name: str
-    captured_at: str          # ISO-8601 string de la fecha de captura del scraping
+    captured_at: str          # ISO-8601 string de la fecha de captura
 
-    # ── Datos obtenidos de MongoDB ────────────────────────────────────────────
-    raw_document: Optional[dict]   # Documento RawScrapingResult completo
+    # ── Datos del evento (sin MongoDB) ────────────────────────────────────────
+    raw_fields: dict          # Campos extraídos por el scraper, del ScrapingMessage
 
     # ── Campos de procesamiento ───────────────────────────────────────────────
     cleaned_product: Optional[dict]        # NormalizedProduct tras reglas deterministas

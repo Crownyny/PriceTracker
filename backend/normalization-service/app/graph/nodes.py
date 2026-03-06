@@ -63,13 +63,14 @@ def make_fetch_raw_node(raw_repo):
 # ── Nodo 2: clean ─────────────────────────────────────────────────────────────
 async def clean_node(state: dict) -> dict:
     """
-    Aplica DefaultNormalizer (reglas deterministas) sobre raw_fields del documento.
+    Aplica DefaultNormalizer (reglas deterministas) sobre raw_fields del estado.
+    raw_fields viene del ScrapingMessage embebido en el evento (sin MongoDB).
     Si hay error previo, no hace nada (el grafo redirigirá a error_end).
     """
     if state.get("error"):
         return {}
 
-    raw_fields = (state.get("raw_document") or {}).get("raw_fields", {})
+    raw_fields = state.get("raw_fields") or {}
     try:
         product = await _normalizer.normalize(
             raw_fields=raw_fields,

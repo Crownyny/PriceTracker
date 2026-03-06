@@ -62,12 +62,11 @@ async def _error_end_node(state: dict) -> dict:
 
 # ── Factory del pipeline ──────────────────────────────────────────────────────
 
-def build_pipeline(raw_repo, product_repo, llm=None, enable_enricher: bool = False):
+def build_pipeline(product_repo, llm=None, enable_enricher: bool = False):
     """
     Construye y compila el grafo de normalización.
 
     Args:
-        raw_repo:        MongoRawRepository — lectura de datos crudos.
         product_repo:    ProductRepository  — escritura de productos normalizados.
         llm:             Instancia de BaseChatModel (LangChain). Opcional.
         enable_enricher: Si True y llm no es None, añade el nodo de enriquecimiento LLM.
@@ -77,8 +76,8 @@ def build_pipeline(raw_repo, product_repo, llm=None, enable_enricher: bool = Fal
     """
     graph = StateGraph(NormalizationState)
 
-    # ── Nodos ─────────────────────────────────────────────────────────────────
-    graph.add_node("fetch_raw", make_fetch_raw_node(raw_repo))
+    # ── Nodos ───────────────────────────────────────────────────────────────
+    graph.add_node("fetch_raw", make_fetch_raw_node())   # sin MongoDB
     graph.add_node("clean", clean_node)
     graph.add_node("validate", validate_node)
     graph.add_node("save", make_save_node(product_repo))

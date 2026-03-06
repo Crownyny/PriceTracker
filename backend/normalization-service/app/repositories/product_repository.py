@@ -1,9 +1,11 @@
 """repositories/product_repository.py
-Repositorio de productos normalizados e historial de precios en PostgreSQL.
+Repositorio de productos normalizados, historial de precios y
+seguimiento de búsquedas en PostgreSQL.
 
 Modelos ORM (SQLAlchemy 2.0 async):
   - NormalizedProductORM  → tabla normalized_products
   - PriceHistoryORM       → tabla price_history
+  - SearchTrackingORM     → tabla search_tracking (progreso de normalización)
 
 Índices implícitos por UniqueConstraint + explícitos recomendados:
     CREATE INDEX ix_price_history_product ON price_history (product_ref, source_name);
@@ -11,9 +13,9 @@ Modelos ORM (SQLAlchemy 2.0 async):
 """
 import datetime
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 
-from sqlalchemy import JSON, UniqueConstraint, select
+from sqlalchemy import JSON, UniqueConstraint, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -62,6 +64,20 @@ class PriceHistoryORM(Base):
     currency: Mapped[str]
     recorded_at: Mapped[datetime.datetime]
     job_id: Mapped[str]
+
+
+class SearchTrackingORM(Base):
+    """Seguimiento del progreso de normalización por búsqueda.
+    Permite saber cuándo se han procesado todos los jobs de un search_id.
+    """
+    __tablename__ = "search_tracking"
+
+    search_id: Mapped[str] = mapped_column(primary_key=True)
+    product_ref: Mapped[str]
+    expected_jobs: Mapped[Optional[int]]   # None hasta que llegue el sentinel
+    completed_jobs: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime.datetime]
+    updated_at: Mapped[datetime.datetime]
 
 
 # ── Repositorio ───────────────────────────────────────────────────────────────
@@ -160,3 +176,75 @@ class ProductRepository:
 
     async def close(self) -> None:
         await self._engine.dispose()
+
+    # ── Tracking de búsquedas ─────────────────────────────────────────────────
+
+    async def record_expected_jobs(
+        self, search_id: str, product_ref: str, total_jobs: int
+    ) -> Tuple[int, int]:
+        """
+        Registra el total de jobs esperados para este search_id (upsert).
+        Retorna (completed_jobs, total_jobs) tras la operación.
+        La operación es atómica: si los jobs ya llegaron antes del sentinel,
+        completed_jobs reflejará el valor actual.
+        """
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        async with self._session_factory() as session:
+            stmt = (
+                pg_insert(SearchTrackingORM)
+                .values(
+                    search_id=search_id,
+                    product_ref=product_ref,
+                    expected_jobs=total_jobs,
+                    completed_jobs=0,
+                    created_at=now,
+                    updated_at=now,
+                )
+                .on_conflict_do_update(
+                    index_elements=["search_id"],
+                    set_={"expected_jobs": total_jobs, "updated_at": now},
+                )
+                .returning(SearchTrackingORM.__table__.c.completed_jobs)
+            )
+            result = await session.execute(stmt)
+            completed = result.scalar_one()
+            await session.commit()
+        return completed, total_jobs
+
+    async def increment_completed_jobs(
+        self, search_id: str, product_ref: str
+    ) -> Tuple[int, Optional[int]]:
+        """
+        Incrementa atómicamente el contador de jobs completados.
+        Si el documento no existe lo crea (puede ocurrir antes de que llegue el sentinel).
+        Retorna (nuevo_completed_jobs, expected_jobs).
+        expected_jobs es None si el SearchCompletedMessage aún no llegó.
+        """
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        async with self._session_factory() as session:
+            stmt = (
+                pg_insert(SearchTrackingORM)
+                .values(
+                    search_id=search_id,
+                    product_ref=product_ref,
+                    expected_jobs=None,
+                    completed_jobs=1,
+                    created_at=now,
+                    updated_at=now,
+                )
+                .on_conflict_do_update(
+                    index_elements=["search_id"],
+                    set_={
+                        "completed_jobs": text("search_tracking.completed_jobs + 1"),
+                        "updated_at": now,
+                    },
+                )
+                .returning(
+                    SearchTrackingORM.__table__.c.completed_jobs,
+                    SearchTrackingORM.__table__.c.expected_jobs,
+                )
+            )
+            result = await session.execute(stmt)
+            row = result.fetchone()
+            await session.commit()
+        return row.completed_jobs, row.expected_jobs
