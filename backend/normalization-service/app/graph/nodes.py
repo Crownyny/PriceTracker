@@ -28,36 +28,23 @@ _validator = ProductValidator()
 
 
 # ── Nodo 1: fetch_raw ─────────────────────────────────────────────────────────
-def make_fetch_raw_node(raw_repo):
+async def fetch_raw_node(state: dict) -> dict:
     """
-    Factoría del nodo fetch_raw.
-    Recupera el documento RawScrapingResult de MongoDB usando job_id.
-    Si no existe o el scraping había fallado, registra el error y
-    desvía el flujo hacia error_end.
+    Valida que el mensaje del evento contenga raw_fields con datos.
+    Los campos ya vienen embebidos en el ScrapingMessage procesado por el worker;
+    no se realiza ninguna consulta a MongoDB.
     """
+    job_id = state.get("job_id", "<desconocido>")
+    raw_fields = state.get("raw_fields")
 
-    async def fetch_raw(state: dict) -> dict:
-        job_id = state["job_id"]
-        try:
-            doc = await raw_repo.find_by_job_id(job_id)
+    if not raw_fields:
+        return {
+            "error": f"El mensaje del evento no contiene raw_fields para job_id={job_id}",
+            "outcome": ScrapingState.NORMALIZATION_FAILED,
+        }
 
-            if not doc:
-                return {
-                    "error": f"No se encontró documento raw para job_id={job_id}",
-                    "outcome": ScrapingState.NORMALIZATION_FAILED,
-                }
-            if doc.get("status") == "failed":
-                return {
-                    "error": f"El scraping del job {job_id} había fallado: {doc.get('error_message')}",
-                    "outcome": ScrapingState.NORMALIZATION_FAILED,
-                }
-            return {"raw_document": doc}
-
-        except Exception as exc:
-            logger.exception("[%s] Error al leer de MongoDB", job_id)
-            return {"error": str(exc), "outcome": ScrapingState.NORMALIZATION_FAILED}
-
-    return fetch_raw
+    logger.debug("[%s] raw_fields recibidos desde el evento (%d campos)", job_id, len(raw_fields))
+    return {}
 
 
 # ── Nodo 2: clean ─────────────────────────────────────────────────────────────

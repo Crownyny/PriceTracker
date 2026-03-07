@@ -26,8 +26,8 @@ from shared.model import ScrapingState
 
 from .nodes import (
     clean_node,
+    fetch_raw_node,
     make_enrich_node,
-    make_fetch_raw_node,
     make_save_node,
     validate_node,
 )
@@ -77,7 +77,7 @@ def build_pipeline(product_repo, llm=None, enable_enricher: bool = False):
     graph = StateGraph(NormalizationState)
 
     # ── Nodos ───────────────────────────────────────────────────────────────
-    graph.add_node("fetch_raw", make_fetch_raw_node())   # sin MongoDB
+    graph.add_node("fetch_raw", fetch_raw_node)
     graph.add_node("clean", clean_node)
     graph.add_node("validate", validate_node)
     graph.add_node("save", make_save_node(product_repo))

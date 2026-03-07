@@ -85,5 +85,5 @@ class SiteDetector:
             return None
 
 
-# Instancia global del detector
+# Instancia 
 detector = SiteDetector()
