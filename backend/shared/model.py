@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 
 class ScrapingState(StrEnum):
-    """Ciclo de vida de un job de scraping a través de ambos servicios."""
+    """Ciclo de vida de un job de scraping a través de ambos servicios and more."""
     PENDING              = "pending"
     SCRAPED              = "scraped"
     FAILED               = "failed"

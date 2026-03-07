@@ -252,7 +252,7 @@ python cli.py \
 
 ## Dependencias key
 
-| Librería | Uso |
+| Librería | Uso | 
 |---|---|
 | `pydantic` v2 | Validación y serialización de modelos |
 | `aio-pika` | Cliente async para RabbitMQ |
