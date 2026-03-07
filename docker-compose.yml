@@ -63,18 +63,31 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+      searxng:
+        condition: service_started
     environment:
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
-      MONGODB_URL: mongodb://mongodb:27017
-      MONGODB_DB: pricetracker
       API_HOST: "0.0.0.0"
       API_PORT: "8001"
       HTTP_TIMEOUT: "30.0"
-      USER_AGENT: "PriceTrackerBot/1.0"
+      USER_AGENT: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+      SEARXNG_URL: "http://searxng:8080"
+      SEARXNG_MAX_RESULTS: "10"
     ports:
       - "8001:8001"   # Health check: GET http://localhost:8001/health
     restart: unless-stopped
-
+  # ── SearXNG — metabuscador para discovery de URLs de e-commerce ─────────────
+  searxng:
+    image: searxng/searxng:latest
+    container_name: pricetracker-searxng
+    ports:
+      - "8080:8080"   # UI: http://localhost:8080
+    environment:
+      - SEARXNG_SECRET_KEY=pricetracker-secret-change-in-production
+    volumes:
+      - ./searxng:/etc/searxng:rw
+      - searxng_data:/data
+    restart: unless-stopped
   # ── Normalizer Service ──────────────────────────────────────────────────────
   normalizer:
     build:
@@ -106,3 +119,4 @@ volumes:
   rabbitmq_data:
   mongodb_data:
   postgres_data:
+  searxng_data:

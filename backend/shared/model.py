@@ -1,11 +1,9 @@
 """shared/model.py
 Modelos de datos y contratos de comunicación entre servicios.
 
-Diseño del contrato ScrapingMessage (versión 2.0):
-  - Ya NO transporta raw_fields inline.
-  - Es un evento puro: solo identifica el job y su estado.
-  - El Normalizer recupera los datos crudos de MongoDB usando job_id.
-  - Esto desacopla el tamaño del mensaje de la cantidad de datos extraídos.
+Flujo de mensajes:
+  SearchRequest → (fan-out) → ScrapingJob × N → ScrapingMessage × N
+                                               → SearchCompletedMessage (sentinel)
 """
 import uuid
 import datetime
@@ -21,36 +19,31 @@ class ScrapingState(StrEnum):
     FAILED               = "failed"
     NORMALIZED           = "normalized"
     NORMALIZATION_FAILED = "normalization_failed"
-    SEARCH_COMPLETED     = "search_completed"   # Todos los jobs de una búsqueda normalizados
 
 
-# ── Solicitud de búsqueda (origen del fan-out) ───────────────────────────────
+# ── Solicitud de búsqueda (entrada de alto nivel al Scraper Service) ──────────
 class SearchRequest(BaseModel):
     """
-    Representa la intención de búsqueda del usuario.
-    El Scraper Service usa su SourceRegistry para generar N ScrapingJobs
-    (uno por fuente registrada) que comparten el mismo search_id.
-
-    Si `sources` se especifica, solo se buscará en esas fuentes (filtro).
-    Si se omite, se busca en todas las fuentes registradas.
+    Solicitud de búsqueda de precio. El worker hace fan-out a N ScrapingJobs,
+    uno por cada fuente seleccionada (automatic via SearXNG o manual via `sources`).
     """
     search_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    product_ref: str
-    query: str                                       # Texto libre de búsqueda
-    sources: Optional[list[str]] = None               # Filtro opcional de fuentes
+    query: str                              # texto libre: "iPhone 15 Pro 128GB"
+    product_ref: str                        # identificador interno del producto
+    sources: Optional[list[str]] = None     # None = auto-discovery via SearXNG
     priority: int = 5
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 # ── Job de scraping (entrada al Scraper Service) ──────────────────────────────
 class ScrapingJob(BaseModel):
-    """Solicitud de scraping. Se publica en la cola de entrada del Scraper Service."""
+    """Solicitud de scraping para una URL/fuente concreta."""
     job_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    search_id: Optional[str] = None   # Agrupa jobs de la misma búsqueda
+    search_id: Optional[str] = None         # vínculo con el SearchRequest padre
     source_url: str
-    source_name: str        # "amazon", "mercadolibre", "exito", etc.
-    product_ref: str        # Identificador interno del producto/recurso
-    priority: int = 5       # 1 (mayor prioridad) → 10 (menor)
+    source_name: str                        # "amazon", "mercadolibre", "unknown", …
+    product_ref: str
+    priority: int = 5
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -68,68 +61,31 @@ class RawScrapingResult(BaseModel):
     error_message: Optional[str] = None
 
 
-# ── Evento de comunicación Scraper → Normalizer ─────────────────────────────
+# ── Evento de comunicación Scraper → Normalizer ──────────────────────────────
 class ScrapingMessage(BaseModel):
     """
     Evento publicado por el Scraper cuando termina un job.
-    Transporta raw_fields directamente para evitar dependencia de MongoDB.
-
-    Diseño:
-      - El Scraper embebe los campos extraídos en el mensaje.
-      - El Normalizer procesa los datos directamente desde el evento.
-      - `schema_version` permite evolucionar el contrato sin romper consumidores.
+    Transporta raw_fields inline (sin lookup a MongoDB).
     """
     job_id: str
     search_id: Optional[str] = None
     product_ref: str
     source_name: str
     captured_at: datetime.datetime
-    state: ScrapingState           # "scraped" | "failed"
-    raw_fields: dict[str, Any] = Field(default_factory=dict)  # Datos crudos del scraping
-    schema_version: str = "2.0"
+    state: ScrapingState
+    raw_fields: dict[str, Any] = Field(default_factory=dict)
     error_message: Optional[str] = None
-    extra: dict[str, Any] = Field(default_factory=dict)
 
 
-
-
-
-# ── Sentinel fin de búsqueda (Scraper → Normalizer) ───────────────────────────
 class SearchCompletedMessage(BaseModel):
     """
-    Evento publicado por el Scraper inmediatamente después del fan-out.
-    Indica al Normalizer cuántos ScrapingMessages enviará para este search_id,
-    permitiendo detectar cuándo terminó de normalizar toda la búsqueda.
-
-    Flujo:
-      1. SearchRequest llega al Scraper.
-      2. El Scraper publica N ScrapingJobs y luego este sentinel.
-      3. El Normalizer acumula los N NormalizedEventMessages.
-      4. Cuando completed == total_jobs, emite SearchNormalizedMessage.
+    Sentinel publicado tras el fan-out de un SearchRequest.
+    Indica al Normalizer cuántos ScrapingMessages esperar para este search_id.
     """
     search_id: str
     product_ref: str
-    total_jobs: int                # Número exacto de jobs despachados
+    total_jobs: int
     dispatched_at: datetime.datetime
-    schema_version: str = "2.0"
-    extra: dict[str, Any] = Field(default_factory=dict)
-
-
-# ── Sentinel fin de normalización (Normalizer → downstream) ─────────────────
-class SearchNormalizedMessage(BaseModel):
-    """
-    Evento publicado por el Normalizer cuando TODOS los jobs de una búsqueda
-    han sido procesados (normalizados o fallidos).
-    Servicios downstream pueden consolidar resultados al recibirlo.
-    """
-    search_id: str
-    product_ref: str
-    total_normalized: int          # Cantidad de jobs procesados
-    completed_at: datetime.datetime
-    schema_version: str = "2.0"
-    extra: dict[str, Any] = Field(default_factory=dict)
-
-
 # ── Producto normalizado (salida del Normalizer Service) ──────────────────────
 class NormalizedProduct(BaseModel):
     """Representación canónica de un producto. Formato estándar de la plataforma."""
@@ -151,11 +107,8 @@ class NormalizedEventMessage(BaseModel):
     """
     Evento publicado por el Normalizer cuando completa (o falla) la normalización.
     Permite a servicios downstream (notificaciones, alertas de precio) reaccionar.
-    Con search_id, downstream puede saber cuándo se completaron todos los
-    resultados de una misma búsqueda.
     """
     job_id: str
-    search_id: Optional[str] = None
     product_ref: str
     source_name: str
     normalized_at: datetime.datetime

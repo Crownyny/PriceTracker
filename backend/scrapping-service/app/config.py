@@ -12,9 +12,13 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8001
 
-    # HTTP scraping
+    # Playwright
+    user_agent: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     http_timeout: float = 30.0
-    user_agent: str = "PriceTrackerBot/1.0"
+
+    # SearXNG — discovery de URLs de producto
+    searxng_url: str = "http://searxng:8080"
+    searxng_max_results: int = 10
 
 
 settings = Settings()

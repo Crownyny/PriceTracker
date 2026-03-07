@@ -2,10 +2,11 @@
 
 Arranca en paralelo:
   - ScraperWorker: consumer de la cola de jobs (lógica principal).
-  - FastAPI: servidor mínimo para health check y disparo manual de jobs (administración).
+  - FastAPI: servidor mínimo para health check y disparo manual de jobs.
 
-Para escalar horizontalmente basta con levantar múltiples réplicas de este servicio;
-RabbitMQ distribuirá los mensajes entre ellas automáticamente (competing consumers).
+El worker gestiona el ciclo de vida de Playwright (start/stop)
+asegurando que Chromium arranque antes de consumir mensajes y
+se cierre limpiamente al apagar el servicio.
 """
 import asyncio
 import logging
@@ -25,7 +26,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ── FastAPI (administración/monitorización, no lógica de negocio) ─────────────
-app = FastAPI(title="Scraper Service", version="0.1.0")
+app = FastAPI(title="Scraper Service", version="0.2.0")
 
 
 @app.get("/health", tags=["admin"])
@@ -39,8 +40,16 @@ async def start_worker() -> None:
     await connection.connect()
     worker = ScraperWorker(connection)
     await worker.setup()
-    logger.info("ScraperWorker iniciado.")
-    await worker.start_consuming()
+
+    # Arrancar Playwright antes de consumir mensajes
+    await worker.start()
+    logger.info("ScraperWorker + Playwright iniciados.")
+
+    try:
+        await worker.start_consuming()
+    finally:
+        # Garantizar cierre limpio del browser aunque el consumer falle
+        await worker.stop()
 
 
 async def main() -> None:
