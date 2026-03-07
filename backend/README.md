@@ -247,7 +247,8 @@ python cli.py \
 3. Usar `BaseConsumer` o `BasePublisher` de `shared.messaging` para conectarse a RabbitMQ.
 4. Usar los modelos de `shared.model` para garantizar compatibilidad de contratos.
 
----
+----
+
 
 ## Dependencias clave
 
