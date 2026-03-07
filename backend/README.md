@@ -250,7 +250,7 @@ python cli.py \
 ----
 
 
-## Dependencias clave
+## Dependencias key
 
 | Librería | Uso |
 |---|---|
