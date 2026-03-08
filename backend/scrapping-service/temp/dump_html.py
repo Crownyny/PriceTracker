@@ -14,6 +14,7 @@ URLS = {
     "amazon":       "https://www.amazon.com/s?k=samsung+galaxy+s24",
     "mercadolibre": "https://listado.mercadolibre.com.co/samsung+galaxy+s24",
     "exito":        "https://www.exito.com/s?q=samsung+galaxy+s24",
+    "falabella":    "https://www.falabella.com.co/falabella-co/search?Ntt=samsung+galaxy+s24",
 }
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
@@ -21,6 +22,7 @@ WAIT_SELECTORS = {
     "amazon":       "div.s-main-slot",
     "mercadolibre": ".ui-search-layout__item, .poly-card",
     "exito":        "[class*='galleryItem'], [class*='productCard']",
+    "falabella":    "[data-pod]",
 }
 
 async def dump(name, url, wait_sel):

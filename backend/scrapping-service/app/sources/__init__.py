@@ -5,7 +5,7 @@ disponibles en el SourceRegistry.
 
 Para agregar una nueva fuente:
   1. Crear un archivo en este directorio (ej: falabella.py)
-  2. Implementar BaseSource (source_name, build_url, extract_raw_fields)
+  2. Implementar BeautifulSoupSource (source_name, build_url, wait_for_selector, _all_cards, _extract_*)
   3. Al final del archivo llamar: registry.register(MiNuevaSource())
   4. Agregar el import aquí abajo para que se auto-registre al arrancar.
 """
@@ -17,3 +17,4 @@ from .base import BaseSource  # noqa: F401
 from . import amazon  # noqa: F401
 from . import mercadolibre  # noqa: F401
 from . import exito  # noqa: F401
+from . import falabella  # noqa: F401
