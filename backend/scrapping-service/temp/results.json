@@ -3,7 +3,7 @@
   "results": [
     {
       "source": "amazon",
-      "job_id": "a3c89641-28ea-42bb-9d50-c58780f10de7",
+      "job_id": "db2a94c4-ee97-40a5-b76e-c5068f1a7910",
       "url": "https://www.amazon.com/s?k=iphone+15",
       "status": "success",
       "error": null,
@@ -157,12 +157,21 @@
     },
     {
       "source": "mercadolibre",
-      "job_id": "12cbaa90-1a9f-46ea-83f0-da5e6e60ea89",
+      "job_id": "727bc887-26dc-4edb-8ce0-e3bb1c4a9242",
       "url": "https://listado.mercadolibre.com.co/iphone+15",
       "status": "success",
       "error": null,
       "total_products": 48,
       "products": [
+        {
+          "raw_title": "Apple iPhone 15 128 GB Negro",
+          "raw_price": "3.844.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Iphone",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_832226-MLA95493131564_102025-E.webp",
+          "raw_description": null
+        },
         {
           "raw_title": "Apple iPhone 15 Pro Max (256 GB) - Titanio Natural - Excelente (Reacondicionado)",
           "raw_price": "2.436.920",
@@ -245,30 +254,21 @@
           "raw_description": null
         },
         {
-          "raw_title": "iPhone 15 Pro (sólo eSIM) 128 GB titanio azul - Aceptable (Reacondicionado)",
-          "raw_price": "1.863.194",
-          "raw_currency": "COP",
-          "raw_availability": "available",
-          "raw_category": "Iphone",
-          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_699987-MLA104461314700_012026-E.webp",
-          "raw_description": null
-        },
-        {
-          "raw_title": "Apple iPhone 15 (128 GB) - Azul",
-          "raw_price": "2.629.900",
-          "raw_currency": "COP",
-          "raw_availability": "available",
-          "raw_category": "Iphone",
-          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_616749-MLA95935201463_102025-E.webp",
-          "raw_description": null
-        },
-        {
           "raw_title": "Apple iPhone 15 Pro Max (512 GB) - Titanio Azul - Excelente (Reacondicionado)",
           "raw_price": "5.100.000",
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": "Iphone",
           "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_689736-MLA95497054220_102025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "iPhone 15 Pro (sólo eSIM) 128 GB titanio azul - Aceptable (Reacondicionado)",
+          "raw_price": "1.863.194",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Iphone",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_699987-MLA104461314700_012026-E.webp",
           "raw_description": null
         },
         {
@@ -599,7 +599,7 @@
     },
     {
       "source": "exito",
-      "job_id": "24bdb3c9-2966-4bd8-9272-f487003fe39c",
+      "job_id": "272d23e1-b254-4350-80f7-a66d9626fe93",
       "url": "https://www.exito.com/s?q=iphone+15",
       "status": "success",
       "error": null,
@@ -1239,7 +1239,7 @@
     },
     {
       "source": "falabella",
-      "job_id": "525a0139-6802-451c-a5ca-417ae9296f2f",
+      "job_id": "3ab8bdb0-c981-46d5-b46f-1c7865768572",
       "url": "https://www.falabella.com.co/falabella-co/search?Ntt=iphone+15",
       "status": "success",
       "error": null,
@@ -1251,7 +1251,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/72752104_1/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/72752104_1/width=240",
           "raw_description": "APPLE Celular iPhone 15 5G | 128GB | 6GB RAM | Compatible con eSIM Por Falabella"
         },
         {
@@ -1260,7 +1260,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/72752113_1/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/72752113_1/width=240",
           "raw_description": "APPLE Celular iPhone 15 5G | 256GB | 6GB RAM | Compatible con eSIM Por Falabella"
         },
         {
@@ -1269,7 +1269,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/151284220_001/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/151284220_001/width=240",
           "raw_description": "APPLE Celular IPhone 15 Plus 128 GB 5G Azul Reacondicionado + Garantía extendida + Panel Solar Por Refurbi."
         },
         {
@@ -1278,7 +1278,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/145256514_01/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/145256514_01/width=240",
           "raw_description": "GENERICO Audifonos Manos Libres Para iPhone 15 Todos Conexión Tipo C Por Gawe Col"
         },
         {
@@ -1287,7 +1287,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141101156_01/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141101156_01/width=240",
           "raw_description": "GENERICO Protector Hidrogel Pantalla Para IPhone 15 Por Bogtecnologia"
         },
         {
@@ -1296,7 +1296,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/136666705_01/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/136666705_01/width=240",
           "raw_description": "PHONETIFY Funda Transparente Shockproof para IPhone 15 Por Phonetify Sas"
         },
         {
@@ -1305,7 +1305,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141101197_01/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141101197_01/width=240",
           "raw_description": "GENERICO Protector Hidrogel Pantalla Para IPhone 15 Plus Por Bogtecnologia"
         },
         {
@@ -1314,7 +1314,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": "https://media.falabella.com.co/falabellaCO/138127211_01/width=240,height=240,quality=70,format=webp,fit=pad",
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/138127211_01/width=240",
           "raw_description": "GENERICO Vidrio templado premium 10d Para iphone 15 Por Ghora"
         },
         {
@@ -1323,7 +1323,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141100457_01/width=240",
           "raw_description": "GENERICO Protector Hidrogel Pantalla Para IPhone 15 Pro Por Bogtecnologia"
         },
         {
@@ -1332,7 +1332,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141488752_01/width=240",
           "raw_description": "PHONETIFY Funda Transparente Antichoque para iPhone 15 Plus Por Phonetify Sas"
         },
         {
@@ -1341,7 +1341,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/127621818_01/width=240",
           "raw_description": "GENERICO Carcasa estuche antigolpe defender para iphone 15 Por Anvic Accesorios"
         },
         {
@@ -1350,7 +1350,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/138245905_01/width=240",
           "raw_description": "PHONETIFY Funda Transparente Antichoque para iPhone 15 Pro Max Por Phonetify Sas"
         },
         {
@@ -1359,7 +1359,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/127621856_01/width=240",
           "raw_description": "GENERICO Carcasa estuche antigolpe defender para iphone 15 Pro Por Anvic Accesorios"
         },
         {
@@ -1368,7 +1368,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/138127383_01/width=240",
           "raw_description": "GENERICO Vidrio templado premium 10d Para iphone 15 plus Por Ghora"
         },
         {
@@ -1377,7 +1377,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/150518588_01/width=240",
           "raw_description": "GENERICO Estuche Forro Rígido Transparente Magsafe Para iPhone 15 Por Tecno Prime"
         },
         {
@@ -1386,7 +1386,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141488911_01/width=240",
           "raw_description": "PHONETIFY Vidrio Protector Pantalla Para iPhone 15 Fácil Instalación Por Phonetify Sas"
         },
         {
@@ -1395,7 +1395,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/129995696_01/width=240",
           "raw_description": "OTTERBOX Estuche Antigolpes Defender Para iPhone 15 - Negro Por Idiaz Cop S.a.s"
         },
         {
@@ -1404,7 +1404,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/130462497_01/width=240",
           "raw_description": "GENERICO Estuche Sumergible Tipo Lifeproof Para iPhone 15 - Transparente Por Idiaz Cop S.a.s"
         },
         {
@@ -1413,7 +1413,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/141099999_01/width=240",
           "raw_description": "GENERICO Protector Hidrogel Pantalla Para IPhone 15 Pro Max Por Bogtecnologia"
         },
         {
@@ -1422,7 +1422,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/143453568_01/width=240",
           "raw_description": "GENERICO Carcasa Estuche Case para Iphone 15 Translucido Rosado Por Tienvir"
         },
         {
@@ -1431,7 +1431,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/135475965_01/width=240",
           "raw_description": "LOVE MEI Estuche Powerful Para iPhone 15 Antigolpes Por Idiaz Cop S.a.s"
         },
         {
@@ -1440,7 +1440,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/144362941_01/width=240",
           "raw_description": "GENERICO Forro Funda Protector Acrilico magnetico Para iphone 15 Por Ghora"
         },
         {
@@ -1449,7 +1449,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/138127531_01/width=240",
           "raw_description": "GENERICO Vidrio templado premium 10d Para iphone 15 pro Por Ghora"
         },
         {
@@ -1458,7 +1458,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/134553431_01/width=240",
           "raw_description": "GENERICO Estuche De Carga Magsafe Para iPhone 15 Plus - Transparente Por Idiaz Cop S.a.s"
         },
         {
@@ -1467,7 +1467,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/134550183_01/width=240",
           "raw_description": "GENERICO Estuche De Carga Magsafe Para iPhone 15 Pro - Transparente Por Idiaz Cop S.a.s"
         },
         {
@@ -1476,7 +1476,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/151611010_01/width=240",
           "raw_description": "GENERICO Estuche Funda MagSafe Antigolpe De Lujo Para iPhone 15 Por Tecno Prime"
         },
         {
@@ -1485,7 +1485,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/151611027_01/width=240",
           "raw_description": "GENERICO Estuche Funda MagSafe Antigolpe De Lujo Para iPhone 15 Por Tecno Prime"
         },
         {
@@ -1494,7 +1494,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/151611044_01/width=240",
           "raw_description": "GENERICO Estuche Funda MagSafe Antigolpe De Lujo Para iPhone 15 Por Tecno Prime"
         },
         {
@@ -1503,7 +1503,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/151611048_01/width=240",
           "raw_description": "GENERICO Estuche Funda MagSafe Antigolpe De Lujo Para iPhone 15 Por Tecno Prime"
         },
         {
@@ -1512,7 +1512,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/151611062_01/width=240",
           "raw_description": "GENERICO Estuche Funda MagSafe Antigolpe De Lujo Para iPhone 15 Por Tecno Prime"
         },
         {
@@ -1521,7 +1521,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/139140012_01/width=240",
           "raw_description": "GENERICO Estuche Reforzado 2 en 1 Protector Para iPhone 15 Por Productos Maw"
         },
         {
@@ -1530,7 +1530,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/143453757_01/width=240",
           "raw_description": "GENERICO Vidrio Protector de Pantalla Premium Antiespia para Iphone 15 Por Tienvir"
         },
         {
@@ -1539,7 +1539,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/143453691_01/width=240",
           "raw_description": "GENERICO Vidrio Protector de Pantalla Premium Blindado para Iphone 15 Por Tienvir"
         },
         {
@@ -1548,7 +1548,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/130406500_01/width=240",
           "raw_description": "SPIGEN Estuche Ultra Hybrid Zero One Para iPhone 15 Por Idiaz Cop S.a.s"
         },
         {
@@ -1557,7 +1557,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/130460845_01/width=240",
           "raw_description": "GENERICO Estuche Sumergible Tipo Lifeproof Para iPhone 15 Plus - Transparente Por Idiaz Cop S.a.s"
         },
         {
@@ -1566,7 +1566,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/129996231_01/width=240",
           "raw_description": "OTTERBOX Estuche Defender Para iPhone 15 - Violeta con Verde Por Idiaz Cop S.a.s"
         },
         {
@@ -1575,7 +1575,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/135472315_01/width=240",
           "raw_description": "LOVE MEI Estuche Powerful Para iPhone 15 Pro Antigolpes Por Idiaz Cop S.a.s"
         },
         {
@@ -1584,7 +1584,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/150518586_01/width=240",
           "raw_description": "GENERICO Estuche Forro Rígido Transparente Magsafe Para iPhone 15 PLUS Por Tecno Prime"
         },
         {
@@ -1593,7 +1593,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/129995903_01/width=240",
           "raw_description": "OTTERBOX Estuche Defender Para iPhone 15 Plus Antigolpes - Negro Por Idiaz Cop S.a.s"
         },
         {
@@ -1602,7 +1602,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/130004386_01/width=240",
           "raw_description": "OTTERBOX Estuche Defender Para iPhone 15 - Gris con Verde Por Idiaz Cop S.a.s"
         },
         {
@@ -1611,7 +1611,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/150518583_01/width=240",
           "raw_description": "GENERICO Estuche Forro Rígido Transparente Magsafe Para iPhone 15 PRO Por Tecno Prime"
         },
         {
@@ -1620,7 +1620,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/138127539_01/width=240",
           "raw_description": "GENERICO Vidrio templado premium 10d Para iphone 15 pro max Por Ghora"
         },
         {
@@ -1629,7 +1629,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/135472162_01/width=240",
           "raw_description": "LOVE MEI Estuche Powerful Para iPhone 15 Pro Max Por Idiaz Cop S.a.s"
         },
         {
@@ -1638,7 +1638,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/130489854_01/width=240",
           "raw_description": "GENERICO Estuche Sumergible Tipo Lifeproof Para iPhone 15 PRO - Transparente Por Idiaz Cop S.a.s"
         },
         {
@@ -1647,7 +1647,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/135474616_01/width=240",
           "raw_description": "LOVE MEI Estuche Powerful Para iPhone 15 Plus Antigolpes Por Idiaz Cop S.a.s"
         },
         {
@@ -1656,7 +1656,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/130004815_01/width=240",
           "raw_description": "OTTERBOX Estuche Defender Para iPhone 15 Pro Max - Negro Por Idiaz Cop S.a.s"
         },
         {
@@ -1665,7 +1665,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/137520906_01/width=240",
           "raw_description": "PHONETIFY Vidrio Protector Pantalla Para iPhone 15 Pro Fácil Instalación Por Phonetify Sas"
         },
         {
@@ -1674,7 +1674,7 @@
           "raw_currency": "COP",
           "raw_availability": "available",
           "raw_category": null,
-          "raw_image_url": null,
+          "raw_image_url": "https://media.falabella.com.co/falabellaCO/144363010_01/width=240",
           "raw_description": "GENERICO Forro Funda Protector Acrilico magnetico Para iphone 15 plus Por Ghora"
         }
       ]

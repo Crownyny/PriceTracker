@@ -40,6 +40,16 @@ class BaseSource(ABC):
         """
         return None
 
+    @property
+    def scroll_before_extract(self) -> bool:
+        """
+        Si True, Playwright hace scroll hasta el final de la página antes de
+        extraer el HTML. Útil para fuentes con imágenes lazy-loaded que solo
+        se cargan cuando el card entra en el viewport.
+        Por defecto False; sobreescribir en fuentes que lo necesiten.
+        """
+        return False
+
     @abstractmethod
     def build_url(self, query: str, product_ref: str) -> str:
         """Construye la URL de búsqueda para esta fuente a partir de la query."""

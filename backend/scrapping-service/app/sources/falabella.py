@@ -33,6 +33,12 @@ class FalabellaSource(BeautifulSoupSource):
     def wait_for_selector(self) -> Optional[str]:
         return "[data-pod]"
 
+    @property
+    def scroll_before_extract(self) -> bool:
+        # Falabella usa lazy-loading: las imágenes fuera del viewport
+        # solo se resuelven cuando el card entra en pantalla.
+        return True
+
     def build_url(self, query: str, product_ref: str) -> str:
         return f"https://www.falabella.com.co/falabella-co/search?Ntt={quote_plus(query)}"
 
@@ -99,10 +105,19 @@ class FalabellaSource(BeautifulSoupSource):
         return meaningful[-1] if meaningful else None
 
     def _extract_image(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
-        for sel in ["picture img", "img[src*='falabella']", "img[src*='sodimac']", "img"]:
-            el = card.select_one(sel)
-            if el:
-                return el.get("src") or el.get("data-src")
+        # Buscar en <picture> primero (source + img), luego img suelta
+        # Falabella usa lazy-load: src puede estar vacío; revisar data-src / srcset
+        for img in card.select("picture source, img"):
+            for attr in ("src", "data-src", "data-lazy-src", "data-original"):
+                val = img.get(attr, "").strip()
+                if val and val.startswith("http"):
+                    return val
+            # srcset: tomar la primera URL (más baja resolución, suficiente)
+            srcset = img.get("srcset", "").strip()
+            if srcset:
+                first = srcset.split(",")[0].strip().split(" ")[0]
+                if first.startswith("http"):
+                    return first
         return None
 
     def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:

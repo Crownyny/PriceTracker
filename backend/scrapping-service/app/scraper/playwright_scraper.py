@@ -111,6 +111,25 @@ class PlaywrightScraper(BaseScraper):
                             job.job_id, wait_selector,
                         )
 
+                # Scroll para disparar lazy-loading de imágenes si la fuente lo requiere
+                should_scroll = getattr(source, "scroll_before_extract", False) if source else False
+                if should_scroll:
+                    await page.evaluate("""
+                        async () => {
+                            await new Promise(resolve => {
+                                let total = document.body.scrollHeight;
+                                let step  = Math.ceil(total / 8);
+                                let pos   = 0;
+                                const tick = setInterval(() => {
+                                    pos += step;
+                                    window.scrollTo(0, pos);
+                                    if (pos >= total) { clearInterval(tick); resolve(); }
+                                }, 120);
+                            });
+                        }
+                    """)
+                    await page.wait_for_timeout(400)
+
                 html_content = await page.content()
             finally:
                 await page.close()
