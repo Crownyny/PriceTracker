@@ -1,10 +1,7 @@
 """Interfaz abstracta del scraper.
 
-Permite múltiples implementaciones según las necesidades de cada fuente:
-  - HttpScraper   → páginas con HTML estático o APIs REST (httpx)
-  - PlaywrightScraper (futuro) → páginas con renderizado JS
-
-Cada fuente puede tener su propia subclase con lógica de extracción específica.
+Implementación activa: PlaywrightScraper (Chromium headless vía Playwright).
+Adecuado para SPAs y sitios con renderizado JavaScript (Amazon, MercadoLibre, Éxito).
 """
 from abc import ABC, abstractmethod
 from typing import Any
