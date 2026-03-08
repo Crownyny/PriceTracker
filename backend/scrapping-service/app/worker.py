@@ -102,22 +102,28 @@ class ScraperWorker(BaseConsumer):
 
         # Scraping paralelo — return_exceptions=True evita que un fallo aislado
         # cancele los demás; PlaywrightScraper ya maneja excepciones internamente.
-        raw_results: list[RawScrapingResult | BaseException] = await asyncio.gather(
+        # Cada elemento es list[RawScrapingResult] (uno por producto encontrado).
+        raw_results: list[list[RawScrapingResult] | BaseException] = await asyncio.gather(
             *[self._scraper.scrape(job) for job in jobs],
             return_exceptions=True,
         )
 
-        # Publicar los resultados válidos; loguear las excepciones inesperadas
+        # Publicar un ScrapingMessage por producto (contrato de cola sin cambios)
         published = 0
-        for job, result in zip(jobs, raw_results):
-            if isinstance(result, BaseException):
+        for job, results in zip(jobs, raw_results):
+            if isinstance(results, BaseException):
                 logger.error(
                     "[%s] Excepción no capturada en fuente '%s': %s",
-                    request.search_id, job.source_name, result,
+                    request.search_id, job.source_name, results,
                 )
             else:
-                await self._publisher.publish_result(result)
-                published += 1
+                for result in results:
+                    await self._publisher.publish_result(result)
+                    published += 1
+                logger.info(
+                    "[%s] Fuente '%s': %d producto(s) encontrado(s)",
+                    request.search_id, job.source_name, len(results),
+                )
 
         # Sentinel: informa al Normalizer cuántos ScrapingMessages esperar
         await self._publisher.publish_search_completed(

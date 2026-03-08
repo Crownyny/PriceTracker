@@ -1,0 +1,881 @@
+{
+  "query": "samsung galaxy s24",
+  "results": [
+    {
+      "source": "amazon",
+      "job_id": "2fe76403-87f9-41e4-82db-535be903eeec",
+      "url": "https://www.amazon.com/s?k=samsung+galaxy+s24",
+      "status": "success",
+      "error": null,
+      "total_products": 16,
+      "products": [
+        {
+          "raw_title": "UltraGlass Unbreak Top 9H+ Vidrio para Samsung Galaxy S24 Ultra Protector de Pantalla [Grado Militar Irrompible y Más Duradero] Protector de Pantalla S24 Ultra Vidrio Templado, Instalación Automática",
+          "raw_price": "COP 98,374.36",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/71Z8N4tdc7L._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS a Colombia en US$35 (COP 132,580) de artículos elegibles"
+        },
+        {
+          "raw_title": "SPIDERCASE Funda magnética para Samsung Galaxy S24 Ultra, [3 formas de soporte] [protección contra caídas de grado militar] con soporte invisible, a prueba de golpes, funda delgada para S24 Ultra 5G, transparente",
+          "raw_price": "COP 41,554.36",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/71H6B+dgGPL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS a Colombia en US$35 (COP 132,580) de artículos elegibles"
+        },
+        {
+          "raw_title": "Samsung Galaxy Buds 3 Pro AI True Auriculares Bluetooth inalámbricos verdaderos, cancelación de ruido, optimización de sonido, ajuste cómodo rediseñado, plateado [versión de EE.UU., exclusivo de",
+          "raw_price": "COP 804,912.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/61zW8yc4hTL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mié, 18 de mar a Colombia"
+        },
+        {
+          "raw_title": "Samsung Galaxy Watch 8 Classic (2025) - Reloj inteligente Bluetooth de 46 mm, diseño de cojín, bisel giratorio, botón rápido, entrenador de dormir y de correr, puntuación de energía, negro",
+          "raw_price": "COP 1,401,522.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/719-nqBNZlL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mié, 18 de mar a Colombia"
+        },
+        {
+          "raw_title": "Funda protectora Samsung Galaxy S24 Ultra S-View con billetera, cubierta con vista de pantalla pequeña inteligente, control con toque de dedo, diseño delgado, bolsillo para tarjetas, versión de EE. UU",
+          "raw_price": "COP 160,952.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/715aOba8t1L._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mar, 17 de mar a Colombia"
+        },
+        {
+          "raw_title": "Samsung Galaxy Watch 8 (2025) 44mm Bluetooth Smartwatch, diseño de amortiguación, rastreador de fitness, entrenamiento de sueño, entrenador de carrera, puntuación de energía, seguimiento de frecuencia",
+          "raw_price": "COP 1,439,402.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/616KEp7qQvL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el vie, 20 de mar a Colombia"
+        },
+        {
+          "raw_title": "OtterBox Funda para Samsung Galaxy S24 Defender Series Pro, color negro, resistente y duradera, con protección de puertos, incluye clip de funda con soporte",
+          "raw_price": "COP 101,935.08",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/71GYBEK+GbL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS entre el 17 - 19 de mar a Colombia en US$35 (COP 132,580) de artículos elegibles"
+        },
+        {
+          "raw_title": "SURITCH Funda protectora magnética para Samsung Galaxy S24 Plus, funda protectora magnética con cubierta de cámara y soporte de metal ajustable para Galaxy S24 Plus (2024), color negro",
+          "raw_price": "COP 106,026.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/61oNLdnopRL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mar, 17 de mar a Colombia en US$35 (COP 132,580) de artículos elegibles"
+        },
+        {
+          "raw_title": "Samsung Galaxy Watch Ultra (2025) 47mm LTE Smartwatch, Carcasa de Titanio, Entrenamiento Avanzado del Sueño, Entrenador de Carrera, Puntaje de Energía, Seguimiento de Frecuencia Cardíaca, GPS, Azul",
+          "raw_price": "COP 2,007,602.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/71nYmQUArVL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mié, 18 de mar a Colombia"
+        },
+        {
+          "raw_title": "TORRAS Soporte Magnético Giratorio de 360° para Funda Samsung Galaxy S24 Ultra, Compatible con Magsafe, Grado Militar Resistente a Golpes Funda Protectora Delgada S24 Ultra con Soporte y Portaanillos",
+          "raw_price": "COP 122,314.52",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/71eJ9PWSi2L._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS a Colombia en US$35 (COP 132,580) de artículos elegibles"
+        },
+        {
+          "raw_title": "TOCOL Protector de pantalla para Samsung Galaxy S24 Ultra, dureza 9H, grado militar, inastillable, HD, vidrio templado, paquete de 2",
+          "raw_price": "COP 35,910.24",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/71Exa3OTKPL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mar, 17 de mar a Colombia en US$35 (COP 132,580) de artículos elegibles"
+        },
+        {
+          "raw_title": "TORRAS Funda magnética Ostand para Samsung Galaxy S24 de 6.2 pulgadas [compatible con MagSafe] [prueba de caídas de grado militar] [soporte de anillo] [soporte integrado] [soporte integrado] mate",
+          "raw_price": "COP 102,238.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/81Z-oF9m0hL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mar, 17 de mar a Colombia en US$35 (COP 132,580) de artículos elegibles"
+        },
+        {
+          "raw_title": "OtterBox Samsung Galaxy S24 Ultra (Solo) - Funda de la Serie Defender - Zapatos de Ante Azul - Sin Pantalla - Resistente y Duradero - con Protección de Puertos - Incluye Clip de Holster - Protección",
+          "raw_price": "COP 151,330.60",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/81sLzffxqDL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mar, 17 de mar a Colombia"
+        },
+        {
+          "raw_title": "【Versión de EE. UU.】 Pantalla LCD de repuesto para Samsung Galaxy S24 Touch Digitalizador Asamblea con marco para Samsung Galaxy SM-S921U con kits de piezas de reparación (negro, sin huellas",
+          "raw_price": "COP 303,002.12",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/71fZ4TBYprL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mar, 17 de mar a Colombia"
+        },
+        {
+          "raw_title": "OtterBox Samsung Galaxy S24+ (Only) - Funda de la serie Defender - Blue Suede Shoes - Solo funda - Sin protector de pantalla - Resistente y duradero - con protección de puertos - Protección",
+          "raw_price": "COP 151,330.60",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/811NRAhWTEL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mar, 17 de mar a Colombia"
+        },
+        {
+          "raw_title": "SAMSUNG Repuesto para bolígrafo Galaxy S24 Ultra S, punta fina de 0.028 in para precisión, control sin contacto Air Command, versión estadounidense, EJ-PS928BJEGUS, gris claro",
+          "raw_price": "COP 172,657.04",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://m.media-amazon.com/images/I/51nV0+kpxuL._AC_UY218_.jpg",
+          "raw_description": "Entrega GRATIS el mié, 18 de mar a Colombia"
+        }
+      ]
+    },
+    {
+      "source": "mercadolibre",
+      "job_id": "608fb146-e6bf-48e2-b813-e116708db63a",
+      "url": "https://listado.mercadolibre.com.co/samsung+galaxy+s24",
+      "status": "success",
+      "error": null,
+      "total_products": 48,
+      "products": [
+        {
+          "raw_title": "Samsung Galaxy S24 Fe 8 Gb Ram 256 Gb Rom 5g Grafito",
+          "raw_price": "2.895.000",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_922933-MLA99510131630_112025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24+ Galaxy Ai de 6,7 pulgadas, 120 Hz, 12 GB de RAM, 512 GB, gris",
+          "raw_price": "5.129.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_726757-MLA99988103801_112025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 Ultra 256gb 12gb Ram Titanium Black",
+          "raw_price": "4.349.990",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_665440-MLA99955912587_112025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 5G Dual SIM 256 GB cobalt violet 8 GB RAM - Bueno (Reacondicionado)",
+          "raw_price": "1.679.869",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_758991-MLA99473151758_112025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 Fe Dual Sim 512gb Rom 8gb Ram Gris",
+          "raw_price": "2.242.044",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_865471-CBT87222750584_072025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24 Fe 8 Gb Ram 512 Gb 5g Graphite",
+          "raw_price": "2.200.506",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_732602-MLA99987369233_112025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Samsung galaxy Galaxy S24 5G Dual SIM 128 GB negro 8 GB RAM - Excelente (Reacondicionado)",
+          "raw_price": "1.490.348",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_960231-MLA96714614807_102025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 Fe 256gb 8gb 5g Grey - Excelente (Reacondicionado)",
+          "raw_price": "1.659.483",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_813445-MLA99937574771_112025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 , Violeta, 8gb_256gb - Excelente (Reacondicionado)",
+          "raw_price": "1.888.017",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_963434-MLA99502238870_112025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 5G Dual SIM 128 GB negro 8 GB RAM - Excelente (Reacondicionado)",
+          "raw_price": "1.701.059",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_672251-MLA96266220868_102025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 Ultra 5G Dual SIM 512 GB titanium black 12 GB RAM",
+          "raw_price": "4.699.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_937331-MLA99593588574_122025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 Ultra 5G Dual SIM 256 GB titanium yellow 12 GB RAM",
+          "raw_price": "4.399.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_965665-MLA95499167648_102025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Teléfono Inteligente Samsung Galaxy S24 Ultra Sm-s928b/ds 12",
+          "raw_price": "5.909.913",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_939456-CBT90284876574_082025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 Sm-s921b/ds 8gb/256gb - Black",
+          "raw_price": "3.933.274",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_661615-CBT87125193450_072025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Plegable Samsung Galaxy Z Fold5 De 7,6 Pulgadas D",
+          "raw_price": "3.335.030",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_769231-MCO107806695009_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24, Galaxy Ai, triple cámara trasera de hasta 50 MP, selfie de 12 MP, pantalla 6.2 1-120 Hz, 128 GB, 8 GB de RAM, Esim Cream - Excelente (Reacondicionado)",
+          "raw_price": "4.499.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_907315-MLU77331982340_072024-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 Fe Ai 512gb/8gb 5g Graphite",
+          "raw_price": "4.428.743",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_995263-CBT96311825752_102025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 5g 128 Gb, Gris Mármol, Versión Estadouni",
+          "raw_price": "2.113.300",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_953820-MCO107116466218_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Teléfono Android Samsung Galaxy S24+ De 512 Gb Y 50 Mp",
+          "raw_price": "3.515.027",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_945028-MCO107112683202_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 Fe 512 Gb + 8 Gb Azul Dual Sim",
+          "raw_price": "2.325.196",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_617455-CBT87504277599_072025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24fe 5g 256gb + 8gb Ram Graphite",
+          "raw_price": "2.800.777",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_624491-CBT105971795297_012026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S25 Fe 5g 256gb 8ram Azul Claro",
+          "raw_price": "5.200.000",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_804179-MCO96768579055_102025-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 Ultra 256gb Titanium Reacondicionado",
+          "raw_price": "5.071.737",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_950810-MCO107397138994_032026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Teléfono Plegable Azul Samsung Galaxy Z Fold 5 256gb",
+          "raw_price": "2.997.871",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_698835-MCO107806950121_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24 5g Dual Sim 128gb Amarillo Amarillo (Nuevo con caja abierta)",
+          "raw_price": "4.449.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_712933-MCO107371589763_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24+ Plus 5g 256 Gb Gris",
+          "raw_price": "2.858.379",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_726644-MCO107806928617_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 Fe 5g 256gb + 8gb Ram Dual Sim",
+          "raw_price": "2.888.825",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_778037-CBT105971382039_012026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24+ 5g 256gb Negro",
+          "raw_price": "2.444.378",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_615901-MCO107806931623_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24+ Plus 5g 256gb Plateado Reacondicionado",
+          "raw_price": "2.765.282",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_749044-MCO107810373987_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Teléfono Amoled Samsung Galaxy S24+ De 256 Gb Y 50 Mp",
+          "raw_price": "2.639.216",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_872198-MCO107116467930_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 De 6.2 Pulgadas, 128 Gb, Color",
+          "raw_price": "1.994.424",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_985118-MCO107806641785_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Teléfono Plegable Samsung Galaxy Z Fold 5 De 256 Gb, Azul He",
+          "raw_price": "2.895.671",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_787287-MCO107810395321_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Teléfono Android Samsung Galaxy S24+ De 512 Gb Y 50 Mp",
+          "raw_price": "3.395.501",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_917366-MCO107810925675_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 5g 128 Gb Gris",
+          "raw_price": "2.265.452",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_995019-MCO107116468206_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 5g 128 Gb Negro",
+          "raw_price": "1.890.580",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_904835-MCO107806672981_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24+ De 512 Gb Con Ia, Negro",
+          "raw_price": "2.904.354",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_815648-MCO107810372991_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 Plus 256gb Gris Mármol",
+          "raw_price": "3.290.356",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_988906-MCO107806911075_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Teléfono Celular Samsung Galaxy S24+ 256gb 50mp Amoled",
+          "raw_price": "2.732.389",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_825587-MCO107112687270_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 5g 128gb Negro",
+          "raw_price": "1.830.797",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_994755-MCO107116146344_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24+ Plus 5g 512gb Gris Reacondicionado",
+          "raw_price": "3.928.110",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_989771-MCO107426701497_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 5g 128gb Gris",
+          "raw_price": "2.345.391",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_613671-MCO107806927609_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S24+ 5g 256 Gb 12 Gb Ram 6.7  Amoled",
+          "raw_price": "2.687.026",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_851654-MCO107810418975_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 5g 256gb Negro",
+          "raw_price": "2.334.988",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_609097-MCO107810925741_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24+ 256gb 5g Violeta",
+          "raw_price": "3.160.809",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_930138-MCO107810400875_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24+ 5g 256gb Negro",
+          "raw_price": "2.365.395",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_849191-MCO107810366507_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24+ 5g 512gb Negro",
+          "raw_price": "3.208.620",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_711700-MCO107116439600_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24+ 5g 512gb Amarillo",
+          "raw_price": "3.236.350",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_947044-MCO107806909081_022026-E.webp",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Smartphone Samsung Galaxy S24 Plus 256gb Gris Mármol",
+          "raw_price": "3.182.534",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": "Samsung Galaxy",
+          "raw_image_url": "https://http2.mlstatic.com/D_Q_NP_2X_634965-MCO107116439492_022026-E.webp",
+          "raw_description": null
+        }
+      ]
+    },
+    {
+      "source": "exito",
+      "job_id": "cfb51782-d038-4158-9327-61d369e7a773",
+      "url": "https://www.exito.com/s?q=samsung+galaxy+s24",
+      "status": "success",
+      "error": null,
+      "total_products": 30,
+      "products": [
+        {
+          "raw_title": "Samsung Galaxy S22 Ultra 5G 128Gb Negro Reacondicionado",
+          "raw_price": "$ 2.149.899",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/26911669-300-auto/samsung-galaxy-s22-ultra-5g-128gb-negro-reacondicionado.jpg?v=638763880042800000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S22 Ultra 5G 128Gb Negro Reacondicionado",
+          "raw_price": "$ 2.149.899",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/26911669-300-auto/samsung-galaxy-s22-ultra-5g-128gb-negro-reacondicionado.jpg?v=638763880042800000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S22 Ultra 5G 128Gb Negro Reacondicionado",
+          "raw_price": "$ 2.149.899",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Samsung Galaxy S22 Ultra 5G 128Gb Negro Reacondicionado",
+          "raw_price": null,
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": null,
+          "raw_price": "$ 2.149.899",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Azul Reacondicionado",
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/32006487-300-auto/celular-samsung-galaxy-s24fe-5g-128gb-8gb-ram-azul-reacondicionado.jpg?v=639010712764600000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Azul Reacondicionado",
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/32006487-300-auto/celular-samsung-galaxy-s24fe-5g-128gb-8gb-ram-azul-reacondicionado.jpg?v=639010712764600000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Azul Reacondicionado",
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Azul Reacondicionado",
+          "raw_price": null,
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": null,
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Gris Reacondicionado",
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/32006480-300-auto/celular-samsung-galaxy-s24fe-5g-128gb-8gb-ram-gris-reacondicionado.jpg?v=639010712695370000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Gris Reacondicionado",
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/32006480-300-auto/celular-samsung-galaxy-s24fe-5g-128gb-8gb-ram-gris-reacondicionado.jpg?v=639010712695370000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Gris Reacondicionado",
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24fe 5G 128Gb 8Gb Ram Gris Reacondicionado",
+          "raw_price": null,
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": null,
+          "raw_price": "$ 1.649.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 5G 256Gb 8 Ram Negro Reacondicionado",
+          "raw_price": "$ 1.499.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/29847912-300-auto/celular-samsung-galaxy-s23-5g-256gb-8-ram-negro-reacondicionado.jpg?v=638920249174930000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 5G 256Gb 8 Ram Negro Reacondicionado",
+          "raw_price": "$ 1.499.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/29847912-300-auto/celular-samsung-galaxy-s23-5g-256gb-8-ram-negro-reacondicionado.jpg?v=638920249174930000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 5G 256Gb 8 Ram Negro Reacondicionado",
+          "raw_price": "$ 1.499.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 5G 256Gb 8 Ram Negro Reacondicionado",
+          "raw_price": null,
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": null,
+          "raw_price": "$ 1.499.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 Ultra 5G 12Gb / 256Gb Verde (Reacondicionado) Cargador Carga Rapida 25W + Cable Usb C",
+          "raw_price": "$ 2.349.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/29314386-300-auto/celular-samsung-galaxy-s23-ultra-5g-12gb-256gb-verde-reacondicionado-cargador-carga-rapida-25w-cable-usb-c.jpg?v=638890141094170000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 Ultra 5G 12Gb / 256Gb Verde (Reacondicionado) Cargador Carga Rapida 25W + Cable Usb C",
+          "raw_price": "$ 2.349.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/29314386-300-auto/celular-samsung-galaxy-s23-ultra-5g-12gb-256gb-verde-reacondicionado-cargador-carga-rapida-25w-cable-usb-c.jpg?v=638890141094170000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 Ultra 5G 12Gb / 256Gb Verde (Reacondicionado) Cargador Carga Rapida 25W + Cable Usb C",
+          "raw_price": "$ 2.349.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S23 Ultra 5G 12Gb / 256Gb Verde (Reacondicionado) Cargador Carga Rapida 25W + Cable Usb C",
+          "raw_price": null,
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": null,
+          "raw_price": "$ 2.349.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24 256Gb Gris Reacondicionado",
+          "raw_price": "$ 2.249.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/26516322-300-auto/celular-samsung-galaxy-s24-256gb-gris-reacondicionado.jpg?v=638731560797000000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24 256Gb Gris Reacondicionado",
+          "raw_price": "$ 2.249.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": "https://exitocol.vtexassets.com/arquivos/ids/26516322-300-auto/celular-samsung-galaxy-s24-256gb-gris-reacondicionado.jpg?v=638731560797000000",
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24 256Gb Gris Reacondicionado",
+          "raw_price": "$ 2.249.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": "Celular Samsung Galaxy S24 256Gb Gris Reacondicionado",
+          "raw_price": null,
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        },
+        {
+          "raw_title": null,
+          "raw_price": "$ 2.249.900",
+          "raw_currency": "COP",
+          "raw_availability": "available",
+          "raw_category": null,
+          "raw_image_url": null,
+          "raw_description": null
+        }
+      ]
+    }
+  ]
+}

@@ -42,9 +42,9 @@ class AmazonSource(BeautifulSoupSource):
     def build_url(self, query: str, product_ref: str) -> str:
         return f"https://www.amazon.com/s?k={quote_plus(query)}"
 
-    # ── Helpers ───────────────────────────────────────────────────────
+    # ── Card discovery ────────────────────────────────────────────────────────
 
-    def _organic_results(self, soup: BeautifulSoup) -> list[Tag]:
+    def _all_cards(self, soup: BeautifulSoup) -> list[Tag]:
         """Devuelve todos los resultados orgánicos (con ASIN, sin AdHolder)."""
         out = []
         for el in soup.select("[data-component-type='s-search-result']"):
@@ -53,48 +53,38 @@ class AmazonSource(BeautifulSoupSource):
                 out.append(el)
         return out
 
-    # ── Extractores (BeautifulSoupSource template method) ────────────────
+    # ── Extractores (BeautifulSoupSource template method) ────────────────────
 
-    def _extract_title(self, soup: BeautifulSoup) -> Optional[str]:
-        # Título del PRIMER resultado orgánico (con o sin precio)
-        results = self._organic_results(soup)
-        for r in results:
-            el = r.select_one("h2 span")
-            if el:
-                return el.get_text(strip=True)
+    def _extract_title(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one("h2 span")
+        return el.get_text(strip=True) if el else None
+
+    def _extract_price(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one(".a-price .a-offscreen")
+        if el:
+            raw = el.get_text(strip=True)
+            if raw:
+                return raw
         return None
 
-    def _extract_price(self, soup: BeautifulSoup) -> Optional[str]:
-        # Precio del primer resultado orgánico que lo tenga visible
-        for r in self._organic_results(soup):
-            el = r.select_one(".a-price .a-offscreen")
-            if el:
-                raw = el.get_text(strip=True)
-                if raw:
-                    return raw
-        return None
-
-    def _extract_currency(self, soup: BeautifulSoup) -> Optional[str]:
-        # Extraer del mismo resultado que tiene precio
-        for r in self._organic_results(soup):
-            symbol_el = r.select_one(".a-price-symbol, span.a-price-symbol")
-            if symbol_el:
-                symbol = symbol_el.get_text(strip=True)
-                return _CURRENCY_SYMBOLS.get(symbol, "USD")
-            # El offscreen a veces incluye el código: "COP 22,652"
-            offscreen = r.select_one(".a-price .a-offscreen")
-            if offscreen:
-                raw = offscreen.get_text(strip=True)
-                for code in ("COP", "USD", "EUR", "GBP", "BRL"):
-                    if raw.startswith(code):
-                        return code
+    def _extract_currency(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        symbol_el = card.select_one(".a-price-symbol, span.a-price-symbol")
+        if symbol_el:
+            symbol = symbol_el.get_text(strip=True)
+            return _CURRENCY_SYMBOLS.get(symbol, "USD")
+        offscreen = card.select_one(".a-price .a-offscreen")
+        if offscreen:
+            raw = offscreen.get_text(strip=True)
+            for code in ("COP", "USD", "EUR", "GBP", "BRL"):
+                if raw.startswith(code):
+                    return code
         return "USD"
 
-    def _extract_availability(self, soup: BeautifulSoup) -> Optional[str]:
-        return "available" if self._organic_results(soup) else None
+    def _extract_availability(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        return "available"
 
-    def _extract_category(self, soup: BeautifulSoup) -> Optional[str]:
-        # El departamento seleccionado en el dropdown (si no es el genérico)
+    def _extract_category(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        # Dato de página, no de card
         el = soup.select_one("#searchDropdownBox option[selected]")
         if el:
             val = el.get_text(strip=True)
@@ -102,20 +92,16 @@ class AmazonSource(BeautifulSoupSource):
                 return val
         return None
 
-    def _extract_image(self, soup: BeautifulSoup) -> Optional[str]:
-        for r in self._organic_results(soup):
-            img = r.select_one("img.s-image")
-            if img:
-                return img.get("src")
-        return None
+    def _extract_image(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        img = card.select_one("img.s-image")
+        return img.get("src") if img else None
 
-    def _extract_description(self, soup: BeautifulSoup) -> Optional[str]:
-        for r in self._organic_results(soup):
-            el = r.select_one(".a-row.a-size-base.a-color-secondary")
-            if el:
-                desc = el.get_text(" ", strip=True)[:500]
-                if desc:
-                    return desc
+    def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one(".a-row.a-size-base.a-color-secondary")
+        if el:
+            desc = el.get_text(" ", strip=True)[:500]
+            if desc:
+                return desc
         return None
 
 

@@ -73,7 +73,12 @@ class PlaywrightScraper(BaseScraper):
             self._playwright = None
         logger.info("Browser Playwright cerrado.")
 
-    async def scrape(self, job: ScrapingJob) -> RawScrapingResult:
+    async def scrape(self, job: ScrapingJob) -> list[RawScrapingResult]:
+        """
+        Scraping de una URL. Devuelve UNA lista con un RawScrapingResult por
+        producto encontrado en la página. Si la navegación falla, devuelve
+        una lista con un único resultado de error.
+        """
         if not self._browser:
             raise RuntimeError("PlaywrightScraper no iniciado. Llamar await start() primero.")
 
@@ -111,33 +116,46 @@ class PlaywrightScraper(BaseScraper):
                 await page.close()
                 await context.close()
 
-            raw_fields = self.extract_raw_fields(html_content, job)
-            return RawScrapingResult(
-                job_id=job.job_id,
-                search_id=job.search_id,
-                product_ref=job.product_ref,
-                source_name=job.source_name,
-                scraped_at=datetime.datetime.now(tz=datetime.timezone.utc),
-                raw_fields=raw_fields,
-                html_content=html_content,
-                status="success",
-            )
+            all_fields = self._extract_all_results(html_content, job)
+            if not all_fields:
+                logger.warning(
+                    "[%s] Sin productos encontrados en '%s' (%s)",
+                    job.job_id, job.source_url, job.source_name,
+                )
+                return []
+
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
+            return [
+                RawScrapingResult(
+                    job_id=job.job_id,
+                    search_id=job.search_id,
+                    product_ref=job.product_ref,
+                    source_name=job.source_name,
+                    scraped_at=now,
+                    raw_fields=fields,
+                    html_content=None,
+                    status="success",
+                )
+                for fields in all_fields
+            ]
 
         except Exception as exc:
             logger.exception("[%s] Error en Playwright scraping de %s", job.job_id, job.source_url)
-            return self._failed_result(job, str(exc))
+            return [self._failed_result(job, str(exc))]
 
-    def extract_raw_fields(self, content: str, job: ScrapingJob) -> dict[str, Any]:
-        """Delega la extracción al source registrado en el SourceRegistry."""
+    def _extract_all_results(
+        self, content: str, job: ScrapingJob
+    ) -> list[dict[str, Any]]:
+        """Delega la extracción al source registrado y devuelve lista de raw_fields."""
         source = self._registry.get(job.source_name)
         if source:
-            return source.extract_raw_fields(content, job)
+            return source.extract_all_results(content, job)
 
         logger.warning(
-            "[%s] Sin extractor registrado para '%s', devolviendo campos vacíos",
+            "[%s] Sin extractor registrado para '%s'",
             job.job_id, job.source_name,
         )
-        return _empty_fields()
+        return []
 
     @staticmethod
     def _failed_result(job: ScrapingJob, error: str) -> RawScrapingResult:

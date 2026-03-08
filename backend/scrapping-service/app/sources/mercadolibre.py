@@ -36,55 +36,41 @@ class MercadoLibreSource(BeautifulSoupSource):
 
     @property
     def wait_for_selector(self) -> Optional[str]:
-        # Cards de listado — presentes en la página de búsqueda
         return ".poly-card, .ui-search-layout__item"
 
     def build_url(self, query: str, product_ref: str) -> str:
         return f"https://listado.mercadolibre.com.co/{quote_plus(query)}"
 
-    # ── Helper ───────────────────────────────────────────────────────
+    # ── Card discovery ────────────────────────────────────────────────────────
 
-    def _first_card(self, soup: BeautifulSoup) -> Optional[Tag]:
-        return soup.select_one(".ui-search-layout__item")
+    def _all_cards(self, soup: BeautifulSoup) -> list[Tag]:
+        return soup.select(".ui-search-layout__item")
 
-    # ── Extractores (BeautifulSoupSource template method) ────────────────
+    # ── Extractores (BeautifulSoupSource template method) ─────────────────────
 
-    def _extract_title(self, soup: BeautifulSoup) -> Optional[str]:
-        card = self._first_card(soup)
-        if card:
-            el = card.select_one("a.poly-component__title, .poly-component__title")
-            if el:
-                return el.get_text(strip=True)
-        return None
+    def _extract_title(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one("a.poly-component__title, .poly-component__title")
+        return el.get_text(strip=True) if el else None
 
-    def _extract_price(self, soup: BeautifulSoup) -> Optional[str]:
-        card = self._first_card(soup)
-        if card:
-            # Precio actual (sin cuotas)
-            el = card.select_one(
-                ".poly-price__current .andes-money-amount__fraction,"
-                ".poly-component__price .andes-money-amount__fraction"
-            )
-            if el:
-                return el.get_text(strip=True)
-        return None
+    def _extract_price(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one(
+            ".poly-price__current .andes-money-amount__fraction,"
+            ".poly-component__price .andes-money-amount__fraction"
+        )
+        return el.get_text(strip=True) if el else None
 
-    def _extract_currency(self, soup: BeautifulSoup) -> Optional[str]:
-        card = self._first_card(soup)
-        if card:
-            el = card.select_one("span.andes-money-amount__currency-symbol")
-            symbol = el.get_text(strip=True) if el else None
-            return _CURRENCY_SYMBOLS.get(symbol, symbol) if symbol else "COP"
-        return "COP"
+    def _extract_currency(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one("span.andes-money-amount__currency-symbol")
+        symbol = el.get_text(strip=True) if el else None
+        return _CURRENCY_SYMBOLS.get(symbol, symbol) if symbol else "COP"
 
-    def _extract_availability(self, soup: BeautifulSoup) -> Optional[str]:
-        if self._first_card(soup):
-            return "available"
-        out = soup.find(string=lambda t: t and "sin stock" in t.lower())
-        return "out_of_stock" if out else None
+    def _extract_availability(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        # Si el card tiene precio visible → disponible; si tiene badge de sin stock → agotado
+        out = card.find(string=lambda t: t and "sin stock" in t.lower())
+        return "out_of_stock" if out else "available"
 
-    def _extract_category(self, soup: BeautifulSoup) -> Optional[str]:
-        # Breadcrumb de la página de resultados
+    def _extract_category(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        # Breadcrumb es dato de página, no de card
         crumbs = soup.select("ol.andes-breadcrumb li a, nav.andes-breadcrumb__item a")
         meaningful = [
             c.get_text(strip=True) for c in crumbs
@@ -92,17 +78,14 @@ class MercadoLibreSource(BeautifulSoupSource):
         ]
         return meaningful[-1] if meaningful else None
 
-    def _extract_image(self, soup: BeautifulSoup) -> Optional[str]:
-        card = self._first_card(soup)
-        if card:
-            for sel in [".poly-component__picture img", "img"]:
-                el = card.select_one(sel)
-                if el:
-                    return el.get("data-zoom") or el.get("src")
+    def _extract_image(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        for sel in [".poly-component__picture img", "img"]:
+            el = card.select_one(sel)
+            if el:
+                return el.get("data-zoom") or el.get("src")
         return None
 
-    def _extract_description(self, soup: BeautifulSoup) -> Optional[str]:
-        # Las páginas de listado no tienen descripción del producto
+    def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
         return None
 
 

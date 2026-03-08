@@ -4,7 +4,6 @@ Implementación activa: PlaywrightScraper (Chromium headless vía Playwright).
 Adecuado para SPAs y sitios con renderizado JavaScript (Amazon, MercadoLibre, Éxito).
 """
 from abc import ABC, abstractmethod
-from typing import Any
 
 from shared.model import RawScrapingResult, ScrapingJob
 
@@ -14,24 +13,17 @@ class BaseScraper(ABC):
     Contrato que todo scraper debe cumplir.
     Responsabilidades:
       1. Obtener el contenido crudo de la URL indicada en el job.
-      2. Extraer raw_fields directamente del HTML/JSON (sin normalización semántica).
-      3. Retornar un RawScrapingResult con el status apropiado.
+      2. Extraer raw_fields por cada producto encontrado (sin normalización semántica).
+      3. Retornar una lista de RawScrapingResult — uno por producto — todos con el
+         mismo job_id (pertenecen a la misma búsqueda).
     """
 
     @abstractmethod
-    async def scrape(self, job: ScrapingJob) -> RawScrapingResult:
+    async def scrape(self, job: ScrapingJob) -> list[RawScrapingResult]:
         """
         Ejecuta el scraping completo para el job dado.
+        Devuelve una lista con un RawScrapingResult por producto encontrado.
         Nunca lanza excepciones: los errores se reflejan en result.status y
         result.error_message para permitir trazabilidad en el Normalizer.
-        """
-        ...
-
-    @abstractmethod
-    def extract_raw_fields(self, content: str, job: ScrapingJob) -> dict[str, Any]:
-        """
-        Extrae campos crudos del contenido HTML/JSON.
-        Punto de extensión: cada fuente implementa sus propios selectores.
-        No debe aplicar normalización semántica (eso es responsabilidad del Normalizer).
         """
         ...
