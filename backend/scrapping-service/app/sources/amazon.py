@@ -1,16 +1,13 @@
 """Fuente: Amazon.
 
-Extrae el primer resultado de una página de búsqueda de Amazon usando
-BeautifulSoup sobre el HTML renderizado por Playwright (Chromium headless).
+Extrae el campo más relevante de la página de resultados de búsqueda de Amazon.
 
-Flujo:
-  build_url() → /s?k=<query>  (página de resultados de búsqueda)
-  Playwright espera `div.s-main-slot` (contenedor principal de resultados).
-  Los extractores localizan el PRIMER resultado orgánico con data-asin
-  y extraen su título, precio, imagen, etc.
-
-Nota: Amazon usa anti-scraping agresivo; Playwright con user-agent real
-y viewport realista mejora significativamente la tasa de éxito.
+Estrategia confirmada por inspección de DOM (marzo 2026):
+  - Selector de título: `h2 span`  (NOT `h2 a span` — el span está directamente bajo h2).
+  - Selector de precio: `.a-price .a-offscreen` dentro de `[data-component-type='s-search-result']`.
+  - Amazon CO puede no mostrar precio en listado para productos principales: en ese caso
+    se devuelve el primer precio disponible de cualquier resultado orgánico.
+  - `wait_for_selector`: `div.s-main-slot` (contenedor principal de resultados).
 """
 from typing import Optional
 from urllib.parse import quote_plus
@@ -22,22 +19,17 @@ from shared.model import ScrapingJob
 from .base import BeautifulSoupSource
 from .registry import registry
 
-# Mapeo símbolo → código ISO 4217
 _CURRENCY_SYMBOLS: dict[str, str] = {
+    "COP": "COP",
     "US$": "USD",
     "$":   "USD",
-    "€":  "EUR",
-    "£":  "GBP",
-    "₹":  "INR",
+    "€":   "EUR",
+    "£":   "GBP",
+    "₹":   "INR",
 }
 
 
 class AmazonSource(BeautifulSoupSource):
-    """
-    Fuente Amazon.
-    Scraping sobre página de resultados (/s?k=...).
-    Playwright espera div.s-main-slot antes de extraer el DOM.
-    """
 
     @property
     def source_name(self) -> str:
@@ -45,82 +37,86 @@ class AmazonSource(BeautifulSoupSource):
 
     @property
     def wait_for_selector(self) -> Optional[str]:
-        # El contenedor principal de resultados de búsqueda
         return "div.s-main-slot"
 
     def build_url(self, query: str, product_ref: str) -> str:
         return f"https://www.amazon.com/s?k={quote_plus(query)}"
 
-    # ── Helper ─────────────────────────────────────────────────────────────
+    # ── Helpers ───────────────────────────────────────────────────────
 
-    def _first_result(self, soup: BeautifulSoup) -> Optional[Tag]:
-        """
-        Devuelve el primer resultado orgánico (con data-asin no vacío).
-        Saltamos items patrocinados que no tienen ASIN real o están marcados
-        como AdHolder.
-        """
+    def _organic_results(self, soup: BeautifulSoup) -> list[Tag]:
+        """Devuelve todos los resultados orgánicos (con ASIN, sin AdHolder)."""
+        out = []
         for el in soup.select("[data-component-type='s-search-result']"):
             asin = el.get("data-asin", "").strip()
-            # Items sin ASIN o con clase de anuncio se descartan
-            if asin and "AdHolder" not in el.get("class", []):
-                return el
-        return None
+            if asin and "AdHolder" not in " ".join(el.get("class", [])):
+                out.append(el)
+        return out
 
-    # ── Extractores individuales (BeautifulSoupSource template method) ────────
+    # ── Extractores (BeautifulSoupSource template method) ────────────────
 
     def _extract_title(self, soup: BeautifulSoup) -> Optional[str]:
-        result = self._first_result(soup)
-        if result:
-            el = result.select_one("h2 a span, h2 span.a-text-normal")
+        # Título del PRIMER resultado orgánico (con o sin precio)
+        results = self._organic_results(soup)
+        for r in results:
+            el = r.select_one("h2 span")
             if el:
                 return el.get_text(strip=True)
         return None
 
     def _extract_price(self, soup: BeautifulSoup) -> Optional[str]:
-        result = self._first_result(soup)
-        if result:
-            for sel in [".a-price .a-offscreen", ".a-price-whole"]:
-                el = result.select_one(sel)
-                if el:
-                    text = el.get_text(strip=True)
-                    if text:
-                        return text
+        # Precio del primer resultado orgánico que lo tenga visible
+        for r in self._organic_results(soup):
+            el = r.select_one(".a-price .a-offscreen")
+            if el:
+                raw = el.get_text(strip=True)
+                if raw:
+                    return raw
         return None
 
     def _extract_currency(self, soup: BeautifulSoup) -> Optional[str]:
-        result = self._first_result(soup)
-        if result:
-            el = result.select_one("span.a-price-symbol")
-            symbol = el.get_text(strip=True) if el else None
-            if symbol:
+        # Extraer del mismo resultado que tiene precio
+        for r in self._organic_results(soup):
+            symbol_el = r.select_one(".a-price-symbol, span.a-price-symbol")
+            if symbol_el:
+                symbol = symbol_el.get_text(strip=True)
                 return _CURRENCY_SYMBOLS.get(symbol, "USD")
+            # El offscreen a veces incluye el código: "COP 22,652"
+            offscreen = r.select_one(".a-price .a-offscreen")
+            if offscreen:
+                raw = offscreen.get_text(strip=True)
+                for code in ("COP", "USD", "EUR", "GBP", "BRL"):
+                    if raw.startswith(code):
+                        return code
         return "USD"
 
     def _extract_availability(self, soup: BeautifulSoup) -> Optional[str]:
-        # Si se renderizó al menos un resultado con ASIN → producto disponible
-        return "available" if self._first_result(soup) else None
+        return "available" if self._organic_results(soup) else None
 
     def _extract_category(self, soup: BeautifulSoup) -> Optional[str]:
-        # Departamento seleccionado en el dropdown de búsqueda
+        # El departamento seleccionado en el dropdown (si no es el genérico)
         el = soup.select_one("#searchDropdownBox option[selected]")
-        return el.get_text(strip=True) if el else None
+        if el:
+            val = el.get_text(strip=True)
+            if val.lower() not in {"all departments", "todos los departamentos"}:
+                return val
+        return None
 
     def _extract_image(self, soup: BeautifulSoup) -> Optional[str]:
-        result = self._first_result(soup)
-        if result:
-            el = result.select_one("img.s-image")
-            if el:
-                return el.get("src")
+        for r in self._organic_results(soup):
+            img = r.select_one("img.s-image")
+            if img:
+                return img.get("src")
         return None
 
     def _extract_description(self, soup: BeautifulSoup) -> Optional[str]:
-        result = self._first_result(soup)
-        if result:
-            el = result.select_one(".a-row.a-size-base.a-color-secondary")
+        for r in self._organic_results(soup):
+            el = r.select_one(".a-row.a-size-base.a-color-secondary")
             if el:
-                return el.get_text(" ", strip=True)[:500]
+                desc = el.get_text(" ", strip=True)[:500]
+                if desc:
+                    return desc
         return None
 
 
-# Auto-registro al importar el módulo
 registry.register(AmazonSource())
