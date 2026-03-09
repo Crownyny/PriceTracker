@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     enable_enricher: bool = False
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4o-mini"
+    openai_base_url: Optional[str] = None    # Para modelos locales (Ollama, vLLM, etc.)
 
 
 settings = Settings()

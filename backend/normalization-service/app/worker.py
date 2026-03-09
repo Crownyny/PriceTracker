@@ -73,11 +73,14 @@ class NormalizerWorker(BaseConsumer):
         if settings.enable_enricher and settings.openai_api_key:
             try:
                 from langchain_openai import ChatOpenAI
-                llm = ChatOpenAI(
-                    model=settings.openai_model,
-                    api_key=settings.openai_api_key,
-                    temperature=0,
-                )
+                kwargs: dict = {
+                    "model": settings.openai_model,
+                    "api_key": settings.openai_api_key,
+                    "temperature": 0,
+                }
+                if settings.openai_base_url:
+                    kwargs["base_url"] = settings.openai_base_url
+                llm = ChatOpenAI(**kwargs)
                 logger.info("LLM enriquecimiento habilitado: %s", settings.openai_model)
             except ImportError:
                 logger.warning(
@@ -124,8 +127,16 @@ class NormalizerWorker(BaseConsumer):
                 "source_name": message.source_name,
                 "captured_at": message.captured_at.isoformat(),
                 "raw_fields": message.raw_fields,
-                "cleaned_product": None,
-                "enrichment_updates": None,
+                "sanitized_product": None,
+                "product_invalid": False,
+                "standardized_product": None,
+                "canonical_text": None,
+                "heuristic_attributes": None,
+                "heuristic_confidence": None,
+                "llm_attributes": None,
+                "merged_attributes": None,
+                "normalized_product": None,
+                "final_confidence": None,
                 "final_product": None,
                 "validation_errors": [],
                 "error": None,
