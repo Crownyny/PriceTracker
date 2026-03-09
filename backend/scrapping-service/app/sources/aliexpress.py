@@ -4,20 +4,25 @@ Estrategia (DOM confirmado por inspección — marzo 2026):
   AliExpress renderiza los resultados de búsqueda en un SPA con SSR parcial.
   60 cards por página en el selector `.search-item-card-wrapper-gallery`.
 
+  ⚠ NOTA: AliExpress usa el sistema anti-bot Tongdun/BX (Alibaba) que incluye
+  un módulo WebAssembly (`g.alicdn.com/sd/punish/…/program.wasm`) capaz de
+  detectar Chromium headless a nivel de IP + fingerprinting. Esto no puede
+  bypassarse con stealth de JavaScript puro. Se necesita un proxy residencial.
+
+  Cuando el CAPTCHA es detectado, extract_all_results devuelve [] y emite
+  un WARNING claro. El resto de fuentes sigue funcionando normalmente.
+
   - URL de búsqueda: /w/wholesale-<query-con-guiones>.html
   - wait_for_selector: ".search-item-card-wrapper-gallery"
-  - Título:  h3 dentro del card (texto directo)
-  - Precio:  div[tabindex="0"][aria-label^="$"] → el aria-label contiene
-             el precio formateado, ej: "$1.755.236"
-  - Imagen:  primer img[src^="//"] → URL protocol-relative, se prefija https:
-  - Link:    a[href*="/item/"] → URL protocol-relative, se prefija https:,
-             se eliminan los query params de tracking de Algolia
-  - Moneda:  USD (precio en dólares por defecto); si la URL indica COP se
-             puede detectar por el prefijo "$" pero AliExpress suele usar USD.
-             Se guarda como USD para que el normalizador lo convierta.
+  - Título:  h3 dentro del card
+  - Precio:  div[tabindex="0"][aria-label^="$"]
+  - Imagen:  primer img[src^="//"] → prefijo https:
+  - Link:    a[href*="/item/"] → limpiado de tracking params
+  - Moneda:  USD
 """
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import quote_plus, urlparse, urlunparse
+import logging
 
 from bs4 import BeautifulSoup, Tag
 
@@ -26,7 +31,17 @@ from shared.model import ScrapingJob
 from .base import BeautifulSoupSource
 from .registry import registry
 
+logger = logging.getLogger(__name__)
+
 _BASE_URL = "https://www.aliexpress.com"
+
+# Texto que aparece en la página de CAPTCHA de AliExpress
+_CAPTCHA_SIGNALS = (
+    "Captcha Interception",
+    "unusual traffic",
+    "slide to verify",
+    "punishTextFetch",
+)
 
 
 class AliexpressSource(BeautifulSoupSource):
@@ -34,6 +49,11 @@ class AliexpressSource(BeautifulSoupSource):
     @property
     def source_name(self) -> str:
         return "aliexpress"
+
+    @property
+    def use_proxy(self) -> bool:
+        """Requiere proxy residencial para evadir el bot-check Tongdun/BX de Alibaba."""
+        return True
 
     @property
     def user_agent(self) -> Optional[str]:
@@ -45,6 +65,33 @@ class AliexpressSource(BeautifulSoupSource):
     @property
     def wait_for_selector(self) -> Optional[str]:
         return ".search-item-card-wrapper-gallery"
+
+    def extract_all_results(self, html_content: str, job: ScrapingJob) -> list[dict[str, Any]]:
+        """Detecta el CAPTCHA de AliExpress y lo reporta con un WARNING claro."""
+        if any(signal in html_content for signal in _CAPTCHA_SIGNALS):
+            logger.warning(
+                "[aliexpress] CAPTCHA / bot-block detectado. "
+                "AliExpress bloquea scraping headless via Tongdun/BX WASM fingerprinting. "
+                "Se requiere un proxy residencial para obtener resultados."
+            )
+            return []
+        return super().extract_all_results(html_content, job)
+
+    @property
+    def extra_http_headers(self) -> dict:
+        return {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "es-CO,es;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://www.google.com/",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "cross-site",
+            "Sec-CH-UA": '"Chromium";v="123", "Google Chrome";v="123", "Not:A-Brand";v="99"',
+            "Sec-CH-UA-Mobile": "?0",
+            "Sec-CH-UA-Platform": '"Linux"',
+        }
 
     def build_url(self, query: str, product_ref: str) -> str:
         slug = quote_plus(query).replace("+", "-")
