@@ -130,6 +130,13 @@ class OlimpicaSource(BaseSource):
                         if offer.get("AvailableQuantity", 1) == 0:
                             availability = "out_of_stock"
 
+                # URL del producto: VTEX proporciona linkText
+                link_text = p.get("linkText", "")
+                product_url = (
+                    f"https://www.olimpica.com/{link_text}/p"
+                    if link_text else None
+                )
+
                 fields = {
                     "raw_title":        title,
                     "raw_price":        price,
@@ -138,6 +145,7 @@ class OlimpicaSource(BaseSource):
                     "raw_category":     category,
                     "raw_image_url":    image_url,
                     "raw_description":  p.get("description") or None,
+                    "raw_url":          product_url,
                 }
                 if fields["raw_title"] or fields["raw_price"]:
                     results.append(fields)

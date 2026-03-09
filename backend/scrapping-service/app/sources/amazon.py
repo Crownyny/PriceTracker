@@ -112,5 +112,12 @@ class AmazonSource(BeautifulSoupSource):
                 return desc
         return None
 
+    def _extract_url(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        a = card.select_one("h2 a[href], a.a-link-normal[href*='/dp/']")
+        if a:
+            href = a.get("href", "")
+            return href if href.startswith("http") else f"https://www.amazon.com{href}"
+        return None
+
 
 registry.register(AmazonSource())

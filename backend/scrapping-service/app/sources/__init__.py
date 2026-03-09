@@ -19,3 +19,5 @@ from . import mercadolibre  # noqa: F401
 from . import exito  # noqa: F401
 from . import falabella  # noqa: F401
 from . import olimpica  # noqa: F401
+from . import alkosto  # noqa: F401
+from . import olimpica  # noqa: F401
