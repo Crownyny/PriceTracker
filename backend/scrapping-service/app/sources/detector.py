@@ -45,9 +45,9 @@ _DOMAIN_MAP: dict[str, str] = {
     "falabella.com.co":     "falabella",
     "olimpica.com":         "olimpica",
     "alkosto.com":          "alkosto",
-    "linio.com.co":         "linio",
     "ktronix.com":          "ktronix",
     "homecenter.com.co":    "homecenter",
+    "dafiti.com.co":        "dafiti",
 }
 
 
