@@ -25,3 +25,4 @@ from . import aliexpress  # noqa: F401
 from . import dafiti  # noqa: F401
 from . import tecnoplaza  # noqa: F401
 from . import alkomprar  # noqa: F401
+from . import computienda  # noqa: F401
