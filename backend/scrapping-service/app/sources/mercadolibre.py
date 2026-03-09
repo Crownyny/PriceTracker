@@ -1,25 +1,34 @@
 """Fuente: MercadoLibre Colombia.
 
-Extrae campos de páginas de producto de MercadoLibre usando BeautifulSoup.
-Los selectores están ajustados a la estructura del DOM actual (marzo 2026).
-Si MercadoLibre cambia su HTML, ajustar los selectores en extract_raw_fields.
+Extrae el primer resultado de la página de listado de MercadoLibre.
 
-Páginas soportadas:
-  - Páginas de producto: mercadolibre.com.co/MLU-...
-  - Páginas de resultado: listado.mercadolibre.com.co/<query>
+Estrategia confirmada por inspección de DOM (marzo 2026):
+  - URL de búsqueda: listado.mercadolibre.com.co/<query>
+  - wait_for_selector: `.poly-card` (48 cards renderizados en listado)
+  - Título: `a.poly-component__title` dentro del primer `.ui-search-layout__item`
+  - Precio: `.poly-price__current .andes-money-amount__fraction`
+  - Moneda: `span.andes-money-amount__currency-symbol` (`$` → COP en Colombia)
+  - Imagen: primera `img` en el card (`.poly-component__picture img`)
 """
-from typing import Any, Optional
+from typing import Optional
 from urllib.parse import quote_plus
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
+from .base import BeautifulSoupSource
 from .registry import registry
 
+_CURRENCY_SYMBOLS: dict[str, str] = {
+    "$":   "COP",
+    "US$": "USD",
+    "R$":  "BRL",
+    "€":   "EUR",
+}
 
-class MercadoLibreSource(BaseSource):
+
+class MercadoLibreSource(BeautifulSoupSource):
 
     @property
     def source_name(self) -> str:
@@ -27,85 +36,58 @@ class MercadoLibreSource(BaseSource):
 
     @property
     def wait_for_selector(self) -> Optional[str]:
-        # Esperar el título antes de extraer — confirma que JS terminó de renderizar
-        return "h1.ui-pdp-title, h1.poly-box"
+        return ".poly-card, .ui-search-layout__item"
 
     def build_url(self, query: str, product_ref: str) -> str:
         return f"https://listado.mercadolibre.com.co/{quote_plus(query)}"
 
-    def extract_raw_fields(self, html_content: str, job: ScrapingJob) -> dict[str, Any]:
-        soup = BeautifulSoup(html_content, "lxml")
-        return {
-            "raw_title":        self._title(soup),
-            "raw_price":        self._price(soup),
-            "raw_currency":     self._currency(soup),
-            "raw_availability": self._availability(soup),
-            "raw_category":     self._category(soup),
-            "raw_image_url":    self._image(soup),
-            "raw_description":  self._description(soup),
-        }
+    # ── Card discovery ────────────────────────────────────────────────────────
 
-    # ── Extractores individuales ──────────────────────────────────────────────
+    def _all_cards(self, soup: BeautifulSoup) -> list[Tag]:
+        return soup.select(".ui-search-layout__item")
 
-    def _title(self, soup: BeautifulSoup) -> Optional[str]:
-        for sel in ["h1.ui-pdp-title", "h1.poly-box", "h1"]:
-            el = soup.select_one(sel)
-            if el:
-                return el.get_text(strip=True)
-        return None
+    # ── Extractores (BeautifulSoupSource template method) ─────────────────────
 
-    def _price(self, soup: BeautifulSoup) -> Optional[str]:
-        # MercadoLibre separa enteros y centavos en spans distintos
-        fraction = soup.select_one(
-            "span.andes-money-amount__fraction, "
-            "meta[itemprop='price']"
+    def _extract_title(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one("a.poly-component__title, .poly-component__title")
+        return el.get_text(strip=True) if el else None
+
+    def _extract_price(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one(
+            ".poly-price__current .andes-money-amount__fraction,"
+            ".poly-component__price .andes-money-amount__fraction"
         )
-        if fraction:
-            if fraction.name == "meta":
-                return fraction.get("content")
-            cents_el = soup.select_one("span.andes-money-amount__cents")
-            cents = "." + cents_el.get_text(strip=True) if cents_el else ""
-            return fraction.get_text(strip=True) + cents
-        return None
+        return el.get_text(strip=True) if el else None
 
-    def _currency(self, soup: BeautifulSoup) -> Optional[str]:
-        el = soup.select_one("span.andes-money-amount__currency-symbol")
+    def _extract_currency(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one("span.andes-money-amount__currency-symbol")
         symbol = el.get_text(strip=True) if el else None
-        # Mapeo de símbolo a código ISO
-        _MAP = {"$": "COP", "US$": "USD", "R$": "BRL", "€": "EUR"}
-        return _MAP.get(symbol, symbol) if symbol else "COP"
+        return _CURRENCY_SYMBOLS.get(symbol, symbol) if symbol else "COP"
 
-    def _availability(self, soup: BeautifulSoup) -> Optional[str]:
-        # Botón de compra presente → disponible
-        buy_btn = soup.select_one(
-            "form.ui-pdp-action-modal-trigger button, "
-            "button.ui-pdp-action--primary"
-        )
-        if buy_btn:
-            return "available"
-        out = soup.find(string=lambda t: t and "sin stock" in t.lower())
-        return "out_of_stock" if out else None
+    def _extract_availability(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        # Si el card tiene precio visible → disponible; si tiene badge de sin stock → agotado
+        out = card.find(string=lambda t: t and "sin stock" in t.lower())
+        return "out_of_stock" if out else "available"
 
-    def _category(self, soup: BeautifulSoup) -> Optional[str]:
-        # Último breadcrumb = categoría más específica
-        crumbs = soup.select("nav.andes-breadcrumb__item a, ol.andes-breadcrumb li a")
-        return crumbs[-1].get_text(strip=True) if crumbs else None
+    def _extract_category(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        # Breadcrumb es dato de página, no de card
+        crumbs = soup.select("ol.andes-breadcrumb li a, nav.andes-breadcrumb__item a")
+        meaningful = [
+            c.get_text(strip=True) for c in crumbs
+            if c.get_text(strip=True).lower() not in {"inicio", "home"}
+        ]
+        return meaningful[-1] if meaningful else None
 
-    def _image(self, soup: BeautifulSoup) -> Optional[str]:
-        for sel in [
-            "figure.ui-pdp-gallery__figure img",
-            "img.ui-pdp-image",
-            "img.poly-component__picture",
-        ]:
-            el = soup.select_one(sel)
+    def _extract_image(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        for sel in [".poly-component__picture img", "img"]:
+            el = card.select_one(sel)
             if el:
                 return el.get("data-zoom") or el.get("src")
         return None
 
-    def _description(self, soup: BeautifulSoup) -> Optional[str]:
-        el = soup.select_one("p.ui-pdp-description__content")
-        return el.get_text(" ", strip=True)[:500] if el else None
+    def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        return None
 
 
-# Auto-registro al importar el módulo
 registry.register(MercadoLibreSource())
+

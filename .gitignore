@@ -1,0 +1,93 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# ── Distribución / build ──────────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+
+# ── Entornos virtuales ────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.conda/
+*.conda
+
+# ── Variables de entorno (sensibles) ─────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+# Mantener los ejemplos
+!.env.example
+
+# ── Dependencias instaladas ───────────────────────────────────────────────────
+node_modules/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+*.out
+
+# ── Cobertura y testing ───────────────────────────────────────────────────────
+.coverage
+.coverage.*
+coverage.xml
+coverage/
+htmlcov/
+.pytest_cache/
+.tox/
+nosetests.xml
+test-results/
+junit*.xml
+
+# ── Archivos temporales y de debug (carpeta temp/) ───────────────────────────
+temp/
+
+# ── Scraping: dumps HTML y resultados locales ─────────────────────────────────
+*.html
+results.json
+dump_*.json
+
+# ── Playwright ────────────────────────────────────────────────────────────────
+playwright-report/
+test-results/
+.playwright/
+
+# ── IDEs y editores ───────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Mypy / type checkers ──────────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.pyre/
+
+# ── Ruff / linters ───────────────────────────────────────────────────────────
+.ruff_cache/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Miscelánea ────────────────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.pid
+.cache/

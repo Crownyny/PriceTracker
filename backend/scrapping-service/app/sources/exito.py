@@ -1,23 +1,29 @@
 """Fuente: Éxito Colombia.
 
-Extrae campos de páginas de producto de exito.com usando BeautifulSoup.
-Éxito usa una SPA (React) — Playwright es necesario para renderizar el precio.
+Extrae el primer resultado de la página de resultados de búsqueda de exito.com.
 
-Soporta páginas de producto tipo:
-  https://www.exito.com/producto/<slug>/<id>/p
+Estrategia confirmada por inspección de DOM (marzo 2026):
+  - El JSON-LD solo contiene datos de WebSite, no de productos → se usa HTML.
+  - wait_for_selector: `[class*='productCard']` (42 cards en la página observada).
+  - Classnames relevantes (VTEX genera classnames hasheados pero con prefijo fijo):
+      - Contenedor:  `productCard_contentInfo__*`
+      - Título:      `styles_name__*`        (primer h3 dentro del card)
+      - Marca:       `styles_brand__*`       (segundo h3 dentro del card)
+      - Precio:      `ProductPrice_container__*`  (contiene `[class*='Price']`)
+  - Moneda: siempre COP (Éxito solo opera en Colombia).
 """
-from typing import Any, Optional
+from typing import Optional
 from urllib.parse import quote_plus
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
+from .base import BeautifulSoupSource
 from .registry import registry
 
 
-class ExitoSource(BaseSource):
+class ExitoSource(BeautifulSoupSource):
 
     @property
     def source_name(self) -> str:
@@ -25,86 +31,65 @@ class ExitoSource(BaseSource):
 
     @property
     def wait_for_selector(self) -> Optional[str]:
-        # Éxito es una SPA — esperar el precio antes de extraer
-        return "span[class*='ProductPrice'], h1[class*='ProductName']"
+        return "[class*='productCard']"
 
     def build_url(self, query: str, product_ref: str) -> str:
         return f"https://www.exito.com/s?q={quote_plus(query)}"
 
-    def extract_raw_fields(self, html_content: str, job: ScrapingJob) -> dict[str, Any]:
-        soup = BeautifulSoup(html_content, "lxml")
-        return {
-            "raw_title":        self._title(soup),
-            "raw_price":        self._price(soup),
-            "raw_currency":     "COP",
-            "raw_availability": self._availability(soup),
-            "raw_category":     self._category(soup),
-            "raw_image_url":    self._image(soup),
-            "raw_description":  self._description(soup),
-        }
+    # ── Card discovery ────────────────────────────────────────────────────────
 
-    # ── Extractores individuales ──────────────────────────────────────────────
+    def _all_cards(self, soup: BeautifulSoup) -> list[Tag]:
+        return soup.select("[class*='productCard']")
 
-    def _title(self, soup: BeautifulSoup) -> Optional[str]:
+    # ── Extractores (BeautifulSoupSource template method) ─────────────────────
+
+    def _extract_title(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one("[class*='name']")
+        if el:
+            t = el.get_text(strip=True)
+            if t and t.lower() not in {"resultados", "search results"}:
+                return t
+        h3 = card.select_one("h3")
+        return h3.get_text(strip=True) if h3 else None
+
+    def _extract_price(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
         for sel in [
-            "h1[class*='ProductName']",
-            "h1[class*='product-name']",
-            "span[class*='ProductName']",
-            "h1",
+            "[class*='ProductPrice']",
+            "[class*='sellingPrice']",
+            "[class*='price__selling']",
+            "[class*='currencyContainer']",
         ]:
-            el = soup.select_one(sel)
+            el = card.select_one(sel)
             if el:
-                return el.get_text(strip=True)
+                t = el.get_text(strip=True)
+                if t and any(c.isdigit() for c in t):
+                    return t
         return None
 
-    def _price(self, soup: BeautifulSoup) -> Optional[str]:
-        for sel in [
-            "span[class*='ProductPrice']",
-            "span[class*='product-price']",
-            "[data-testid='price-value']",
-            "span[class*='Price']",
-        ]:
-            el = soup.select_one(sel)
-            if el:
-                text = el.get_text(strip=True)
-                if text and any(c.isdigit() for c in text):
-                    return text
-        return None
+    def _extract_currency(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        return "COP"
 
-    def _availability(self, soup: BeautifulSoup) -> Optional[str]:
-        btn = soup.select_one(
-            "button[class*='add-to-cart'], "
-            "button[class*='AddToCart'], "
-            "[data-testid='add-to-cart']"
-        )
-        if btn and not btn.get("disabled"):
-            return "available"
-        out = soup.find(string=lambda t: t and "agotado" in t.lower())
-        return "out_of_stock" if out else None
+    def _extract_availability(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        out = card.find(string=lambda t: t and "agotado" in t.lower())
+        return "out_of_stock" if out else "available"
 
-    def _category(self, soup: BeautifulSoup) -> Optional[str]:
+    def _extract_category(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
         crumbs = soup.select("[class*='Breadcrumb'] a, nav[aria-label*='breadcrumb'] a")
-        return crumbs[-1].get_text(strip=True) if crumbs else None
+        meaningful = [
+            c.get_text(strip=True) for c in crumbs
+            if c.get_text(strip=True).lower() not in {"inicio", "home"}
+        ]
+        return meaningful[-1] if meaningful else None
 
-    def _image(self, soup: BeautifulSoup) -> Optional[str]:
-        for sel in [
-            "img[class*='product-image']",
-            "img[class*='ProductImage']",
-            "[data-testid='product-image'] img",
-            "img[class*='vtex']",
-        ]:
-            el = soup.select_one(sel)
+    def _extract_image(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        for sel in ["img[src*='vtexassets']", "img[src*='exito']", "img"]:
+            el = card.select_one(sel)
             if el:
                 return el.get("src")
         return None
 
-    def _description(self, soup: BeautifulSoup) -> Optional[str]:
-        for sel in ["[class*='ProductDescription']", "[class*='product-description']"]:
-            el = soup.select_one(sel)
-            if el:
-                return el.get_text(" ", strip=True)[:500]
+    def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
         return None
 
 
-# Auto-registro al importar el módulo
 registry.register(ExitoSource())
