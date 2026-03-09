@@ -12,6 +12,8 @@ dependencies = [
     # Parsing HTML
     "beautifulsoup4>=4.12.0",
     "lxml>=5.0.0",
+    # HTTP client (usado por fuentes con APIs REST directas, ej: Alkomprar/Algolia)
+    "httpx>=0.27.0",
 ]
 
 [build-system]
