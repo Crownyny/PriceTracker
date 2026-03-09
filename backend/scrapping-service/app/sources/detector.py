@@ -1,13 +1,12 @@
 """Detector de fuente a partir de una URL.
 
 Mapea el dominio de una URL al nombre canónico de su source registrado.
-Permite que URLs descubiertas por SearXNG usen el extractor correcto.
+Útil para identificar qué extractor usar cuando se recibe una URL arbitraria.
 
 Cómo añadir soporte para un nuevo sitio:
-  1. Crear app/sources/<nombre>.py con la clase e implementar extract_raw_fields.
+  1. Crear app/sources/<nombre>.py extendiendo BeautifulSoupSource.
   2. Registrar el source: registry.register(MiNuevoSource()).
   3. Añadir su dominio al _DOMAIN_MAP de este archivo.
-  4. Listo — SearXNG lo detectará automáticamente.
 """
 import logging
 from typing import Optional
@@ -40,6 +39,7 @@ _DOMAIN_MAP: dict[str, str] = {
     # Colombia
     "exito.com":            "exito",
     "falabella.com.co":     "falabella",
+    "olimpica.com":         "olimpica",
     "alkosto.com":          "alkosto",
     "linio.com.co":         "linio",
     "ktronix.com":          "ktronix",
