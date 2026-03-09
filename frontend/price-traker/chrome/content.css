@@ -1,0 +1,611 @@
+/* ========================================
+   PRICE TRACKER - ESTILOS DEL OVERLAY
+   Basado en el prototipo de Figma
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   EXTENSION TOGGLE (esquina superior derecha)
+   ========================================== */
+.price-tracker-status-indicator {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f9fafb;
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.price-tracker-status-indicator .status-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+}
+
+.price-tracker-status-indicator .status-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.price-tracker-status-indicator .status-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.price-tracker-status-indicator .status-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.price-tracker-status-indicator .status-label.active {
+  color: #10b981;
+}
+
+.price-tracker-status-indicator .status-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #3b82f6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.price-tracker-status-indicator .status-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.price-tracker-status-indicator .status-toggle.inactive {
+  background: #d1d5db;
+}
+
+.price-tracker-status-indicator .status-toggle.inactive::after {
+  transform: translateX(-20px);
+}
+
+/* ==========================================
+   OVERLAY PRINCIPAL - INTEGRADO EN PAGINA
+   ========================================== */
+.price-tracker-overlay-inline {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  max-width: 900px;
+  margin: 24px auto 24px auto;
+  padding-top: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  animation: slideInDown 0.4s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.price-tracker-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid #3b82f6;
+  position: relative;
+}
+
+/* Etiqueta de Price Tracker */
+.price-tracker-container::before {
+  content: '🔍 Price Tracker';
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+/* ==========================================
+   HEADER
+   ========================================== */
+.price-tracker-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+}
+
+.price-tracker-header .product-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.price-tracker-header .product-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.price-tracker-header .product-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price-tracker-header .product-meta {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.price-tracker-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.price-tracker-close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* ==========================================
+   CONTENIDO - GRID DE 2 COLUMNAS
+   ========================================== */
+.price-tracker-content {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 0;
+  padding: 24px;
+}
+
+/* ==========================================
+   COLUMNA IZQUIERDA - MEJOR PRECIO
+   ========================================== */
+.best-price-section {
+  padding-right: 24px;
+}
+
+.best-price-card {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid transparent;
+  background-image: linear-gradient(white, white), linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.best-price-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.best-price-label .icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.best-price-label .text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.best-price-value {
+  font-size: 36px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 12px 0;
+  line-height: 1.1;
+}
+
+.best-price-store {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.best-price-store img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e9d5ff;
+}
+
+.best-price-store span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.savings-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border: 1px solid #a7f3d0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.savings-badge .icon {
+  color: #059669;
+  font-size: 16px;
+}
+
+.savings-badge .text {
+  font-size: 12px;
+  color: #065f46;
+}
+
+.savings-badge .text strong {
+  font-weight: 600;
+  color: #047857;
+}
+
+.view-offer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+.view-offer-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.view-offer-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ==========================================
+   COLUMNA DERECHA - COMPARACION DE PRECIOS
+   ========================================== */
+.price-comparison-section {
+  padding-left: 24px;
+  border-left: 1px solid #e5e7eb;
+}
+
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.comparison-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.stores-count {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Grid de tiendas 2x2 */
+.stores-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.store-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.store-item:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.store-item.best {
+  background: linear-gradient(135deg, #eef2ff, #faf5ff);
+  border-color: #c7d2fe;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+  position: relative;
+}
+
+.store-item .best-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 0 12px 0 8px;
+}
+
+.store-item .store-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: white;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.store-item .store-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.store-item .store-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.store-item .store-shipping {
+  font-size: 11px;
+  color: #10b981;
+  margin: 0;
+}
+
+.store-item .store-shipping.paid {
+  color: #6b7280;
+}
+
+.store-item .store-price {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.store-item .price-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.store-item.best .price-value {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.store-item .price-diff {
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Ver mas tiendas */
+.see-more-stores {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6366f1;
+  font-size: 13px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 12px 0;
+  margin-top: 8px;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.see-more-stores:hover {
+  color: #4f46e5;
+}
+
+/* ==========================================
+   FOOTER
+   ========================================== */
+.price-tracker-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.dashboard-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.dashboard-link:hover {
+  color: #6366f1;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 768px) {
+  .price-tracker-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .best-price-section {
+    padding-right: 0;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .price-comparison-section {
+    padding-left: 0;
+    padding-top: 24px;
+    border-left: none;
+  }
+  
+  .stores-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .price-tracker-overlay {
+    width: 95%;
+    max-width: none;
+  }
+}
+
+/* ==========================================
+   LOADING INDICATOR
+   ========================================== */
+.price-tracker-loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2147483647;
+  background: white;
+  padding: 32px 48px;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.price-tracker-loading .spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.price-tracker-loading .loading-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.price-tracker-loading .loading-subtext {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 8px 0 0;
+}
