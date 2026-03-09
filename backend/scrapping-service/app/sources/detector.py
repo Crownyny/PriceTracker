@@ -36,6 +36,10 @@ _DOMAIN_MAP: dict[str, str] = {
     "amazon.es":            "amazon",
     "amazon.com":           "amazon",
 
+    # Global
+    "aliexpress.com":       "aliexpress",
+    "es.aliexpress.com":    "aliexpress",
+
     # Colombia
     "exito.com":            "exito",
     "falabella.com.co":     "falabella",
