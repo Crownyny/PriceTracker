@@ -23,3 +23,4 @@ from . import alkosto  # noqa: F401
 from . import homecenter  # noqa: F401
 from . import aliexpress  # noqa: F401
 from . import dafiti  # noqa: F401
+from . import tecnoplaza  # noqa: F401

@@ -48,6 +48,7 @@ _DOMAIN_MAP: dict[str, str] = {
     "ktronix.com":          "ktronix",
     "homecenter.com.co":    "homecenter",
     "dafiti.com.co":        "dafiti",
+    "tecnoplaza.com.co":     "tecnoplaza",
 }
 
 
