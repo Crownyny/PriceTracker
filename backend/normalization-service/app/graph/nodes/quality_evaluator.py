@@ -1,17 +1,18 @@
 """Node 5 — Attribute Quality Evaluator
 
 Determina si las heurísticas son suficientes para evitar LLM.
-Score ≥ 4 → skip LLM, score < 4 → usar LLM.
+Score ≥ HEURISTIC_CONFIDENCE_THRESHOLD → skip LLM, score < threshold → usar LLM.
 
 El score cuenta cualquier campo *_candidates no vacío (excepto 'numbers'),
 por lo que funciona automáticamente con cualquier dominio de producto.
 """
 from ..state import NormalizationState
+from .constants import HEURISTIC_CONFIDENCE_THRESHOLD
 from .helpers import heuristic_to_merged
 
 
 async def quality_evaluator_node(state: NormalizationState) -> NormalizationState:
-    """Determina si las heurísticas son suficientes (score ≥ 4 → skip LLM)."""
+    """Determina si las heurísticas son suficientes (score ≥ threshold → skip LLM)."""
     if state.get("error"):
         return state
 
@@ -27,7 +28,7 @@ async def quality_evaluator_node(state: NormalizationState) -> NormalizationStat
     result: NormalizationState = {**state, "heuristic_confidence": score}
 
     # Si confianza alta, preparar merged_attributes directamente
-    if score >= 4:
+    if score >= HEURISTIC_CONFIDENCE_THRESHOLD:
         result["merged_attributes"] = heuristic_to_merged(h)
 
     return result

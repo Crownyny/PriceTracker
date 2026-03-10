@@ -4,13 +4,19 @@ from typing import Optional
 from .constants import DOMAIN_KEYWORDS
 
 
-def detect_domain(category: str) -> Optional[str]:
+def detect_domain(category: str, fallback_text: str = "") -> Optional[str]:
     """Detecta el dominio según palabras clave de la categoría (en español).
-    Retorna None si la categoría no coincide con ningún dominio conocido."""
+    Si la categoría no coincide, intenta con fallback_text (ej: título del producto).
+    Retorna None si no coincide con ningún dominio conocido."""
     cat = category.lower().strip()
     for domain, keywords in DOMAIN_KEYWORDS.items():
         if any(kw in cat for kw in keywords):
             return domain
+    if fallback_text:
+        text = fallback_text.lower().strip()
+        for domain, keywords in DOMAIN_KEYWORDS.items():
+            if any(kw in text for kw in keywords):
+                return domain
     return None
 
 

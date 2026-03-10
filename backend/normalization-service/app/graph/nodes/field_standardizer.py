@@ -19,6 +19,7 @@ async def field_standardizer_node(state: NormalizationState) -> NormalizationSta
         "availability": s.get("_availability", "in_stock"),
         "category": s.get("raw_category", ""),
         "image_url": s.get("raw_image_url", ""),
+        "source_url": s.get("raw_url", ""),
         "description": s.get("raw_description", ""),
         "source": state.get("source_name", ""),
     }

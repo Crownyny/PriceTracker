@@ -93,10 +93,13 @@ class NormalizedProduct(BaseModel):
     source_name: str
     canonical_name: str
     price: float
-    currency: str           # ISO 4217: "COP", "USD", "EUR"
+    currency: str                            # ISO 4217: "COP", "USD", "EUR"
     category: str
     availability: bool
     updated_at: datetime.datetime
+    scraped_at: Optional[datetime.datetime] = None   # Fecha de captura por el scraper
+    source_url: Optional[str] = None                 # URL original del producto scrapeado
+    confidence: Optional[str] = None                 # "high" | "medium" | "low"
     image_url: Optional[str] = None
     description: Optional[str] = None
     extra: dict[str, Any] = Field(default_factory=dict)

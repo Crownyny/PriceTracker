@@ -15,10 +15,10 @@ Cualquier error ──► error_end → END
 | 2 | `field_standardizer.py` | Field Standardizer | Mapea campos crudos al esquema interno (`title`, `price`, `currency`, `availability`, `category`, `image_url`, `description`) |
 | 3 | `text_canonicalizer.py` | Text Canonicalizer | Separa tokens unidos (`256gb` → `256 gb`), normaliza símbolos (`+` → `plus`, `/` → espacio) |
 | 4 | `attribute_extractor.py` | Attribute Candidate Extractor | Extrae candidatos heurísticos via regex: storage, memory, modelo, color, condición, marca |
-| 5 | `quality_evaluator.py` | Attribute Quality Evaluator | Calcula score 0-4. Si ≥ 3 salta al nodo 8 (sin LLM) |
-| 6 | `llm_extractor.py` | LLM Attribute Extractor | Extrae atributos con LLM pequeño. Solo se ejecuta si score < 3 |
+| 5 | `quality_evaluator.py` | Attribute Quality Evaluator | Calcula score 0-N. Si ≥ `HEURISTIC_CONFIDENCE_THRESHOLD` (3) salta al nodo 8 (sin LLM) |
+| 6 | `llm_extractor.py` | LLM Attribute Extractor | Extrae atributos con LLM pequeño. Solo se ejecuta si score < threshold |
 | 7 | `attribute_merger.py` | Attribute Merger | Fusiona heurísticas + LLM. LLM tiene prioridad en conflictos |
-| 8 | `semantic_normalizer.py` | Product Semantic Normalizer | Genera `canonical_name` y representación canónica (LLM o determinista) |
+| 8 | `semantic_normalizer.py` | Product Semantic Normalizer | Genera `canonical_name` y representación canónica. Usa LLM solo en ruta de baja confianza; determinista si confianza alta |
 | 9 | `validation.py` | Validation + Confidence | Valida coherencia (storage ≥ memory), asegura brand/model en canonical_name, calcula confianza final (high/medium/low) |
 
 ## Auxiliares

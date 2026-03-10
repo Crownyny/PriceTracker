@@ -114,19 +114,11 @@ async def attribute_extractor_node(state: NormalizationState) -> NormalizationSt
 
     brand_candidates: list[str] = []
     if title:
-        # Buscar marcas conocidas en el título (más robusto que tomar la primera palabra)
+        # Buscar marcas conocidas en el título
         for token in title.split():
             if token.isalpha() and len(token) >= 2 and token in _KNOWN_BRANDS:
                 brand_candidates.append(token)
                 break
-        # Fallback: primera palabra si es capitalizada en el título original
-        if not brand_candidates:
-            original_title = std.get("title", "")
-            tokens = original_title.split()
-            if tokens:
-                first = tokens[0]
-                if first[0:1].isupper() and first.isalpha() and len(first) >= 2:
-                    brand_candidates.append(first.lower())
 
     # Modelo (letter + number) — útil en electrónica, herramientas y otros
     model_candidates = re.findall(r"\b[a-z]+\d+[a-z0-9]*\b", canonical)
@@ -136,7 +128,7 @@ async def attribute_extractor_node(state: NormalizationState) -> NormalizationSt
     ]
 
     # ── Almacenamiento + memoria (electrónica / games / dominio desconocido) ──
-    domain = detect_domain(std.get("category", ""))
+    domain = detect_domain(std.get("category", ""), fallback_text=std.get("title", ""))
     storage_candidates: list[int] = []
     memory_candidates: list[int] = []
 

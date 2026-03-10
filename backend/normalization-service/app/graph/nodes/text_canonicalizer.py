@@ -52,7 +52,7 @@ async def text_canonicalizer_node(state: NormalizationState) -> NormalizationSta
 
     # Separación de tokens unidos según dominio detectado.
     # Si no se reconoce la categoría, se aplican todos los patrones.
-    domain = detect_domain(std.get("category", ""))
+    domain = detect_domain(std.get("category", ""), fallback_text=std.get("title", ""))
     if domain:
         text = re.sub(_DOMAIN_UNIT_PATTERNS[domain], r"\1 \2", text, flags=re.IGNORECASE)
     else:

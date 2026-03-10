@@ -46,8 +46,15 @@ CURRENCY_MAP: dict[str, str] = {
 SOURCE_DEFAULT_CURRENCY: dict[str, str] = {
     "mercadolibre": "COP",
     "exito": "COP",
+    "falabella": "COP",
+    "olimpica": "COP",
     "amazon": "USD",
 }
+
+# Umbral de confianza heurística para saltar el LLM.
+# Si el score (número de campos *_candidates no vacíos) alcanza este valor,
+# el pipeline usa solo heurísticas y omite los nodos LLM.
+HEURISTIC_CONFIDENCE_THRESHOLD: int = 3
 
 # Tokens que no deben considerarse como modelo (node 4)
 NON_MODEL_TOKENS: frozenset[str] = frozenset({
@@ -65,10 +72,11 @@ KNOWN_BRANDS: frozenset[str] = frozenset({
     "kingston", "sandisk", "seagate", "nvidia", "amd", "intel", "epson",
     "canon", "nikon", "gopro", "garmin", "fitbit", "oppo", "realme",
     "honor", "google", "microsoft", "nintendo", "xbox", "playstation",
-    # Moda / Calzado
+    # Moda / Calzado / Textil
     "nike", "adidas", "puma", "reebok", "converse", "vans", "fila",
     "levis", "zara", "hm", "uniqlo", "gucci", "balenciaga", "lacoste",
     "tommy", "ralph", "polo", "diesel", "skechers", "new",
+    "gildan", "hanes", "nautica", "calvin", "columbia", "wrangler",
     # Hogar / Cocina
     "oster", "black", "decker", "kitchenaid", "cuisinart", "hamilton",
     "whirlpool", "electrolux", "bosch", "haceb", "challenger", "mabe",

@@ -34,6 +34,7 @@ from .nodes import (
     make_save_node,
     error_end_node,
 )
+from .nodes.constants import HEURISTIC_CONFIDENCE_THRESHOLD
 from .state import NormalizationState
 
 logger = logging.getLogger(__name__)
@@ -49,8 +50,8 @@ def _route_after_sanitizer(state: NormalizationState) -> str:
 
 
 def _route_after_quality(state: NormalizationState) -> str:
-    """Si confianza heurística ≥ 4: skip LLM → semantic_normalizer."""
-    if state.get("heuristic_confidence", 0) >= 4:
+    """Si confianza heurística ≥ threshold: skip LLM → semantic_normalizer."""
+    if state.get("heuristic_confidence", 0) >= HEURISTIC_CONFIDENCE_THRESHOLD:
         return "semantic_normalizer"
     return "llm_extractor"
 

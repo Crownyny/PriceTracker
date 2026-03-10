@@ -26,7 +26,7 @@ async def validation_node(state: NormalizationState) -> NormalizationState:
 
     normalized = dict(state.get("normalized_product") or {})
     std = state.get("standardized_product") or {}
-    domain = detect_domain(std.get("category", ""))
+    domain = detect_domain(std.get("category", ""), fallback_text=std.get("title", ""))
 
     # Consistencia numérica: storage >= memory (solo electronics)
     if domain == "electronics":
@@ -67,9 +67,17 @@ async def validation_node(state: NormalizationState) -> NormalizationState:
     now = datetime.datetime.now(tz=datetime.timezone.utc)
     final_canonical = normalized.get("canonical_name") or std.get("title", "unknown")
 
-    # Extra: todos los atributos normalizados + meta
+    # scraped_at: parsear captured_at desde ISO-8601
+    scraped_at: Optional[datetime.datetime] = None
+    raw_captured = state.get("captured_at")
+    if raw_captured:
+        try:
+            scraped_at = datetime.datetime.fromisoformat(raw_captured)
+        except (ValueError, TypeError):
+            pass
+
+    # Extra: todos los atributos normalizados + meta (confidence ya es campo propio)
     extra = {k: v for k, v in normalized.items() if k != "canonical_name"}
-    extra["confidence"] = confidence
     extra["heuristic_confidence"] = state.get("heuristic_confidence", 0)
 
     try:
@@ -80,8 +88,11 @@ async def validation_node(state: NormalizationState) -> NormalizationState:
             price=float(std.get("price", 0)),
             currency=std.get("currency", "USD"),
             category=std.get("category", "unknown") or "unknown",
-            availability=std.get("availability") in ("in_stock", True),
+            availability=std.get("availability") == "in_stock",
             updated_at=now,
+            scraped_at=scraped_at,
+            source_url=std.get("source_url") or None,
+            confidence=confidence,
             image_url=std.get("image_url") or None,
             description=std.get("description") or None,
             extra=extra,

@@ -7,12 +7,16 @@ import logging
 from typing import Optional
 
 from ..state import NormalizationState
+from .constants import HEURISTIC_CONFIDENCE_THRESHOLD
 
 logger = logging.getLogger(__name__)
 
 
 def make_semantic_normalizer_node(llm=None):
-    """Factoría: construye representación canónica (LLM o determinista)."""
+    """Factoría: construye representación canónica (LLM o determinista).
+
+    Solo usa LLM cuando la confianza heurística es baja (ruta LLM activa).
+    """
 
     async def semantic_normalizer(state: NormalizationState) -> NormalizationState:
         if state.get("error"):
@@ -20,12 +24,13 @@ def make_semantic_normalizer_node(llm=None):
 
         merged = state.get("merged_attributes") or {}
 
-        if llm is not None:
+        # Solo usar LLM si la confianza heurística fue baja (el flujo pasó por llm_extractor)
+        if llm is not None and state.get("heuristic_confidence", 0) < HEURISTIC_CONFIDENCE_THRESHOLD:
             result = await _semantic_normalize_with_llm(llm, merged, state.get("job_id"))
             if result is not None:
                 return {**state, "normalized_product": result}
 
-        # Fallback determinista
+        # Ruta rápida determinista (confianza alta o LLM no disponible)
         return {**state, "normalized_product": _build_canonical_deterministic(merged)}
 
     return semantic_normalizer
