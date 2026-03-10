@@ -34,3 +34,7 @@ from . import totto  # noqa: F401
 from . import velez  # noqa: F401
 from . import arturocalle  # noqa: F401
 from . import mattelsa  # noqa: F401
+from . import ishop  # noqa: F401
+from . import hm  # noqa: F401
+from . import sevenseven  # noqa: F401
+from . import mango  # noqa: F401
