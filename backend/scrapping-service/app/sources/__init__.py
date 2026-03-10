@@ -26,3 +26,11 @@ from . import dafiti  # noqa: F401
 from . import tecnoplaza  # noqa: F401
 from . import alkomprar  # noqa: F401
 from . import computienda  # noqa: F401
+from . import d1  # noqa: F401
+from . import rimax  # noqa: F401
+from . import miniso  # noqa: F401
+from . import jumbo  # noqa: F401
+from . import totto  # noqa: F401
+from . import velez  # noqa: F401
+from . import arturocalle  # noqa: F401
+from . import mattelsa  # noqa: F401
