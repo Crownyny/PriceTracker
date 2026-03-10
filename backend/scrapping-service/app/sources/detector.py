@@ -36,14 +36,29 @@ _DOMAIN_MAP: dict[str, str] = {
     "amazon.es":            "amazon",
     "amazon.com":           "amazon",
 
+    # Global
+    "aliexpress.com":       "aliexpress",
+    "es.aliexpress.com":    "aliexpress",
+
     # Colombia
     "exito.com":            "exito",
     "falabella.com.co":     "falabella",
     "olimpica.com":         "olimpica",
     "alkosto.com":          "alkosto",
-    "linio.com.co":         "linio",
     "ktronix.com":          "ktronix",
     "homecenter.com.co":    "homecenter",
+    "dafiti.com.co":        "dafiti",
+    "tecnoplaza.com.co":     "tecnoplaza",
+    "alkomprar.com":        "alkomprar",
+    "computienda.com.co":   "computienda",
+    "domicilios.tiendasd1.com": "d1",
+    "rimax.com.co":          "rimax",
+    "miniso.co":             "miniso",
+    "jumbocolombia.com":     "jumbo",
+    "co.totto.com":          "totto",
+    "velez.com.co":          "velez",
+    "arturocalle.com":       "arturocalle",
+    "mattelsa.net":          "mattelsa",
 }
 
 

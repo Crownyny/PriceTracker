@@ -91,5 +91,12 @@ class ExitoSource(BeautifulSoupSource):
     def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
         return None
 
+    def _extract_url(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        a = card.select_one("a[href]")
+        if a:
+            href = a.get("href", "")
+            return href if href.startswith("http") else f"https://www.exito.com{href}"
+        return None
+
 
 registry.register(ExitoSource())

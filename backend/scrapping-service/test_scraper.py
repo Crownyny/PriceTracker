@@ -147,10 +147,23 @@ def main() -> None:
     total_products = sum(r["total_products"] for r in results)
     ok = sum(1 for r in results if r["status"] == "success")
     failed = sum(1 for r in results if r["status"] == "error")
-    logger.info(
-        "Resumen: %d fuente(s) exitosas, %d fallo(s), %d producto(s) totales",
-        ok, failed, total_products,
-    )
+
+    print("\n" + "─" * 48)
+    print(f"  Resultados para: '{args.query}'")
+    print("─" * 48)
+    for r in results:
+        status_icon = "✓" if r["status"] == "success" else ("✗" if r["status"] == "error" else "·")
+        count = r["total_products"]
+        source = r["source"]
+        if r["status"] == "error":
+            detail = f"  ERROR: {r['error']}"
+        else:
+            detail = f"  {count} producto(s)"
+        print(f"  {status_icon}  {source:<20}{detail}")
+    print("─" * 48)
+    print(f"  Total: {total_products} producto(s)  |  {ok} ok  |  {failed} error(s)")
+    print("─" * 48 + "\n")
+
     logger.info("Resultados exportados a '%s'", _OUTPUT_FILE)
 
 

@@ -1,27 +1,27 @@
-"""Fuente: Olimpica Colombia.
+"""Fuente: Miniso Colombia (miniso.co).
+
+Miniso Colombia corre sobre VTEX IO (account: minisocol). Aplica la misma
+estrategia que Olimpica y Rimax: se consulta directamente la API REST de
+catálogo VTEX, que devuelve JSON limpio sin necesidad de esperar el render
+SPA de React.
 
 Estrategia (marzo 2026):
-  El SPA de Olimpica (VTEX IO) no renderiza los cards de producto dentro del
-  timeout de Playwright en modo headless. En cambio, Olimpica expone la API
-  REST legada estándar de VTEX (catalog_system) que devuelve JSON y es
-  completamente fiable.
-
   - URL de búsqueda: /api/catalog_system/pub/products/search?ft=<query>&_from=0&_to=47
   - El browser carga la URL de la API; Playwright recibe JSON envuelto en
     <html><body><pre>...</pre></body></html>.
   - wait_for_selector: "pre"  (siempre presente en respuestas JSON del browser)
   - extract_all_results parsea el texto de <pre> como JSON directamente.
 
-  Campos clave de la respuesta VTEX:
-    productName, brand, items[0].sellers[0].commertialOffer.Price,
-    items[0].images[0].imageUrl, categories[-1]
+Campos clave de la respuesta VTEX:
+  productName, brand, link, items[0].sellers[0].commertialOffer.Price,
+  items[0].images[0].imageUrl, categories[-1]
 """
 import json
 import logging
 from typing import Any, Optional
 from urllib.parse import quote
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from shared.model import ScrapingJob
 
@@ -30,21 +30,21 @@ from .registry import registry
 
 logger = logging.getLogger(__name__)
 
+_BASE = "https://www.miniso.co"
 
-class OlimpicaSource(BaseSource):
+
+class MinisoSource(BaseSource):
     """
-    Fuente Olimpica usando la API REST VTEX catalog_system.
-    Extiende BaseSource directamente (no BeautifulSoupSource) porque el
-    contenido es JSON, no HTML de un listing SPA.
+    Fuente Miniso Colombia usando la API REST VTEX catalog_system.
+    Mismo patrón que OlimpicaSource y RimaxSource.
     """
 
     @property
     def source_name(self) -> str:
-        return "olimpica"
+        return "miniso"
 
     @property
     def user_agent(self) -> Optional[str]:
-        # PriceTrackerBot es bloqueado por Olimpica; usamos un UA de Chrome real.
         return (
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
             "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
@@ -52,7 +52,6 @@ class OlimpicaSource(BaseSource):
 
     @property
     def wait_for_selector(self) -> Optional[str]:
-        # El browser envuelve JSON en <pre>; siempre aparece al instante.
         return "pre"
 
     @property
@@ -61,16 +60,11 @@ class OlimpicaSource(BaseSource):
 
     def build_url(self, query: str, product_ref: str) -> str:
         return (
-            f"https://www.olimpica.com/api/catalog_system/pub/products/search"
+            f"{_BASE}/api/catalog_system/pub/products/search"
             f"?ft={quote(query, safe='')}&_from=0&_to=47&O=OrderByScoreDESC"
         )
 
     def extract_all_results(self, html_content: str, job: ScrapingJob) -> list[dict[str, Any]]:
-        """
-        El browser carga la URL de la API VTEX y el contenido es JSON
-        envuelto en etiquetas HTML mínimas. Se extrae el texto del <pre>
-        y se parsea como JSON.
-        """
         soup = BeautifulSoup(html_content, "lxml")
 
         pre = soup.find("pre")
@@ -79,11 +73,11 @@ class OlimpicaSource(BaseSource):
         try:
             products: list[dict] = json.loads(raw_text)
         except json.JSONDecodeError:
-            logger.warning("[olimpica] No se pudo parsear JSON de la respuesta VTEX")
+            logger.warning("[miniso] No se pudo parsear JSON de la respuesta VTEX")
             return []
 
         if not isinstance(products, list):
-            logger.warning("[olimpica] Respuesta VTEX no es una lista: %s", type(products))
+            logger.warning("[miniso] Respuesta VTEX no es una lista: %s", type(products))
             return []
 
         results = []
@@ -116,7 +110,6 @@ class OlimpicaSource(BaseSource):
                 category: Optional[str] = None
                 cats = p.get("categories", [])
                 if cats:
-                    # Formato VTEX: "/Electrónica/Celulares/" → "Celulares"
                     last_cat = cats[-1].strip("/").split("/")[-1]
                     if last_cat:
                         category = last_cat
@@ -130,11 +123,8 @@ class OlimpicaSource(BaseSource):
                         if offer.get("AvailableQuantity", 1) == 0:
                             availability = "out_of_stock"
 
-                # URL del producto: VTEX proporciona linkText
-                link_text = p.get("linkText", "")
-                product_url = (
-                    f"https://www.olimpica.com/{link_text}/p"
-                    if link_text else None
+                product_url = p.get("link") or (
+                    f"{_BASE}/{p['linkText']}/p" if p.get("linkText") else None
                 )
 
                 fields = {
@@ -150,10 +140,10 @@ class OlimpicaSource(BaseSource):
                 if fields["raw_title"] or fields["raw_price"]:
                     results.append(fields)
             except Exception as exc:
-                logger.debug("[olimpica] Error procesando producto: %s", exc)
+                logger.debug("[miniso] Error procesando producto: %s", exc)
                 continue
 
         return results
 
 
-registry.register(OlimpicaSource())
+registry.register(MinisoSource())

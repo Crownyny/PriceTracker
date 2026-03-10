@@ -108,6 +108,7 @@ class BeautifulSoupSource(BaseSource, ABC):
                 "raw_category":     self._extract_category(card, soup),
                 "raw_image_url":    self._extract_image(card, soup),
                 "raw_description":  self._extract_description(card, soup),
+                "raw_url":          self._extract_url(card, soup),
             }
             # Descartar cards sin datos útiles
             if fields["raw_title"] or fields["raw_price"]:
@@ -153,4 +154,8 @@ class BeautifulSoupSource(BaseSource, ABC):
 
     def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
         """Extrae la descripción/bullet points del producto (máx ~500 chars)."""
+        return None
+
+    def _extract_url(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        """Extrae la URL canónica de la página de detalle del producto."""
         return None

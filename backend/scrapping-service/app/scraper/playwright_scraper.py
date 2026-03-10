@@ -20,16 +20,42 @@ from typing import Any
 
 from playwright.async_api import async_playwright, Browser, Playwright
 
+try:
+    from playwright_stealth import Stealth as _Stealth
+    _stealth = _Stealth()
+except ImportError:
+    _stealth = None
+
 from shared.model import RawScrapingResult, ScrapingJob
 
 from .base import BaseScraper
 from ..sources.registry import SourceRegistry
+from ..config import settings
 
 logger = logging.getLogger(__name__)
 
 # Timeout por defecto para navegación y espera de selector (ms)
 _NAV_TIMEOUT = 30_000
 _SELECTOR_TIMEOUT = 10_000
+
+# Errores de red transitorios que justifican un reintento automático
+_RETRYABLE_ERRORS = (
+    "ERR_NETWORK_CHANGED",
+    "ERR_CONNECTION_RESET",
+    "ERR_CONNECTION_CLOSED",
+    "ERR_INTERNET_DISCONNECTED",
+    "ERR_TIMED_OUT",
+)
+_MAX_RETRIES = 2
+
+# Fallback manual cuando playwright-stealth no está disponible
+_STEALTH_SCRIPT_FALLBACK = """
+    Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    window.chrome = window.chrome || { runtime: {}, loadTimes: function(){}, csi: function(){}, app: {} };
+    Object.defineProperty(navigator, 'languages', { get: () => ['es-CO', 'es', 'en-US', 'en'] });
+    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+    Object.defineProperty(navigator, 'platform', { get: () => 'Linux x86_64' });
+"""
 
 
 class PlaywrightScraper(BaseScraper):
@@ -87,25 +113,59 @@ class PlaywrightScraper(BaseScraper):
         try:
             source = self._registry.get(job.source_name)
             ua = (getattr(source, "user_agent", None) or self._user_agent)
+            extra_headers = getattr(source, "extra_http_headers", None) or {}
+            sel_timeout = getattr(source, "selector_timeout", _SELECTOR_TIMEOUT) or _SELECTOR_TIMEOUT
+
+            # Usar proxy residencial si: está configurado Y la fuente lo requiere
+            use_proxy = getattr(source, "use_proxy", False)
+            proxy_cfg = None
+            if use_proxy and settings.residential_proxy_url:
+                proxy_cfg = {"server": settings.residential_proxy_url}
+                logger.debug("[%s] Usando proxy residencial", job.job_id)
+
             context = await self._browser.new_context(
                 user_agent=ua,
                 locale="es-CO",
                 timezone_id="America/Bogota",
+                viewport={"width": 1366, "height": 768},
+                extra_http_headers=extra_headers,
+                proxy=proxy_cfg,
             )
+            await context.add_init_script(_STEALTH_SCRIPT_FALLBACK)
             page = await context.new_page()
+            # playwright-stealth aplica parches más completos contra fingerprinting
+            if _stealth is not None:
+                await _stealth.apply_stealth_async(page)
 
             try:
-                await page.goto(
-                    job.source_url,
-                    timeout=_NAV_TIMEOUT,
-                    wait_until="domcontentloaded",
-                )
+                # Reintentar en errores de red transitorios
+                last_nav_exc = None
+                for attempt in range(1, _MAX_RETRIES + 2):
+                    try:
+                        await page.goto(
+                            job.source_url,
+                            timeout=_NAV_TIMEOUT,
+                            wait_until="domcontentloaded",
+                        )
+                        last_nav_exc = None
+                        break
+                    except Exception as nav_exc:
+                        last_nav_exc = nav_exc
+                        is_retryable = any(e in str(nav_exc) for e in _RETRYABLE_ERRORS)
+                        if is_retryable and attempt <= _MAX_RETRIES:
+                            logger.warning(
+                                "[%s] %s — reintento %d/%d",
+                                job.job_id, str(nav_exc)[:80], attempt, _MAX_RETRIES,
+                            )
+                            await page.wait_for_timeout(1500 * attempt)
+                        else:
+                            raise
 
                 # Esperar selector específico del source si está definido
                 wait_selector = getattr(source, "wait_for_selector", None) if source else None
                 if wait_selector:
                     try:
-                        await page.wait_for_selector(wait_selector, timeout=_SELECTOR_TIMEOUT)
+                        await page.wait_for_selector(wait_selector, timeout=sel_timeout)
                     except Exception:
                         logger.warning(
                             "[%s] Timeout esperando selector '%s', continuando con HTML parcial",

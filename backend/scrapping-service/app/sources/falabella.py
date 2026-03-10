@@ -134,5 +134,12 @@ class FalabellaSource(BeautifulSoupSource):
                     return t
         return None
 
+    def _extract_url(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        a = card.select_one("a[href]")
+        if a:
+            href = a.get("href", "")
+            return href if href.startswith("http") else f"https://www.falabella.com.co{href}"
+        return None
+
 
 registry.register(FalabellaSource())
