@@ -23,5 +23,8 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
     openai_base_url: Optional[str] = None    # Para modelos locales (Ollama, vLLM, etc.)
 
+    # Concurrencia: mensajes procesados en paralelo dentro del worker
+    normalizer_prefetch_count: int = 4
+
 
 settings = Settings()

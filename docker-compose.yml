@@ -52,6 +52,43 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # ── Ollama — modelo LLM local ───────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: pricetracker-ollama
+    ports:
+      - "11434:11434"
+    environment:
+      OLLAMA_NUM_PARALLEL: "4"        # Solicitudes concurrentes al modelo
+      OLLAMA_MAX_LOADED_MODELS: "1"   # Mantiene 1 modelo en memoria
+      OLLAMA_KEEP_ALIVE: "-1"         # Nunca descarga el modelo por inactividad
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags | grep -q phi3 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 60
+      start_period: 20s
+    # GPU NVIDIA — descomentar si tienes GPU:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ── Descarga del modelo (one-shot) ──────────────────────────────────────────
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: pricetracker-ollama-init
+    depends_on:
+      ollama:
+        condition: service_started
+    entrypoint: ["sh", "-c", "sleep 10 && curl -sf http://ollama:11434/api/pull -d '{\"name\": \"phi3:mini\"}' && echo 'Model ready'"]
+    restart: "no"
+
   # ── Scraper Service ─────────────────────────────────────────────────────────
   scrapper:
     build:
@@ -72,6 +109,7 @@ services:
     ports:
       - "8001:8001"   # Health check: GET http://localhost:8001/health
     restart: unless-stopped
+
   # ── Normalizer Service ──────────────────────────────────────────────────────
   normalizer:
     build:
@@ -85,6 +123,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      ollama:
+        condition: service_started
     environment:
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
       MONGODB_URL: mongodb://mongodb:27017
@@ -92,9 +132,13 @@ services:
       DATABASE_URL: "postgresql+asyncpg://postgres:postgres@postgres:5432/pricetracker"
       API_HOST: "0.0.0.0"
       API_PORT: "8002"
-      ENABLE_ENRICHER: "false"
-      # OPENAI_API_KEY: "sk-..."     # descomentar para enriquecimiento LLM
-      # OPENAI_MODEL: "gpt-4o-mini"
+      # LLM local vía Ollama
+      ENABLE_ENRICHER: "true"
+      OPENAI_API_KEY: "ollama"
+      OPENAI_MODEL: "phi3:mini"
+      OPENAI_BASE_URL: "http://ollama:11434/v1"
+      # Concurrencia del worker
+      NORMALIZER_PREFETCH_COUNT: "4"
     ports:
       - "8002:8002"   # Health check: GET http://localhost:8002/health
     restart: unless-stopped
@@ -103,3 +147,4 @@ volumes:
   rabbitmq_data:
   mongodb_data:
   postgres_data:
+  ollama_data:

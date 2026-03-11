@@ -118,6 +118,19 @@ class NormalizedEventMessage(BaseModel):
     state: ScrapingState            # "normalized" | "normalization_failed"
     schema_version: str = "2.0"
     error_message: Optional[str] = None
+    search_id: Optional[str] = None
+
+
+# ── Cierre de búsqueda normalizada (Normalizer → downstream) ─────────────────
+class SearchNormalizedMessage(BaseModel):
+    """
+    Publicado por el Normalizer cuando todos los jobs de un SearchRequest
+    han sido procesados. Cierra el ciclo de vida de una búsqueda.
+    """
+    search_id: str
+    product_ref: str
+    total_normalized: int
+    completed_at: datetime.datetime
 
 
 # ── Historial de precios ──────────────────────────────────────────────────────

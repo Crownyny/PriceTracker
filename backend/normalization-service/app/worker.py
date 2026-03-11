@@ -22,6 +22,7 @@ Flujo por mensaje recibido:
         3. Si todos los jobs ya llegaron (completed == expected):
            publica SearchNormalizedMessage de inmediato.
 """
+import asyncio
 import datetime
 import logging
 from typing import Any, Optional
@@ -65,6 +66,7 @@ class NormalizerWorker(BaseConsumer):
             connection=connection,
             queue_name=QUEUE_SCRAPING_RESULTS,
             dlq_name=QUEUE_SCRAPING_RESULTS_DLQ,
+            prefetch_count=settings.normalizer_prefetch_count,
         )
         self._publisher = BasePublisher(connection)
         self._product_repo = product_repo
@@ -92,6 +94,35 @@ class NormalizerWorker(BaseConsumer):
             llm=llm,
             enable_enricher=settings.enable_enricher,
         )
+
+    async def start_consuming(self) -> None:
+        """Override: procesamiento concurrente de mensajes con semáforo."""
+        channel = await self._conn.channel()
+        await channel.set_qos(prefetch_count=self._prefetch_count)
+        queue = await channel.declare_queue(
+            self._queue_name,
+            durable=True,
+            arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": self._dlq_name,
+            },
+        )
+        sem = asyncio.Semaphore(self._prefetch_count)
+        tasks: set[asyncio.Task] = set()
+
+        async def _bounded(msg):
+            async with sem:
+                await self._dispatch(msg)
+
+        logger.info(
+            "Escuchando en '%s' (concurrencia: %d)...",
+            self._queue_name, self._prefetch_count,
+        )
+        async with queue.iterator() as queue_iter:
+            async for message in queue_iter:
+                task = asyncio.create_task(_bounded(message))
+                tasks.add(task)
+                task.add_done_callback(tasks.discard)
 
     async def handle(self, payload: dict[str, Any]) -> None:
         # Discriminar entre sentinel y job individual por el campo exclusivo del sentinel
