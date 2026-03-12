@@ -8,7 +8,7 @@ def detect_domain(category: str, fallback_text: str = "") -> Optional[str]:
     """Detecta el dominio según palabras clave de la categoría (en español).
     Si la categoría no coincide, intenta con fallback_text (ej: título del producto).
     Retorna None si no coincide con ningún dominio conocido."""
-    cat = category.lower().strip()
+    cat = (category or "").lower().strip()
     for domain, keywords in DOMAIN_KEYWORDS.items():
         if any(kw in cat for kw in keywords):
             return domain
