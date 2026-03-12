@@ -90,9 +90,12 @@ class BasePublisher:
         return self._channel
 
     async def _ensure_queue(self, channel: aio_pika.abc.AbstractChannel, queue_name: str) -> None:
-        """Declara la cola solo la primera vez por canal."""
+        """Verifica que la cola existe (passive=True) sin re-declararla.
+        Los consumers son los responsables de declararlas con sus argumentos
+        DLQ correctos. Un publisher que intente re-declarar una cola con
+        argumentos distintos recibirá PRECONDITION_FAILED de RabbitMQ."""
         if queue_name not in self._declared_queues:
-            await channel.declare_queue(queue_name, durable=True)
+            await channel.declare_queue(queue_name, durable=True, passive=True)
             self._declared_queues.add(queue_name)
 
     async def publish(self, queue_name: str, payload: dict[str, Any]) -> None:
