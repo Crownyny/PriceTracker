@@ -67,12 +67,19 @@ class BaseSource(ABC):
     @abstractmethod
     def extract_all_results(self, html_content: str, job: ScrapingJob) -> list[dict[str, Any]]:
         """
-        Extrae los campos crudos de TODOS los productos encontrados en el HTML.
-        Cada elemento de la lista corresponde a un producto distinto y se
-        publicará como un ScrapingMessage independiente en la cola.
+        Extrae todos los productos del HTML/respuesta y los devuelve como lista.
+        Las fuentes de API (alkomprar, olimpica, etc.) implementan este método.
         No aplica normalización semántica (responsabilidad del Normalizer Service).
         """
         ...
+
+    def iter_results(self, html_content: str, job: ScrapingJob):
+        """
+        Generator: hace yield de cada raw_fields en cuanto se extrae.
+        Por defecto delega a extract_all_results (compatibilidad con fuentes de API).
+        BeautifulSoupSource sobreescribe esto para yield card por card.
+        """
+        yield from self.extract_all_results(html_content, job)
 
 
 class BeautifulSoupSource(BaseSource, ABC):
@@ -80,8 +87,8 @@ class BeautifulSoupSource(BaseSource, ABC):
     Clase base para fuentes que usan BeautifulSoup para parseo HTML.
 
     Implementa el patrón Template Method:
-      - `extract_all_results` parsea el HTML, obtiene todos los cards via
-        `_all_cards()` y llama a los `_extract_*` por cada card.
+      - `iter_results` parsea el HTML, itera los cards via `_all_cards()` y
+        hace yield de cada producto en cuanto se extrae su card individual.
       - `_all_cards(soup)` devuelve la lista de nodos/cards de la página.
       - `_extract_*(card, soup)` reciben tanto el card individual como el soup
         completo (útil para datos de contexto como breadcrumbs o moneda global).
@@ -92,13 +99,16 @@ class BeautifulSoupSource(BaseSource, ABC):
     """
 
     def extract_all_results(self, html_content: str, job: ScrapingJob) -> list[dict[str, Any]]:
+        """Compatibilidad: retorna todos los resultados como lista."""
+        return list(self.iter_results(html_content, job))
+
+    def iter_results(self, html_content: str, job: ScrapingJob):
         """
-        Parsea el HTML, itera sobre todos los cards del listing y devuelve
-        una lista con los raw_fields de cada producto encontrado.
-        Solo incluye productos que tengan al menos título o precio.
+        Generator: parsea el HTML e itera sobre los cards del listing haciendo
+        yield de los raw_fields de cada producto en cuanto se extrae.
+        Solo emite productos que tengan al menos título o precio.
         """
         soup = BeautifulSoup(html_content, "lxml")
-        results = []
         for card in self._all_cards(soup):
             fields = {
                 "raw_title":        self._extract_title(card, soup),
@@ -110,10 +120,8 @@ class BeautifulSoupSource(BaseSource, ABC):
                 "raw_description":  self._extract_description(card, soup),
                 "raw_url":          self._extract_url(card, soup),
             }
-            # Descartar cards sin datos útiles
             if fields["raw_title"] or fields["raw_price"]:
-                results.append(fields)
-        return results
+                yield fields
 
     # ── Card discovery (obligatorio) ──────────────────────────────────────────
 
