@@ -16,6 +16,7 @@ se usa `wait_until="networkidle"` como estrategia por defecto.
 """
 import datetime
 import logging
+import uuid
 from typing import Any
 
 from playwright.async_api import async_playwright, Browser, Playwright
@@ -207,12 +208,16 @@ class PlaywrightScraper(BaseScraper):
             now = datetime.datetime.now(tz=datetime.timezone.utc)
             return [
                 RawScrapingResult(
-                    job_id=job.job_id,
+                    # Each product gets its own unique job_id so the normalizer
+                    # can track, store and emit events independently per product.
+                    # The original ScrapingJob id is preserved in metadata via
+                    # the search_id chain.
+                    job_id=str(uuid.uuid4()),
                     search_id=job.search_id,
                     product_ref=job.product_ref,
                     source_name=job.source_name,
                     scraped_at=now,
-                    raw_fields=fields,
+                    raw_fields={**fields, "scraping_job_id": job.job_id},
                     html_content=None,
                     status="success",
                 )
@@ -261,4 +266,5 @@ def _empty_fields() -> dict[str, Any]:
         "raw_category": None,
         "raw_image_url": None,
         "raw_description": None,
+        "raw_url": None,
     }

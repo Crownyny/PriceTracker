@@ -16,6 +16,8 @@ dependencies = [
     "httpx>=0.27.0",
     # Stealth anti-bot para Playwright (parchea fingerprinting de Chrome headless)
     "playwright-stealth>=1.0.6",
+    # HTTP client con TLS fingerprinting (requerido por fuentes con protección anti-bot, ej: Mango)
+    "curl-cffi>=0.7.0",
 ]
 
 [build-system]

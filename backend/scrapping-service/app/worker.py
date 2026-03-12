@@ -9,6 +9,7 @@ Flujo por mensaje:
     6. Publica SearchCompletedMessage como sentinel con el total de resultados enviados.
 """
 import asyncio
+import datetime
 import logging
 from typing import Any
 
@@ -17,8 +18,9 @@ from shared.messaging import (
     RabbitMQConnection,
     QUEUE_SCRAPING_JOBS,
     QUEUE_SCRAPING_JOBS_DLQ,
+    QUEUE_SCRAPING_RESULTS,
 )
-from shared.model import RawScrapingResult, ScrapingJob, SearchRequest
+from shared.model import RawScrapingResult, ScrapingJob, ScrapingMessage, ScrapingState, SearchRequest
 
 from .config import settings
 from .publisher import ScrapingResultPublisher
@@ -108,31 +110,74 @@ class ScraperWorker(BaseConsumer):
             return_exceptions=True,
         )
 
-        # Publicar un ScrapingMessage por producto (contrato de cola sin cambios)
-        published = 0
+        # Publicar un ScrapingMessage por producto encontrado.
+        # Para fuentes que no devuelven resultados o lanzan excepción,
+        # publicar un ScrapingMessage con state=FAILED usando el job_id original
+        # para que el Normalizer pueda contabilizar y cerrar la búsqueda.
+        products_published = 0
+        failed_published = 0
         for job, results in zip(jobs, raw_results):
             if isinstance(results, BaseException):
                 logger.error(
                     "[%s] Excepción no capturada en fuente '%s': %s",
                     request.search_id, job.source_name, results,
                 )
+                failed_msg = ScrapingMessage(
+                    job_id=job.job_id,
+                    search_id=request.search_id,
+                    product_ref=request.product_ref,
+                    source_name=job.source_name,
+                    captured_at=datetime.datetime.now(tz=datetime.timezone.utc),
+                    state=ScrapingState.FAILED,
+                    raw_fields={},
+                    error_message=str(results),
+                )
+                await self._publisher.publish(
+                    QUEUE_SCRAPING_RESULTS,
+                    failed_msg.model_dump(mode='json'),
+                )
+                failed_published += 1
+            elif not results:
+                # Fuente respondió pero no encontró productos
+                logger.info(
+                    "[%s] Fuente '%s': 0 productos — publicando FAILED sentinel",
+                    request.search_id, job.source_name,
+                )
+                failed_msg = ScrapingMessage(
+                    job_id=job.job_id,
+                    search_id=request.search_id,
+                    product_ref=request.product_ref,
+                    source_name=job.source_name,
+                    captured_at=datetime.datetime.now(tz=datetime.timezone.utc),
+                    state=ScrapingState.FAILED,
+                    raw_fields={},
+                    error_message="No products found",
+                )
+                await self._publisher.publish(
+                    QUEUE_SCRAPING_RESULTS,
+                    failed_msg.model_dump(mode='json'),
+                )
+                failed_published += 1
             else:
                 for result in results:
                     await self._publisher.publish_result(result)
-                    published += 1
+                    products_published += 1
                 logger.info(
                     "[%s] Fuente '%s': %d producto(s) encontrado(s)",
                     request.search_id, job.source_name, len(results),
                 )
 
-        # Sentinel: informa al Normalizer cuántos ScrapingMessages esperar
+        # total_jobs = mensajes totales enviados (productos + sentinels FAILED).
+        # El Normalizer llama increment_completed_jobs por cada mensaje recibido,
+        # por lo que este número debe coincidir exactamente.
+        total_messages = products_published + failed_published
         await self._publisher.publish_search_completed(
             search_id=request.search_id,
             product_ref=request.product_ref,
-            total_jobs=published,
+            total_jobs=total_messages,
         )
 
         logger.info(
-            "[%s] Completado: %d/%d resultados publicados para '%s'",
-            request.search_id, published, len(jobs), request.query,
+            "[%s] Completado: %d producto(s), %d fuente(s) sin resultado(s), total=%d mensajes para '%s'",
+            request.search_id, products_published, failed_published, total_messages, request.query,
         )
