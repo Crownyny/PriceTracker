@@ -89,6 +89,11 @@ def make_llm_extractor_node(llm=None):
                 text = text.strip()
 
             attrs = json.loads(text)
+            # qwen2 a veces devuelve una lista en lugar de un objeto
+            if isinstance(attrs, list):
+                attrs = attrs[0] if attrs else {}
+            if not isinstance(attrs, dict):
+                attrs = {}
             valid_keys = set(attributes)
             attrs = {k: v for k, v in attrs.items() if k in valid_keys}
             return {**state, "llm_attributes": attrs}

@@ -32,9 +32,11 @@ from shared.messaging import (
     BasePublisher,
     RabbitMQConnection,
     QUEUE_NORMALIZED_EVENTS,
+    QUEUE_NORMALIZED_EVENTS_DLQ,
     QUEUE_SCRAPING_RESULTS,
     QUEUE_SCRAPING_RESULTS_DLQ,
     QUEUE_SEARCH_NORMALIZED,
+    QUEUE_SEARCH_NORMALIZED_DLQ,
 )
 from shared.model import (
     NormalizedEventMessage,
@@ -94,6 +96,30 @@ class NormalizerWorker(BaseConsumer):
             llm=llm,
             enable_enricher=settings.enable_enricher,
         )
+
+    async def setup(self) -> None:
+        """Declara colas de entrada (scraping.results) y de salida (normalized.events, search.normalized)."""
+        await super().setup()
+        channel = await self._conn.channel()
+        await channel.declare_queue(QUEUE_NORMALIZED_EVENTS_DLQ, durable=True)
+        await channel.declare_queue(
+            QUEUE_NORMALIZED_EVENTS,
+            durable=True,
+            arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": QUEUE_NORMALIZED_EVENTS_DLQ,
+            },
+        )
+        await channel.declare_queue(QUEUE_SEARCH_NORMALIZED_DLQ, durable=True)
+        await channel.declare_queue(
+            QUEUE_SEARCH_NORMALIZED,
+            durable=True,
+            arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": QUEUE_SEARCH_NORMALIZED_DLQ,
+            },
+        )
+        logger.info("Colas de salida declaradas: '%s', '%s'", QUEUE_NORMALIZED_EVENTS, QUEUE_SEARCH_NORMALIZED)
 
     async def start_consuming(self) -> None:
         """Override: procesamiento concurrente de mensajes con semáforo."""

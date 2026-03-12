@@ -54,12 +54,18 @@ SOURCE_DEFAULT_CURRENCY: dict[str, str] = {
 # Umbral de confianza heurística para saltar el LLM.
 # Si el score (número de campos *_candidates no vacíos) alcanza este valor,
 # el pipeline usa solo heurísticas y omite los nodos LLM.
-HEURISTIC_CONFIDENCE_THRESHOLD: int = 3
+# Con threshold=1 el LLM solo se invoca cuando NO se encontró ningún
+# atributo heurístico (score==0), lo que ocurre en casos muy difíciles.
+HEURISTIC_CONFIDENCE_THRESHOLD: int = 1
 
 # Tokens que no deben considerarse como modelo (node 4)
 NON_MODEL_TOKENS: frozenset[str] = frozenset({
     "gb", "tb", "mb", "ghz", "mhz", "mp", "mah",
     "ram", "ssd", "hdd", "4g", "5g", "lte", "wifi",
+    # Tipos de memoria RAM — son especificaciones, no identificadores de modelo
+    "ddr3", "ddr3l", "ddr4", "ddr5", "ddr6",
+    # Versiones de interfaz
+    "usb2", "usb3",
 })
 
 # Marcas conocidas para mejorar la detección heurística de brand.
@@ -200,4 +206,26 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "nintendo", "control juego", "mando", "headset gamer",
         "silla gamer", "teclado gamer", "mouse gamer",
     ],
+}
+
+# Etiqueta de categoría legible por humanos para cada dominio detectado.
+# Usada como fallback cuando la fuente no informa la categoría del producto.
+DOMAIN_TO_CATEGORY: dict[str, str] = {
+    "electronics":  "Electrónica",
+    "fashion":      "Moda y Ropa",
+    "kitchen":      "Hogar y Cocina",
+    "home":         "Hogar",
+    "jewelry":      "Joyería y Accesorios",
+    "accessories":  "Accesorios",
+    "sports":       "Deportes",
+    "beauty":       "Belleza y Cuidado Personal",
+    "toys":         "Juguetes",
+    "health":       "Salud",
+    "automotive":   "Automotriz",
+    "stationery":   "Papelería",
+    "baby":         "Bebé",
+    "food":         "Alimentos",
+    "tools":        "Herramientas",
+    "pet":          "Mascotas",
+    "games":        "Videojuegos",
 }

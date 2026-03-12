@@ -49,11 +49,16 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags | grep -q phi3 || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags | grep -q qwen2 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 60
       start_period: 20s
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
     # GPU NVIDIA — descomentar si tienes GPU:
     # deploy:
     #   resources:
@@ -70,7 +75,7 @@ services:
     depends_on:
       ollama:
         condition: service_started
-    entrypoint: ["sh", "-c", "sleep 10 && curl -sf http://ollama:11434/api/pull -d '{\"name\": \"phi3:mini\"}' && echo 'Model ready'"]
+    entrypoint: ["sh", "-c", "sleep 10 && curl -sf http://ollama:11434/api/pull -d '{\"name\": \"qwen2:0.5b\"}' && echo 'Model ready'"]
     restart: "no"
 
   # ── Scraper Service ─────────────────────────────────────────────────────────
@@ -103,20 +108,18 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      ollama:
-        condition: service_started
     environment:
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
       DATABASE_URL: "postgresql+asyncpg://postgres:postgres@postgres:5432/pricetracker"
       API_HOST: "0.0.0.0"
       API_PORT: "8002"
-      # LLM local vía Ollama
-      ENABLE_ENRICHER: "true"
+      # LLM local vía Ollama — desactivado temporalmente
+      ENABLE_ENRICHER: "false"
       OPENAI_API_KEY: "ollama"
-      OPENAI_MODEL: "phi3:mini"
+      OPENAI_MODEL: "qwen2:0.5b"
       OPENAI_BASE_URL: "http://ollama:11434/v1"
       # Concurrencia del worker
-      NORMALIZER_PREFETCH_COUNT: "4"
+      NORMALIZER_PREFETCH_COUNT: "1"
     ports:
       - "8002:8002"   # Health check: GET http://localhost:8002/health
     restart: unless-stopped
