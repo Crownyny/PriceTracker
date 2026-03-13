@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Presentation.DTO;
+package unicauca.edu.co.API.Presentation.DTO.OUT;
 
 import java.time.LocalDateTime;
 import java.util.Map;

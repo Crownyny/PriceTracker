@@ -3,7 +3,7 @@ package unicauca.edu.co.API.Presentation.Mapper;
 import org.mapstruct.Mapper;
 
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
-import unicauca.edu.co.API.Presentation.DTO.NormalizedProductDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 
 /**
  * Mapper para NormalizedProduct.
