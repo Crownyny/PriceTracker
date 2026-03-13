@@ -8,6 +8,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Interfaces.INormalizedService;
 
 @Service
@@ -15,10 +16,13 @@ public class NormalizedService implements INormalizedService {
 
     private final RabbitTemplate rabbitTemplate;
     private final SimpMessagingTemplate messagingTemplate;
+    private final NormalizedProductMapper mapper;
 
-    public NormalizedService(RabbitTemplate rabbitTemplate, SimpMessagingTemplate messagingTemplate) {
+    public NormalizedService(RabbitTemplate rabbitTemplate, SimpMessagingTemplate messagingTemplate,
+        NormalizedProductMapper mapper) {
         this.rabbitTemplate = rabbitTemplate;
         this.messagingTemplate = messagingTemplate;
+        this.mapper = mapper;
     }
 
     /**
@@ -45,7 +49,6 @@ public class NormalizedService implements INormalizedService {
     }
 
     private NormalizedProductDTO convertToDTO(NormalizedProductEntity entity) {
-        // Lógica para convertir NormalizedProductEntity a NormalizedProductDTO
-        return null;
+            return mapper.toDTO(entity);
     }
 }

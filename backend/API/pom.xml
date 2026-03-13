@@ -77,14 +77,6 @@
 			<artifactId>testcontainers-junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- MapStruct annotation processor -->
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct-processor</artifactId>
-			<version>1.5.5.Final</version>
-			<scope>provided</scope>
-		</dependency>
-
 		<!-- Spring Boot AMQP (RabbitMQ) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -103,12 +95,6 @@
 			<artifactId>mapstruct</artifactId>
 			<version>1.5.5.Final</version>
 		</dependency>
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct-processor</artifactId>
-			<version>1.5.5.Final</version>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -121,6 +107,11 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>1.5.5.Final</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

@@ -13,8 +13,11 @@ public class ProductService implements IProductService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductService.class); 
     private final ScrapingService scrapingService;
-    public ProductService(ScrapingService scrapingService) {
+    private final NormalizedService normalizedService;
+
+    public ProductService(ScrapingService scrapingService, NormalizedService normalizedService) {
         this.scrapingService = scrapingService;
+        this.normalizedService = normalizedService;
     }
 
     @Override
@@ -23,9 +26,7 @@ public class ProductService implements IProductService {
         scrapingService.sendData(query);
         logger.info("Query enviado exitosamente a la cola");
 
-        // Escuchar la cola de resultados de RabbitMQ
-        logger.info("Esperando resultados de la cola 'scrapping.results'...");
-        // La lógica de escucha está implementada en ScrapingService
+      
     }
 
     @Override
