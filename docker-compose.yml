@@ -36,6 +36,42 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # ── API Spring Boot ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend/API
+      dockerfile: Dockerfile
+    container_name: pricetracker-api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pricetracker
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      # RabbitMQ Configuration
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # Server Configuration
+      SERVER_PORT: 8080
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    ports:
+      - "8080:8080"   # API REST
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
   # ── Ollama — modelo LLM local ───────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
