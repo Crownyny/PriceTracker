@@ -2,6 +2,8 @@ package unicauca.edu.co.API.Services;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +50,21 @@ public class ScrapingService implements IScrapingService {
         } catch (Exception e) {
             logger.error("Error al enviar query a la cola '{}': {}", SCRAPING_QUEUE, e.getMessage(), e);
             throw new RuntimeException("Error al enviar query al scraper: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Escucha la cola de resultados de RabbitMQ y procesa los mensajes.
+     *
+     * @param message el mensaje recibido de la cola
+     */
+    @RabbitListener(queues = "scrapping.results")
+    public void listenToResults(@Payload String message) {
+        try {
+            logger.info("Mensaje recibido de la cola 'scrapping.results': {}", message);
+            // Aquí puedes agregar lógica para manejar el mensaje recibido
+        } catch (Exception e) {
+            logger.error("Error al procesar mensaje de la cola 'scrapping.results': {}", e.getMessage(), e);
         }
     }
 }

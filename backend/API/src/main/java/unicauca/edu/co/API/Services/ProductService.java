@@ -22,7 +22,10 @@ public class ProductService implements IProductService {
         logger.info("Enviando query a la cola de scraping: {}", query);
         scrapingService.sendData(query);
         logger.info("Query enviado exitosamente a la cola");
-        // Por ahora retorna null, ya que el resultado llegará de forma asíncrona
+
+        // Escuchar la cola de resultados de RabbitMQ
+        logger.info("Esperando resultados de la cola 'scrapping.results'...");
+        // La lógica de escucha está implementada en ScrapingService
     }
 
     @Override

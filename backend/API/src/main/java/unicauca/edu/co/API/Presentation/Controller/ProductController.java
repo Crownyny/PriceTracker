@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -26,29 +27,14 @@ public class ProductController {
      * Maneja las solicitudes de búsqueda enviadas por WebSocket.
      *
      * @param query QueryDTOIN con los detalles de la búsqueda
-     * @throws Exception si ocurre un error durante la búsqueda
+     * @param sessionId ID de la sesión WebSocket para identificar al usuario
      */
+
     @MessageMapping("/search")
-    @SendTo("/topic/search-results")
-    public void searchProduct(QueryDTOIN query) throws Exception {
-        logger.info("Recibida solicitud de búsqueda: {}", query);
-
-        // Enviar la búsqueda al servicio
+    public void searchProduct(QueryDTOIN query,
+                              @Header("simpSessionId") String sessionId) {
+        query.setSessionId(sessionId);
         productService.SearchProduct(query);
-
-        // Simular respuesta asíncrona (en producción, esto vendría de RabbitMQ)
-        messagingTemplate.convertAndSend("/topic/search-results", "Búsqueda en proceso para: " + query.getQuery());
     }
 
-    /**
-     * Envía resultados específicos a una cola privada del usuario.
-     *
-     * @param userId ID del usuario
-     * @param result Resultado de la búsqueda
-     */
-    public void sendPrivateResult(String userId, Object result) {
-        String destination = "/queue/private-" + userId;
-        logger.info("Enviando resultado privado a {}: {}", destination, result);
-        messagingTemplate.convertAndSend(destination, result);
-    }
 }

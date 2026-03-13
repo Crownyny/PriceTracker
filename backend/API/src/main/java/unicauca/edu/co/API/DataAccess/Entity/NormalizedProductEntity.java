@@ -3,15 +3,8 @@ package unicauca.edu.co.API.DataAccess.Entity;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -35,49 +28,22 @@ import lombok.Setter;
  * @Param description: Descripción del producto normalizado.
  * @Param extra: Información adicional del producto normalizado, como características específicas o atributos personalizados.
  */
-
-@Entity
-@Table(name = "normalized_products")
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
 public class NormalizedProductEntity {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
-    @Column(nullable = false)
     private String productRef;
-    
-    @Column(nullable = false)
     private String sourceName;
-    
-    @Column(nullable = false)
     private String canonicalName;
-    
-    @Column(nullable = false)
     private Double price;
-    
-    @Column(nullable = false, length = 10)
     private String currency;
-    
-    @Column(nullable = false)
     private String category;
-    
-    @Column(nullable = false)
     private Boolean availability;
-    
-    @Column(nullable = false)
     private LocalDateTime updatedAt;
-    
-    @Column
     private String imageUrl;
-    
-    @Column(columnDefinition = "TEXT")
     private String description;
-    
-    @Column(columnDefinition = "jsonb")
     private Map<String, String> extra;
+
+
 }
