@@ -24,7 +24,9 @@ Flujo por mensaje recibido:
 """
 import asyncio
 import datetime
+import json
 import logging
+import os
 from typing import Any, Optional
 
 from shared.messaging import (
@@ -51,6 +53,19 @@ from .graph.pipeline import build_pipeline
 from .repositories.product_repository import ProductRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _append_failure(record: dict) -> None:
+    """Escribe un registro de fallo en el archivo JSONL configurado (si está activo)."""
+    path = settings.failures_log_path
+    if not path:
+        return
+    try:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+    except Exception as exc:  # nunca debe romper el flujo principal
+        logger.warning("No se pudo escribir en failures_log: %s", exc)
 
 
 class NormalizerWorker(BaseConsumer):
@@ -168,6 +183,20 @@ class NormalizerWorker(BaseConsumer):
 
         if message.state == ScrapingState.FAILED:
             # Short-circuit: el scraping ya falló, no hay datos que normalizar
+            logger.warning(
+                "[%s] Scraping fallido — razón: %s",
+                message.job_id, message.error_message or "(sin detalle)",
+            )
+            _append_failure({
+                "ts": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                "failure_type": "scraping_failed",
+                "job_id": message.job_id,
+                "search_id": message.search_id,
+                "source_name": message.source_name,
+                "product_ref": message.product_ref,
+                "reason": message.error_message or "(sin detalle)",
+                "raw_fields": message.raw_fields,
+            })
             event = NormalizedEventMessage(
                 job_id=message.job_id,
                 search_id=message.search_id,
@@ -201,14 +230,39 @@ class NormalizerWorker(BaseConsumer):
             }
             final_state = await self._pipeline.ainvoke(initial_state)
 
+            if final_state.get("outcome") == ScrapingState.NORMALIZATION_FAILED:
+                logger.warning(
+                    "[%s] Pipeline de normalización fallido — error=%s  validation_errors=%s  raw_fields=%s",
+                    message.job_id,
+                    final_state.get("error"),
+                    final_state.get("validation_errors"),
+                    message.raw_fields,
+                )
+                _append_failure({
+                    "ts": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                    "failure_type": "normalization_failed",
+                    "job_id": message.job_id,
+                    "search_id": message.search_id,
+                    "source_name": message.source_name,
+                    "product_ref": message.product_ref,
+                    "error": final_state.get("error"),
+                    "validation_errors": final_state.get("validation_errors"),
+                    "raw_fields": message.raw_fields,
+                })
+
+            # Construir el evento final
+            event_state = ScrapingState(final_state.get("outcome", ScrapingState.NORMALIZATION_FAILED))
+            product_data = final_state.get("final_product") if event_state == ScrapingState.NORMALIZED else None
+
             event = NormalizedEventMessage(
                 job_id=message.job_id,
                 search_id=message.search_id,
                 product_ref=message.product_ref,
                 source_name=message.source_name,
                 normalized_at=datetime.datetime.now(tz=datetime.timezone.utc),
-                state=ScrapingState(final_state.get("outcome", ScrapingState.NORMALIZATION_FAILED)),
+                state=event_state,
                 error_message=final_state.get("error"),
+                normalized_product=product_data,
             )
 
         await self._publisher.publish(QUEUE_NORMALIZED_EVENTS, event.model_dump(mode="json"))

@@ -119,6 +119,7 @@ class NormalizedEventMessage(BaseModel):
     schema_version: str = "2.0"
     error_message: Optional[str] = None
     search_id: Optional[str] = None
+    normalized_product: Optional[NormalizedProduct] = None
 
 
 # ── Cierre de búsqueda normalizada (Normalizer → downstream) ─────────────────
