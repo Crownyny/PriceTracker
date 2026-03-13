@@ -53,18 +53,5 @@ public class ScrapingService implements IScrapingService {
         }
     }
 
-    /**
-     * Escucha la cola de resultados de RabbitMQ y procesa los mensajes.
-     *
-     * @param message el mensaje recibido de la cola
-     */
-    @RabbitListener(queues = "scrapping.results")
-    public void listenToResults(@Payload String message) {
-        try {
-            logger.info("Mensaje recibido de la cola 'scrapping.results': {}", message);
-            // Aquí puedes agregar lógica para manejar el mensaje recibido
-        } catch (Exception e) {
-            logger.error("Error al procesar mensaje de la cola 'scrapping.results': {}", e.getMessage(), e);
-        }
-    }
+
 }

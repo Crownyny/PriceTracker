@@ -3,9 +3,17 @@ package unicauca.edu.co.API.DataAccess.Entity;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * 
@@ -28,10 +36,14 @@ import lombok.Setter;
  * @Param description: Descripción del producto normalizado.
  * @Param extra: Información adicional del producto normalizado, como características específicas o atributos personalizados.
  */
+@Entity
+@Table(name = "normalized_products")
 @Getter
 @Setter
 @AllArgsConstructor
 public class NormalizedProductEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String productRef;
     private String sourceName;
@@ -43,7 +55,11 @@ public class NormalizedProductEntity {
     private LocalDateTime updatedAt;
     private String imageUrl;
     private String description;
+    @Column(columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, String> extra;
 
-
+    // Constructor sin argumentos para JPA
+    public NormalizedProductEntity() {
+    }
 }
