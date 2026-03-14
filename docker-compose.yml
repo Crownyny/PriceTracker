@@ -67,73 +67,6 @@ services:
 #    #         - driver: nvidia
 #    #           count: 1
 #    #           capabilities: [gpu]
-  # ── API Spring Boot ─────────────────────────────────────────────────────────
-  api:
-    build:
-      context: ./backend/API
-      dockerfile: Dockerfile
-    container_name: pricetracker-api
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    environment:
-      # Database Configuration
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: pricetracker
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      # RabbitMQ Configuration
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: guest
-      RABBITMQ_PASSWORD: guest
-      # Server Configuration
-      SERVER_PORT: 8080
-      JAVA_OPTS: "-Xmx512m -Xms256m"
-    ports:
-      - "8080:8080"   # API REST
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-
-  # ── Ollama — modelo LLM local ───────────────────────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    container_name: pricetracker-ollama
-    ports:
-      - "11434:11434"
-    environment:
-      OLLAMA_NUM_PARALLEL: "4"        # Solicitudes concurrentes al modelo
-      OLLAMA_MAX_LOADED_MODELS: "1"   # Mantiene 1 modelo en memoria
-      OLLAMA_KEEP_ALIVE: "-1"         # Nunca descarga el modelo por inactividad
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags | grep -q qwen2 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 60
-      start_period: 20s
-    devices:
-      - /dev/kfd
-      - /dev/dri
-    group_add:
-      - video
-    # GPU NVIDIA — descomentar si tienes GPU:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
 
 #  # ── Descarga del modelo (one-shot) ──────────────────────────────────────────
 #  ollama-init:
@@ -190,6 +123,41 @@ services:
     ports:
       - "8002:8002"   # Health check: GET http://localhost:8002/health
     restart: unless-stopped
+  api:
+    build:
+      context: ./backend/API
+      dockerfile: Dockerfile
+    container_name: pricetracker-api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pricetracker
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      # RabbitMQ Configuration
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # Server Configuration
+      SERVER_PORT: 8080
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    ports:
+      - "8080:8080"   # API REST
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
 
 volumes:
   rabbitmq_data:
