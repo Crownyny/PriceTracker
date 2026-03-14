@@ -4,6 +4,8 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,5 +37,13 @@ public class ProductController {
         query.setSessionId(sessionId);
         productService.searchProduct(query);
     }
+@GetMapping("/test-ws")
+@ResponseBody
+public String testWs() {
+
+    messagingTemplate.convertAndSend("/topic/test", "hola websocket");
+
+    return "ok";
+}
 
 }

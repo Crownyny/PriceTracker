@@ -15,6 +15,8 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * 
  * Entity para representar un producto normalizado con información detallada.
@@ -61,7 +63,7 @@ public class NormalizedProductEntity {
     private Boolean availability;
     
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private String updatedAt;
     
     @Column(name = "image_url")
     private String imageUrl;
