@@ -12,6 +12,7 @@ from shared.model import NormalizedProduct, ScrapingState
 
 from ..state import NormalizationState
 from ...validator import ProductValidator, ValidationError
+from .constants import DOMAIN_TO_CATEGORY
 from .helpers import detect_domain
 
 logger = logging.getLogger(__name__)
@@ -38,15 +39,18 @@ async def validation_node(state: NormalizationState) -> NormalizationState:
                 normalized["storage"],
             )
 
-    # Coherencia nombre: brand y model presentes en canonical_name
-    canonical = normalized.get("canonical_name", "")
+    # Usar el título original como base del nombre canónico
+    canonical = re.sub(r"\s+", " ", (std.get("title") or "").strip())
+    if not canonical:
+        canonical = normalized.get("canonical_name", "unknown")
+
     brand = normalized.get("brand") or ""
     model = normalized.get("model") or ""
 
     if brand and brand.lower() not in canonical.lower():
-        canonical = f"{brand.lower()} {canonical}"
+        canonical = f"{brand} {canonical}"
     if model and model.lower() not in canonical.lower():
-        canonical = f"{canonical} {model.lower()}"
+        canonical = f"{canonical} {model}"
 
     normalized["canonical_name"] = re.sub(r"\s+", " ", canonical).strip()
 
@@ -65,7 +69,7 @@ async def validation_node(state: NormalizationState) -> NormalizationState:
 
     # Construir NormalizedProduct
     now = datetime.datetime.now(tz=datetime.timezone.utc)
-    final_canonical = normalized.get("canonical_name") or std.get("title", "unknown")
+    final_canonical = normalized["canonical_name"]
 
     # scraped_at: parsear captured_at desde ISO-8601
     scraped_at: Optional[datetime.datetime] = None
@@ -81,13 +85,18 @@ async def validation_node(state: NormalizationState) -> NormalizationState:
     extra["heuristic_confidence"] = state.get("heuristic_confidence", 0)
 
     try:
+        # Inferir categoría desde el dominio si la fuente no la informó
+        raw_category = (std.get("category") or "").strip()
+        if not raw_category or raw_category.lower() == "unknown":
+            raw_category = DOMAIN_TO_CATEGORY.get(domain, "unknown") if domain else "unknown"
+
         product = NormalizedProduct(
             product_ref=state["product_ref"],
             source_name=state["source_name"],
             canonical_name=final_canonical,
             price=float(std.get("price", 0)),
             currency=std.get("currency", "USD"),
-            category=std.get("category", "unknown") or "unknown",
+            category=raw_category,
             availability=std.get("availability") == "in_stock",
             updated_at=now,
             scraped_at=scraped_at,

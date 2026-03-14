@@ -104,7 +104,12 @@ async def attribute_extractor_node(state: NormalizationState) -> NormalizationSt
     # ── Atributos genéricos (aplican a todos los dominios) ────────────────────
     numbers = [int(m) for m in re.findall(r"\d+", canonical)]
 
-    color_candidates = [w for w in canonical.split() if w in COLORS]
+    # Deduplicar preservando orden (el canonical_text repite título+descripción)
+    _seen_colors: set[str] = set()
+    color_candidates = [
+        w for w in canonical.split()
+        if w in COLORS and not _seen_colors.__contains__(w) and not _seen_colors.add(w)  # type: ignore[func-returns-value]
+    ]
 
     condition_candidates: list[str] = []
     for term, normalized in CONDITIONS.items():
@@ -121,11 +126,11 @@ async def attribute_extractor_node(state: NormalizationState) -> NormalizationSt
                 break
 
     # Modelo (letter + number) — útil en electrónica, herramientas y otros
-    model_candidates = re.findall(r"\b[a-z]+\d+[a-z0-9]*\b", canonical)
-    model_candidates = [
-        m for m in model_candidates
+    # Deduplicar preservando orden para evitar repeticiones por título+descripción
+    model_candidates = list(dict.fromkeys(
+        m for m in re.findall(r"\b[a-z]+\d+[a-z0-9]*\b", canonical)
         if m not in NON_MODEL_TOKENS and len(m) >= 2
-    ]
+    ))
 
     # ── Almacenamiento + memoria (electrónica / games / dominio desconocido) ──
     domain = detect_domain(std.get("category", ""), fallback_text=std.get("title", ""))
@@ -140,6 +145,9 @@ async def attribute_extractor_node(state: NormalizationState) -> NormalizationSt
             if unit.lower() == "tb":
                 num *= 1024
             raw_storage.append(num)
+        # Deduplicar antes del split: si título y descripción son iguales, los
+        # mismos valores aparecen dos veces y el split min/max daría memoria=storage.
+        raw_storage = list(dict.fromkeys(raw_storage))
         if len(raw_storage) >= 2:
             sorted_vals = sorted(raw_storage)
             memory_candidates = [sorted_vals[0]]

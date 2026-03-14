@@ -110,9 +110,22 @@ def _parse_price_full(raw_price: str) -> tuple[float, str]:
             cleaned = cleaned.replace(".", "")
 
     try:
-        return float(cleaned), currency
+        value = float(cleaned)
     except ValueError:
         return 0.0, currency
+
+    # Sanity guard: un valor con más de 10 dígitos es imposible para cualquier
+    # producto de retail (>10.000 millones). Ocurre cuando el scraper concatena
+    # dos nodos de texto que contienen precios distintos (ej. precio tachado +
+    # precio con descuento). Se reextrae solo el primer token de precio válido.
+    if value > 9_999_999_999:
+        first_price = re.search(r"\d{1,3}(?:[.,]\d{3})+", raw_price)
+        if first_price:
+            sub_value, _ = _parse_price_full(first_price.group())
+            if sub_value > 0:
+                return sub_value, currency
+
+    return value, currency
 
 
 def _normalize_currency(raw: str) -> str:
