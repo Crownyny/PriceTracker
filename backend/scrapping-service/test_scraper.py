@@ -39,6 +39,11 @@ logger = logging.getLogger(__name__)
 _OUTPUT_FILE = Path(__file__).parent / "temp" / "results.json"
 
 
+async def _collect_job_results(scraper: PlaywrightScraper, job: ScrapingJob) -> list:
+    """Consume el async generator del scraper y acumula sus resultados."""
+    return [result async for result in scraper.scrape(job)]
+
+
 async def run_scraping(query: str, sources_filter: list[str] | None, user_agent: str, limit: int | None) -> list[dict]:
     """
     Ejecuta el scraping en paralelo en todas las fuentes seleccionadas.
@@ -75,7 +80,7 @@ async def run_scraping(query: str, sources_filter: list[str] | None, user_agent:
 
     try:
         raw_results = await asyncio.gather(
-            *[scraper.scrape(job) for job in jobs],
+            *[_collect_job_results(scraper, job) for job in jobs],
             return_exceptions=True,
         )
     finally:
