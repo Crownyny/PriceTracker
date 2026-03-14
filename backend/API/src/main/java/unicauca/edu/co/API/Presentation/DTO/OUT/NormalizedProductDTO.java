@@ -3,6 +3,8 @@ package unicauca.edu.co.API.Presentation.DTO.OUT;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,15 +35,31 @@ import lombok.Setter;
 
 public class NormalizedProductDTO {
     private Integer id;
+    @JsonProperty("product_ref")
     private String productRef;
+    @JsonProperty("source_name")
     private String sourceName;
+    @JsonProperty("canonical_name")
     private String canonicalName;
+
     private Double price;
     private String currency;
     private String category;
     private Boolean availability;
-    private LocalDateTime updatedAt;
+    @JsonProperty("updated_at")
+    private String updatedAt;
+
+    @JsonProperty("scraped_at")
+    private String scrapedAt;
+
+    @JsonProperty("source_url")
+    private String sourceUrl;
+
+    private String confidence;
+
+    @JsonProperty("image_url")
     private String imageUrl;
+
     private String description;
     private Map<String, String> extra;
 
