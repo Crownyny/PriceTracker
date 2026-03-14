@@ -56,30 +56,21 @@ public class NormalizedService implements INormalizedService {
     public void listenToResults(@Payload String message) {
         try {
             logger.info("Mensaje recibido de la cola normalized.events: {}", message);
-            
-            // Deserializar el JSON string a NormalizedProductEntity
             NormalizedEventDTO eventDTO = objectMapper.readValue(message, NormalizedEventDTO.class);
-            logger.info("EVENTO___________________________________--", eventDTO);
             NormalizedProductEntity productEntity = null;
             NormalizedProductDTO productDTO = null;
-           //Extraer de eventDTO el producto normalizado y convertirlo a NormalizedProductEntity
             if (eventDTO.getNormalizedProduct() != null) {
                 productDTO = eventDTO.getNormalizedProduct();
                 productEntity = mapper.toEntity(productDTO);
-
                 //TODO guardar en base de datos
                 logger.info("Producto normalizado convertido a entidad: {}", productEntity);
             } else {
                 logger.warn("El mensaje no contiene un producto normalizado válido: {}", message);
-                
             }
             sendToWebSocket(productDTO);
 
-            // No se devuelve nada ya que el resultado se envía al WebSocket privado
-
         } catch (Exception e) {
             logger.error("Error al procesar el mensaje de la cola normalized.events", e);
-          
         }
     }
 
