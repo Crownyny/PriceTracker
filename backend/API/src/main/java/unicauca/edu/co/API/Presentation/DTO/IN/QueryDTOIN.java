@@ -22,11 +22,9 @@ import lombok.Setter;
 public class QueryDTOIN {
     private String sessionId; // Para identificar la conexión WebSocket del usuario
     private String query;
-    private int searchId;
-    private String productRef;
+    private String search_id;
+    private String product_ref;
     private String sources;
-    private int priority = 2; 
-    //metadata?
     public QueryDTOIN() {
     }
 }
