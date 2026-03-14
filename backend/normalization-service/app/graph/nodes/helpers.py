@@ -1,7 +1,28 @@
 """Funciones helper compartidas entre nodos."""
+import re
 from typing import Optional
 
 from .constants import DOMAIN_KEYWORDS
+
+
+def _kw_in_text(kw: str, text: str) -> bool:
+    """Comprueba si kw aparece como palabra(s) completa(s) en text.
+
+    - Palabras compuestas (con espacios): coincidencia de subcadena directa,
+      ya que la combinación de tokens es suficientemente específica.
+    - Palabras simples: se usan word-boundaries permitiendo plurales estándar
+      en español/inglés (+s o +es) para detectar correctamente formas como
+      "camisetas" a partir de la keyword "camiseta", pero evitando falsos
+      positivos como "gel" dentro de "softgels" o "colchon" en "colchoneta".
+    """
+    if not text:
+        return False
+    if " " in kw:
+        return kw in text
+    # Permite exacto O con sufijo plural (s/es). Word-boundary al inicio y al
+    # final del token: evita "colchon" → "colchoneta", "gel" → "softgels",
+    # pero sí acepta "camiseta" → "camisetas", "auricular" → "auriculares".
+    return bool(re.search(r"\b" + re.escape(kw) + r"(?:s|es)?\b", text))
 
 
 def detect_domain(category: str, fallback_text: str = "") -> Optional[str]:
@@ -10,12 +31,12 @@ def detect_domain(category: str, fallback_text: str = "") -> Optional[str]:
     Retorna None si no coincide con ningún dominio conocido."""
     cat = (category or "").lower().strip()
     for domain, keywords in DOMAIN_KEYWORDS.items():
-        if any(kw in cat for kw in keywords):
+        if any(_kw_in_text(kw, cat) for kw in keywords):
             return domain
     if fallback_text:
         text = fallback_text.lower().strip()
         for domain, keywords in DOMAIN_KEYWORDS.items():
-            if any(kw in text for kw in keywords):
+            if any(_kw_in_text(kw, text) for kw in keywords):
                 return domain
     return None
 

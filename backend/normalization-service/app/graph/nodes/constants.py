@@ -78,6 +78,7 @@ KNOWN_BRANDS: frozenset[str] = frozenset({
     "kingston", "sandisk", "seagate", "nvidia", "amd", "intel", "epson",
     "canon", "nikon", "gopro", "garmin", "fitbit", "oppo", "realme",
     "honor", "google", "microsoft", "nintendo", "xbox", "playstation",
+    "anker", "belkin", "ugreen", "baseus", "aukey",
     # Moda / Calzado / Textil
     "nike", "adidas", "puma", "reebok", "converse", "vans", "fila",
     "levis", "zara", "hm", "uniqlo", "gucci", "balenciaga", "lacoste",
@@ -87,11 +88,19 @@ KNOWN_BRANDS: frozenset[str] = frozenset({
     "oster", "black", "decker", "kitchenaid", "cuisinart", "hamilton",
     "whirlpool", "electrolux", "bosch", "haceb", "challenger", "mabe",
     "samurai", "imusa", "universal",
+    "ninja", "cosori", "instant", "cuisinart", "oxo", "vitamix",
     # Belleza
     "loreal", "maybelline", "nivea", "dove", "pantene", "garnier",
-    "revlon", "neutrogena",
+    "revlon", "neutrogena", "cerave", "olaplex", "clinique", "vichy",
+    "cetaphil", "bioderma", "avene", "eucerin",
     # Deporte
-    "under", "armour", "speedo", "wilson", "everlast",
+    "under", "armour", "speedo", "wilson", "everlast", "gaiam",
+    "bowflex", "weider", "gold",
+    # Juguetes
+    "hasbro", "mattel", "leapfrog", "fisher", "lego", "catan",
+    "ravensburger", "playmobil",
+    # Salud / Suplementos
+    "optimum", "dymatize", "myprotein", "isopure", "bulksupplements",
     # Herramientas
     "dewalt", "makita", "stanley", "truper", "pretul",
     # Mascotas
@@ -103,10 +112,26 @@ KNOWN_BRANDS: frozenset[str] = frozenset({
 DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "electronics": [
         "electrónica", "electronica", "celular", "teléfono", "telefono",
-        "computador", "computadora", "laptop", "tablet", "televisor", "tv",
-        "audio", "video", "cámara", "camara", "gaming", "impresora",
+        "computador", "computadora", "laptop", "notebook", "tablet", "televisor", "tv",
+        "audio", "video", "cámara", "camara", "impresora",
         "monitor", "teclado", "mouse", "auricular", "audífono", "audifonos",
         "smartwatch", "smarttv", "router", "modem", "proyector", "parlante",
+        "pantalla", "cargador", "cable usb", "cable tipo c", "cable cargador",
+        "disco duro", "memoria", "usb", "adaptador",
+    ],
+    # Toys before games so 'juego de mesa' (multi-word, specific) is matched
+    # before the single keyword 'gaming' (also present in Hasbro Gaming brand titles)
+    "toys": [
+        "juguete", "muñeca", "carritos", "lego", "puzzle",
+        "rompecabezas", "peluche", "juego de mesa", "fichas", "bloques",
+        "pista carros", "control remoto", "dron", "patineta niño",
+        "juego de estrategia", "juego educativo", "juego de cartas",
+        "juego familiar", "jugadores", "muñeco", "figura de acción",
+    ],
+    "games": [
+        "videojuego", "video juego", "consola", "playstation", "xbox",
+        "nintendo", "control juego", "mando", "headset gamer",
+        "silla gamer", "teclado gamer", "mouse gamer", "gaming",
     ],
     "fashion": [
         "ropa", "moda", "camiseta", "camisa", "pantalón", "pantalon",
@@ -134,18 +159,23 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "cadena", "dije", "reloj", "joya", "oro", "plata", "diamante",
         "esmeralda", "zircon", "bisutería", "bisuteria", "piercing",
     ],
-    "accessories": [
-        "accesorio", "bolso", "cartera", "mochila", "maleta", "billetera",
-        "cinturón", "cinturon", "gorra", "sombrero", "bufanda", "guante",
-        "gafas", "lentes", "paraguas", "riñonera", "maletín", "maletin",
-        "funda", "carcasa", "correa",
-    ],
+    # Sports before accessories to avoid short keywords like 'correa' (accessories)
+    # stealing sports-primary products that have carrying straps, etc.
     "sports": [
         "deporte", "deportivo", "bicicleta", "bici", "pesa", "gimnasio",
         "fútbol", "futbol", "balón", "balon", "raqueta", "patín", "patin",
         "yoga", "fitness", "natación", "natacion", "running", "ciclismo",
         "trotadora", "elíptica", "eliptica", "piscina", "skate", "boxeo",
         "guantes boxeo", "caminadora",
+        "mancuerna", "mancuernas", "dumbbell", "kettlebell", "tapete",
+        "colchoneta", "pesas libres", "barbell", "gym", "entrenamiento",
+        "crossfit",
+    ],
+    "accessories": [
+        "accesorio", "bolso", "cartera", "mochila", "maleta", "billetera",
+        "cinturón", "cinturon", "gorra", "sombrero", "bufanda", "guante",
+        "gafas", "lentes", "paraguas", "riñonera", "maletín", "maletin",
+        "funda", "carcasa", "correa",
     ],
     "beauty": [
         "belleza", "cuidado personal", "perfume", "crema", "shampoo",
@@ -154,17 +184,14 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "esmalte", "body splash", "loción", "locion", "hidratante",
         "mascarilla", "jabón", "jabon", "gel", "protector solar",
     ],
-    "toys": [
-        "juguete", "muñeca", "carritos", "lego", "puzzle",
-        "rompecabezas", "peluche", "juego de mesa", "fichas", "bloques",
-        "pista carros", "control remoto", "dron", "patineta niño",
-    ],
     "health": [
         "salud", "vitamina", "suplemento", "proteína", "proteina",
         "farmacia", "medicamento", "tensiómetro", "tensiometro",
         "termómetro", "termometro", "glucómetro", "glucometro",
         "masajeador", "nebulizador", "oxímetro", "oximetro",
         "silla de ruedas", "andador", "botiquín",
+        "cápsula", "capsula", "tableta", "comprimido", "softgel",
+        "omega", "colágeno", "probiótico", "melatonina", "zinc",
     ],
     "automotive": [
         "automotriz", "auto", "carro", "moto", "vehículo", "vehiculo",
@@ -188,6 +215,10 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "chocolate", "cereal", "arroz", "aceite comestible", "leche",
         "yogur", "galleta", "atún", "pasta", "sopa", "salsa", "condimento",
         "proteína en polvo", "barra proteína",
+        "bebida energética", "bebida energetica", "energizante",
+        "jugo", "refresco", "agua", "té", "infusión", "multivitamínico",
+        "queso", "carne", "jamón", "jamon", "pollo", "pescado",
+        "mermelada", "mantequilla", "harina", "azúcar", "azucar",
     ],
     "tools": [
         "herramienta", "taladro", "martillo", "destornillador", "sierra",
@@ -200,11 +231,6 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "correa perro", "collar perro", "arena gato", "alimento perro",
         "alimento gato", "ropa mascota", "juguete mascota", "portamascotas",
         "antiparasitario", "shampoo mascota",
-    ],
-    "games": [
-        "videojuego", "video juego", "consola", "playstation", "xbox",
-        "nintendo", "control juego", "mando", "headset gamer",
-        "silla gamer", "teclado gamer", "mouse gamer",
     ],
 }
 
