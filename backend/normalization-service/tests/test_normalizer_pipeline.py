@@ -41,6 +41,9 @@ def _initial_state(
     job_id: str = "test-job-001",
 ) -> dict:
     """Construye el estado inicial mínimo requerido por el pipeline."""
+    # Asegurar raw_url para que input_sanitizer no falle por URL faltante
+    if "raw_url" not in raw_fields or raw_fields.get("raw_url") is None:
+        raw_fields = {**raw_fields, "raw_url": "https://example.com/product/test"}
     return {
         "job_id": job_id,
         "product_ref": product_ref,

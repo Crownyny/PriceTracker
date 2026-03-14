@@ -45,6 +45,9 @@ def _make_scraping_msg(
     search_id: str | None = "search-001",
     error_message: str | None = None,
 ) -> ScrapingMessage:
+    # Asegurar raw_url para que input_sanitizer no falle por URL faltante
+    if "raw_url" not in raw_fields and state == ScrapingState.SCRAPED:
+        raw_fields = {**raw_fields, "raw_url": f"https://example.com/product/{job_id}"}
     return ScrapingMessage(
         job_id=job_id,
         search_id=search_id,
