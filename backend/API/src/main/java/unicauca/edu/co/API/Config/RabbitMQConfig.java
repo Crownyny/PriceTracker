@@ -14,17 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 public class RabbitMQConfig {
     
-    // Nombre de la cola
-    public static final String SCRAPING_QUEUE = "scraping.jobs";
-    
-    /**
-     * Define la cola de scraping.
-     * @return Queue para scraping jobs
-     */
-    @Bean
-    public Queue scrapingQueue() {
-        return new Queue(SCRAPING_QUEUE, true, false, false);
-    }
     
     /**
      * Configura el convertidor de mensajes.

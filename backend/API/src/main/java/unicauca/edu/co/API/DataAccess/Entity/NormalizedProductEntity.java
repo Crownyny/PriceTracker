@@ -45,15 +45,27 @@ public class NormalizedProductEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    
+    @Column(name = "product_ref")
     private String productRef;
+    
+    @Column(name = "source_name")
     private String sourceName;
+    
+    @Column(name = "canonical_name")
     private String canonicalName;
+    
     private Double price;
     private String currency;
     private String category;
     private Boolean availability;
+    
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @Column(name = "image_url")
     private String imageUrl;
+    
     private String description;
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
