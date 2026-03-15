@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.Services.Interfaces;
 
+import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 
@@ -12,11 +13,5 @@ public interface IProductService {
      * @return 
      */
     public void searchProduct(QueryDTOIN query);
-    /**
-     * Obtiene un producto por su ID.
-     * @param id El ID del producto a buscar.
-     * @return Un NormalizedProductDTO que representa el producto encontrado, o null si no se encuentra ningún producto con el ID especificado.
-     */
-    public NormalizedProductDTO getProductById(String id);
-    
+
 }

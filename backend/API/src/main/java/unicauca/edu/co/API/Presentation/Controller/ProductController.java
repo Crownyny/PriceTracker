@@ -37,13 +37,14 @@ public class ProductController {
         query.setSessionId(sessionId);
         productService.searchProduct(query);
     }
-@GetMapping("/test-ws")
-@ResponseBody
-public String testWs() {
+    
+    @GetMapping("/test-ws")
+    @ResponseBody
+    public String testWs() {
 
     messagingTemplate.convertAndSend("/topic/test", "hola websocket");
 
     return "ok";
-}
+    }
 
 }

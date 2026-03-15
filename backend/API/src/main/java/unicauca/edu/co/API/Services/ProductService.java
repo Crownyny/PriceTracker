@@ -1,32 +1,38 @@
 package unicauca.edu.co.API.Services;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Config.WebSocketConfig;
+import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Interfaces.IProductService;
+
 
 @Service
 public class ProductService implements IProductService {
 
+    private final MessengerService messengerService;
     private static final Logger logger = LoggerFactory.getLogger(ProductService.class); 
     private final ScrapingService scrapingService;
-    private final NormalizedService normalizedService;
+    private final ProductRepository productRepository;
     private final WebSocketConfig webSocket;
 
 
     public ProductService(
         ScrapingService scrapingService, 
-        NormalizedService normalizedService,
-        WebSocketConfig webSocket
+        ProductRepository productRepository,
+        WebSocketConfig webSocket, 
+        MessengerService messengerService
     ) {
         this.scrapingService = scrapingService;
-        this.normalizedService = normalizedService;
+        this.productRepository = productRepository;
         this.webSocket = webSocket;
-
+        this.messengerService = messengerService;
     }
 
     @Override
@@ -40,10 +46,16 @@ public class ProductService implements IProductService {
         logger.info("Query enviado exitosamente a la cola");
     }
 
-    @Override
-    public NormalizedProductDTO getProductById(String id) {
-        // TODO Auto-generated method stub
-        return null;
+
+    /**
+     * Maneja el evento NormalizedProductReceivedEvent publicado cuando se recibe un producto normalizado desde RabbitMQ.
+     * @param event El evento que contiene el producto normalizado recibido.
+     */
+    @EventListener
+    public void handleNormalizedProduct(
+            NormalizedProductReceivedEvent event) {
+        NormalizedProductDTO product = event.getProduct();
+        messengerService.sendToWebSocket(product);
     }
 
     /**
@@ -62,5 +74,6 @@ public class ProductService implements IProductService {
         int randomSuffix = (int) (Math.random() * 900) + 100; // Número aleatorio de 3 dígitos
         return baseRef + "" + randomSuffix;
     }
+
 
 }
