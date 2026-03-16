@@ -30,5 +30,4 @@ public class ProductRestController {
     public List<NormalizedProductDTO> searchProductQuery(@RequestBody QueryDTOIN query) {
         return productService.getProductByProductRef(query);
     }
-
 }

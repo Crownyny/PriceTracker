@@ -60,7 +60,7 @@ public class StrategyService implements IStrategyServices{
     public void resolveStrategyAPI(QueryDTOIN query, String var_productRef) {
         NormalizedProductEntity entity = productRepository.findByProductRefStartingWith(var_productRef).get(0);
         ExceptionDTO error= messengerService.createExceptionDTO(query, "PRODUCT_IN_BD", entity.getUpdatedAt());
-        messengerService.disconnectWebSocket(query.getSessionId(), query.getProduct_ref(), error);
+        messengerService.disconnectWebSocket(query.getSessionId(), entity.getProductRef(), error);
     }
 
     private String DecryptProductRef(String productRef) {
