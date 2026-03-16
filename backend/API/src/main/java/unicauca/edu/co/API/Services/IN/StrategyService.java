@@ -52,14 +52,15 @@ public class StrategyService implements IStrategyServices{
     @Override
     public void resolveStrategyWebScraping(QueryDTOIN query, String var_productRef) {
         logger.info("Iniciando estrategia de web scraping para productRef: {}", var_productRef);
+        referenceCheckService.save(query.getProduct_ref());
         productService.searchProduct(query);
     }
 
     @Override
     public void resolveStrategyAPI(QueryDTOIN query, String var_productRef) {
         NormalizedProductEntity entity = productRepository.findByProductRefStartingWith(var_productRef).get(0);
-        ExceptionDTO error= messengerService.createExceptionDTO(query, var_productRef, entity.getUpdatedAt());
-        messengerService.disconnectWebSocket(query.getSessionId(), var_productRef, error);
+        ExceptionDTO error= messengerService.createExceptionDTO(query, "PRODUCT_IN_BD", entity.getUpdatedAt());
+        messengerService.disconnectWebSocket(query.getSessionId(), query.getProduct_ref(), error);
     }
 
     private String DecryptProductRef(String productRef) {
