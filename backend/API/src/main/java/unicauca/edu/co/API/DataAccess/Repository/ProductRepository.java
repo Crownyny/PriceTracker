@@ -53,4 +53,12 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
      * Cuenta productos por categoría.
      */
     long countByCategory(String category);
+
+    /**
+     * Encuentra productos cuya referencia comience con un prefijo dado. Esto es útil para implementar búsquedas por referencia parcial.
+     * @param productRef El prefijo de la referencia del producto a buscar.
+     * @return Una lista de productos normalizados que coinciden con el prefijo dado.
+     */
+
+    List<NormalizedProductEntity> findByProductRefStartingWith(String productRef);
 }

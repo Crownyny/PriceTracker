@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Services;
+package unicauca.edu.co.API.Services.OUT;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
-import unicauca.edu.co.API.Services.Interfaces.IScrapingService;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IScrapingService;
 
 /**
  * Servicio de Scraping que envía queries a la cola de RabbitMQ.
@@ -37,16 +37,10 @@ public class ScrapingService implements IScrapingService {
     @Override
     public void sendData(QueryDTOIN query) {
         try {
-            // Convertir el query a JSON
             String queryJson = objectMapper.writeValueAsString(query);
-            
             logger.info("Enviando query a la cola '{}': {}", SCRAPING_QUEUE, queryJson);
-            
-            // Enviar el mensaje a la cola
             rabbitTemplate.convertAndSend(SCRAPING_QUEUE, queryJson);
-            
             logger.info("Query enviado exitosamente a la cola '{}'", SCRAPING_QUEUE);
-            
         } catch (Exception e) {
             logger.error("Error al enviar query a la cola '{}': {}", SCRAPING_QUEUE, e.getMessage(), e);
             throw new RuntimeException("Error al enviar query al scraper: " + e.getMessage(), e);
