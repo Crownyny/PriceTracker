@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
+import org.springframework.boot.autoconfigure.web.WebProperties.Resources.Chain.Strategy;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -10,17 +11,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
-import unicauca.edu.co.API.Services.ProductService;
+import unicauca.edu.co.API.Services.IN.ProductService;
+import unicauca.edu.co.API.Services.IN.StrategyService;
 
 @Controller
 public class ProductController {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
-    private final ProductService productService;
+    private final StrategyService strategyService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public ProductController(ProductService productService, SimpMessagingTemplate messagingTemplate) {
-        this.productService = productService;
+    public ProductController(
+        ProductService productService,
+        StrategyService strategyService, 
+        SimpMessagingTemplate messagingTemplate
+    ) {
+        this.strategyService = strategyService; 
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -35,7 +41,7 @@ public class ProductController {
     public void searchProduct(QueryDTOIN query,
                               @Header("simpSessionId") String sessionId) {
         query.setSessionId(sessionId);
-        productService.searchProduct(query);
+        strategyService.resolveSearchStrategy(query);
     }
     
     @GetMapping("/test-ws")

@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Services.Interfaces;
+package unicauca.edu.co.API.Services.Interfaces.OUT;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 
