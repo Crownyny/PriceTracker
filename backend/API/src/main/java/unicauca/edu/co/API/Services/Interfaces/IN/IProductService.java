@@ -17,10 +17,10 @@ public interface IProductService {
 
     /**
      * Obtiene un producto normalizado por su referencia. Si el producto existe en la base de datos, se devuelve el producto normalizado correspondiente. Si el producto no existe, se devuelve null.
-     * @param productRef La referencia del producto que se desea obtener.
+     * @param query Objeto que contiene los criterios de búsqueda para los productos, incluyendo la referencia del producto.
      * @return Una lista de objetos NormalizedProductDTO que corresponden a la referencia del producto especificada. 
      */
-    List<NormalizedProductDTO> getProductByProductRef(String productRef);
+    List<NormalizedProductDTO> getProductByProductRef(QueryDTOIN query);
 
 
     /**

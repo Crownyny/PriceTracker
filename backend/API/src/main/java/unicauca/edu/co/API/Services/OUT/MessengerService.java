@@ -122,12 +122,12 @@ public class MessengerService implements IMessengerService {
     @Override
     public void disconnectWebSocket(String sessionId, String productRef, ExceptionDTO errorMessage) {
         try {
-            webSocket.removeSession(productRef, sessionId);
             messagingTemplate.convertAndSendToUser(
                 sessionId,
                 "/queue/errors",
                 errorMessage
             );
+            webSocket.removeSession(productRef, sessionId);
             logger.info("WebSocket desconectado para sessionId: {}", sessionId);
         } catch (Exception e) {
             logger.error("Error al desconectar WebSocket", e);

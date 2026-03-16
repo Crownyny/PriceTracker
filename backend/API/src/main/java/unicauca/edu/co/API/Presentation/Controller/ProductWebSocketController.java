@@ -13,15 +13,17 @@ import org.slf4j.LoggerFactory;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Services.IN.ProductService;
 import unicauca.edu.co.API.Services.IN.StrategyService;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @Controller
-public class ProductController {
+public class ProductWebSocketController {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
+    private static final Logger logger = LoggerFactory.getLogger(ProductWebSocketController.class);
     private final StrategyService strategyService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public ProductController(
+    public ProductWebSocketController(
         ProductService productService,
         StrategyService strategyService, 
         SimpMessagingTemplate messagingTemplate
@@ -36,7 +38,6 @@ public class ProductController {
      * @param query QueryDTOIN con los detalles de la búsqueda
      * @param sessionId ID de la sesión WebSocket para identificar al usuario
      */
-
     @MessageMapping("/search")
     public void searchProduct(QueryDTOIN query,
                               @Header("simpSessionId") String sessionId) {
@@ -46,11 +47,9 @@ public class ProductController {
     
     @GetMapping("/test-ws")
     @ResponseBody
-    public String testWs() {
-
-    messagingTemplate.convertAndSend("/topic/test", "hola websocket");
-
-    return "ok";
+        public String testWs() {
+        messagingTemplate.convertAndSend("/topic/test", "hola websocket");
+        return "ok";
     }
 
 }
