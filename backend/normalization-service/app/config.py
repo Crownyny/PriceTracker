@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     enable_enricher: bool = False
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4o-mini"
+    openai_base_url: Optional[str] = None    # Para modelos locales (Ollama, vLLM, etc.)
+
+    # Concurrencia: mensajes procesados en paralelo dentro del worker
+    normalizer_prefetch_count: int = 4
+
+    # Archivo de fallos de normalización (JSONL). Vacío = desactivado.
+    failures_log_path: str = "/tmp/normalization_failures.jsonl"
 
 
 settings = Settings()

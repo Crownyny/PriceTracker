@@ -14,11 +14,22 @@ dependencies = [
     # LangGraph + LangChain
     "langgraph>=0.2.0",
     "langchain-core>=0.2.0",
-    # Opcional — descomentar si enable_enricher=True:
-    # "langchain-openai>=0.1.0",     # LLM OpenAI
-    # "langchain-anthropic>=0.1.0",  # LLM Anthropic (alternativa)
+    "langchain-openai>=0.1.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
 ]
 
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.backends.legacy:build"
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

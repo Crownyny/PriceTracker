@@ -18,22 +18,6 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  # ── MongoDB — almacén de resultados raw del Scraper ─────────────────────────
-  mongodb:
-    image: mongo:7
-    container_name: pricetracker-mongodb
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: pricetracker
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - mongodb_data:/data/db
-
   # ── PostgreSQL — productos normalizados e historial de precios ──────────────
   postgres:
     image: postgres:16-alpine
@@ -52,6 +36,48 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+#  # ── Ollama — modelo LLM local ───────────────────────────────────────────────
+#  ollama:
+#    image: ollama/ollama:latest
+#    container_name: pricetracker-ollama
+#    ports:
+#      - "11434:11434"
+#    environment:
+#      OLLAMA_NUM_PARALLEL: "4"        # Solicitudes concurrentes al modelo
+#      OLLAMA_MAX_LOADED_MODELS: "1"   # Mantiene 1 modelo en memoria
+#      OLLAMA_KEEP_ALIVE: "-1"         # Nunca descarga el modelo por inactividad
+#    volumes:
+#      - ollama_data:/root/.ollama
+#    healthcheck:
+#      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags | grep -q qwen2 || exit 1"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 60
+#      start_period: 20s
+#    devices:
+#      - /dev/kfd
+#      - /dev/dri
+#    group_add:
+#      - video
+#    # GPU NVIDIA — descomentar si tienes GPU:
+#    # deploy:
+#    #   resources:
+#    #     reservations:
+#    #       devices:
+#    #         - driver: nvidia
+#    #           count: 1
+#    #           capabilities: [gpu]
+
+#  # ── Descarga del modelo (one-shot) ──────────────────────────────────────────
+#  ollama-init:
+#    image: curlimages/curl:latest
+#    container_name: pricetracker-ollama-init
+#    depends_on:
+#      ollama:
+#        condition: service_started
+#    entrypoint: ["sh", "-c", "sleep 10 && curl -sf http://ollama:11434/api/pull -d '{\"name\": \"qwen2:0.5b\"}' && echo 'Model ready'"]
+#    restart: "no"
+
   # ── Scraper Service ─────────────────────────────────────────────────────────
   scrapper:
     build:
@@ -61,33 +87,16 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      mongodb:
-        condition: service_healthy
-      searxng:
-        condition: service_started
     environment:
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
       API_HOST: "0.0.0.0"
       API_PORT: "8001"
       HTTP_TIMEOUT: "30.0"
       USER_AGENT: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-      SEARXNG_URL: "http://searxng:8080"
-      SEARXNG_MAX_RESULTS: "10"
     ports:
       - "8001:8001"   # Health check: GET http://localhost:8001/health
     restart: unless-stopped
-  # ── SearXNG — metabuscador para discovery de URLs de e-commerce ─────────────
-  searxng:
-    image: searxng/searxng:latest
-    container_name: pricetracker-searxng
-    ports:
-      - "8080:8080"   # UI: http://localhost:8080
-    environment:
-      - SEARXNG_SECRET_KEY=pricetracker-secret-change-in-production
-    volumes:
-      - ./searxng:/etc/searxng:rw
-      - searxng_data:/data
-    restart: unless-stopped
+
   # ── Normalizer Service ──────────────────────────────────────────────────────
   normalizer:
     build:
@@ -97,26 +106,60 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      mongodb:
-        condition: service_healthy
       postgres:
         condition: service_healthy
     environment:
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
-      MONGODB_URL: mongodb://mongodb:27017
-      MONGODB_DB: pricetracker
       DATABASE_URL: "postgresql+asyncpg://postgres:postgres@postgres:5432/pricetracker"
       API_HOST: "0.0.0.0"
       API_PORT: "8002"
+      # LLM local vía Ollama — desactivado temporalmente
       ENABLE_ENRICHER: "false"
-      # OPENAI_API_KEY: "sk-..."     # descomentar para enriquecimiento LLM
-      # OPENAI_MODEL: "gpt-4o-mini"
+      OPENAI_API_KEY: "ollama"
+      OPENAI_MODEL: "qwen2:0.5b"
+      OPENAI_BASE_URL: "http://ollama:11434/v1"
+      # Concurrencia del worker
+      NORMALIZER_PREFETCH_COUNT: "1"
     ports:
       - "8002:8002"   # Health check: GET http://localhost:8002/health
     restart: unless-stopped
+  api:
+    build:
+      context: ./backend/API
+      dockerfile: Dockerfile
+    container_name: pricetracker-api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pricetracker
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      # RabbitMQ Configuration
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # Server Configuration
+      SERVER_PORT: 8080
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    ports:
+      - "8080:8080"   # API REST
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
 
 volumes:
   rabbitmq_data:
-  mongodb_data:
   postgres_data:
-  searxng_data:
+#  ollama_data:

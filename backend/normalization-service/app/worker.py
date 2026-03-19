@@ -22,8 +22,11 @@ Flujo por mensaje recibido:
         3. Si todos los jobs ya llegaron (completed == expected):
            publica SearchNormalizedMessage de inmediato.
 """
+import asyncio
 import datetime
+import json
 import logging
+import os
 from typing import Any, Optional
 
 from shared.messaging import (
@@ -31,9 +34,11 @@ from shared.messaging import (
     BasePublisher,
     RabbitMQConnection,
     QUEUE_NORMALIZED_EVENTS,
+    QUEUE_NORMALIZED_EVENTS_DLQ,
     QUEUE_SCRAPING_RESULTS,
     QUEUE_SCRAPING_RESULTS_DLQ,
     QUEUE_SEARCH_NORMALIZED,
+    QUEUE_SEARCH_NORMALIZED_DLQ,
 )
 from shared.model import (
     NormalizedEventMessage,
@@ -48,6 +53,19 @@ from .graph.pipeline import build_pipeline
 from .repositories.product_repository import ProductRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _append_failure(record: dict) -> None:
+    """Escribe un registro de fallo en el archivo JSONL configurado (si está activo)."""
+    path = settings.failures_log_path
+    if not path:
+        return
+    try:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False, default=str) + "\n")
+    except Exception as exc:  # nunca debe romper el flujo principal
+        logger.warning("No se pudo escribir en failures_log: %s", exc)
 
 
 class NormalizerWorker(BaseConsumer):
@@ -65,6 +83,7 @@ class NormalizerWorker(BaseConsumer):
             connection=connection,
             queue_name=QUEUE_SCRAPING_RESULTS,
             dlq_name=QUEUE_SCRAPING_RESULTS_DLQ,
+            prefetch_count=settings.normalizer_prefetch_count,
         )
         self._publisher = BasePublisher(connection)
         self._product_repo = product_repo
@@ -73,11 +92,14 @@ class NormalizerWorker(BaseConsumer):
         if settings.enable_enricher and settings.openai_api_key:
             try:
                 from langchain_openai import ChatOpenAI
-                llm = ChatOpenAI(
-                    model=settings.openai_model,
-                    api_key=settings.openai_api_key,
-                    temperature=0,
-                )
+                kwargs: dict = {
+                    "model": settings.openai_model,
+                    "api_key": settings.openai_api_key,
+                    "temperature": 0,
+                }
+                if settings.openai_base_url:
+                    kwargs["base_url"] = settings.openai_base_url
+                llm = ChatOpenAI(**kwargs)
                 logger.info("LLM enriquecimiento habilitado: %s", settings.openai_model)
             except ImportError:
                 logger.warning(
@@ -89,6 +111,59 @@ class NormalizerWorker(BaseConsumer):
             llm=llm,
             enable_enricher=settings.enable_enricher,
         )
+
+    async def setup(self) -> None:
+        """Declara colas de entrada (scraping.results) y de salida (normalized.events, search.normalized)."""
+        await super().setup()
+        channel = await self._conn.channel()
+        await channel.declare_queue(QUEUE_NORMALIZED_EVENTS_DLQ, durable=True)
+        await channel.declare_queue(
+            QUEUE_NORMALIZED_EVENTS,
+            durable=True,
+            arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": QUEUE_NORMALIZED_EVENTS_DLQ,
+            },
+        )
+        await channel.declare_queue(QUEUE_SEARCH_NORMALIZED_DLQ, durable=True)
+        await channel.declare_queue(
+            QUEUE_SEARCH_NORMALIZED,
+            durable=True,
+            arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": QUEUE_SEARCH_NORMALIZED_DLQ,
+            },
+        )
+        logger.info("Colas de salida declaradas: '%s', '%s'", QUEUE_NORMALIZED_EVENTS, QUEUE_SEARCH_NORMALIZED)
+
+    async def start_consuming(self) -> None:
+        """Override: procesamiento concurrente de mensajes con semáforo."""
+        channel = await self._conn.channel()
+        await channel.set_qos(prefetch_count=self._prefetch_count)
+        queue = await channel.declare_queue(
+            self._queue_name,
+            durable=True,
+            arguments={
+                "x-dead-letter-exchange": "",
+                "x-dead-letter-routing-key": self._dlq_name,
+            },
+        )
+        sem = asyncio.Semaphore(self._prefetch_count)
+        tasks: set[asyncio.Task] = set()
+
+        async def _bounded(msg):
+            async with sem:
+                await self._dispatch(msg)
+
+        logger.info(
+            "Escuchando en '%s' (concurrencia: %d)...",
+            self._queue_name, self._prefetch_count,
+        )
+        async with queue.iterator() as queue_iter:
+            async for message in queue_iter:
+                task = asyncio.create_task(_bounded(message))
+                tasks.add(task)
+                task.add_done_callback(tasks.discard)
 
     async def handle(self, payload: dict[str, Any]) -> None:
         # Discriminar entre sentinel y job individual por el campo exclusivo del sentinel
@@ -108,6 +183,20 @@ class NormalizerWorker(BaseConsumer):
 
         if message.state == ScrapingState.FAILED:
             # Short-circuit: el scraping ya falló, no hay datos que normalizar
+            logger.warning(
+                "[%s] Scraping fallido — razón: %s",
+                message.job_id, message.error_message or "(sin detalle)",
+            )
+            _append_failure({
+                "ts": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                "failure_type": "scraping_failed",
+                "job_id": message.job_id,
+                "search_id": message.search_id,
+                "source_name": message.source_name,
+                "product_ref": message.product_ref,
+                "reason": message.error_message or "(sin detalle)",
+                "raw_fields": message.raw_fields,
+            })
             event = NormalizedEventMessage(
                 job_id=message.job_id,
                 search_id=message.search_id,
@@ -124,8 +213,16 @@ class NormalizerWorker(BaseConsumer):
                 "source_name": message.source_name,
                 "captured_at": message.captured_at.isoformat(),
                 "raw_fields": message.raw_fields,
-                "cleaned_product": None,
-                "enrichment_updates": None,
+                "sanitized_product": None,
+                "product_invalid": False,
+                "standardized_product": None,
+                "canonical_text": None,
+                "heuristic_attributes": None,
+                "heuristic_confidence": None,
+                "llm_attributes": None,
+                "merged_attributes": None,
+                "normalized_product": None,
+                "final_confidence": None,
                 "final_product": None,
                 "validation_errors": [],
                 "error": None,
@@ -133,14 +230,39 @@ class NormalizerWorker(BaseConsumer):
             }
             final_state = await self._pipeline.ainvoke(initial_state)
 
+            if final_state.get("outcome") == ScrapingState.NORMALIZATION_FAILED:
+                logger.warning(
+                    "[%s] Pipeline de normalización fallido — error=%s  validation_errors=%s  raw_fields=%s",
+                    message.job_id,
+                    final_state.get("error"),
+                    final_state.get("validation_errors"),
+                    message.raw_fields,
+                )
+                _append_failure({
+                    "ts": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                    "failure_type": "normalization_failed",
+                    "job_id": message.job_id,
+                    "search_id": message.search_id,
+                    "source_name": message.source_name,
+                    "product_ref": message.product_ref,
+                    "error": final_state.get("error"),
+                    "validation_errors": final_state.get("validation_errors"),
+                    "raw_fields": message.raw_fields,
+                })
+
+            # Construir el evento final
+            event_state = ScrapingState(final_state.get("outcome", ScrapingState.NORMALIZATION_FAILED))
+            product_data = final_state.get("final_product") if event_state == ScrapingState.NORMALIZED else None
+
             event = NormalizedEventMessage(
                 job_id=message.job_id,
                 search_id=message.search_id,
                 product_ref=message.product_ref,
                 source_name=message.source_name,
                 normalized_at=datetime.datetime.now(tz=datetime.timezone.utc),
-                state=ScrapingState(final_state.get("outcome", ScrapingState.NORMALIZATION_FAILED)),
+                state=event_state,
                 error_message=final_state.get("error"),
+                normalized_product=product_data,
             )
 
         await self._publisher.publish(QUEUE_NORMALIZED_EVENTS, event.model_dump(mode="json"))

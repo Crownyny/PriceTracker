@@ -1,104 +1,123 @@
 """Fuente: Amazon.
 
-Extrae campos de páginas de producto de Amazon usando BeautifulSoup.
-Soporta amazon.com, amazon.com.co y otros dominios regionales.
+Extrae el campo más relevante de la página de resultados de búsqueda de Amazon.
 
-Nota: Amazon usa anti-scraping agresivo. Playwright con user-agent real
-y viewport realista mejora significativamente la tasa de éxito.
+Estrategia confirmada por inspección de DOM (marzo 2026):
+  - Selector de título: `h2 span`  (NOT `h2 a span` — el span está directamente bajo h2).
+  - Selector de precio: `.a-price .a-offscreen` dentro de `[data-component-type='s-search-result']`.
+  - Amazon CO puede no mostrar precio en listado para productos principales: en ese caso
+    se devuelve el primer precio disponible de cualquier resultado orgánico.
+  - `wait_for_selector`: `div.s-main-slot` (contenedor principal de resultados).
 """
-from typing import Any, Optional
+from typing import Optional
 from urllib.parse import quote_plus
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
+from .base import BeautifulSoupSource
 from .registry import registry
 
+_CURRENCY_SYMBOLS: dict[str, str] = {
+    "COP": "COP",
+    "US$": "USD",
+    "$":   "USD",
+    "€":   "EUR",
+    "£":   "GBP",
+    "₹":   "INR",
+}
 
-class AmazonSource(BaseSource):
+
+class AmazonSource(BeautifulSoupSource):
 
     @property
     def source_name(self) -> str:
         return "amazon"
 
     @property
+    def user_agent(self) -> Optional[str]:
+        # Amazon oculta precios y reduce resultados con UAs tipo bot.
+        return (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+        )
+
+    @property
     def wait_for_selector(self) -> Optional[str]:
-        return "#productTitle"
+        return "div.s-main-slot"
 
     def build_url(self, query: str, product_ref: str) -> str:
         return f"https://www.amazon.com/s?k={quote_plus(query)}"
 
-    def extract_raw_fields(self, html_content: str, job: ScrapingJob) -> dict[str, Any]:
-        soup = BeautifulSoup(html_content, "lxml")
-        return {
-            "raw_title":        self._title(soup),
-            "raw_price":        self._price(soup),
-            "raw_currency":     self._currency(soup),
-            "raw_availability": self._availability(soup),
-            "raw_category":     self._category(soup),
-            "raw_image_url":    self._image(soup),
-            "raw_description":  self._description(soup),
-        }
+    # ── Card discovery ────────────────────────────────────────────────────────
 
-    # ── Extractores individuales ──────────────────────────────────────────────
+    def _all_cards(self, soup: BeautifulSoup) -> list[Tag]:
+        """Devuelve todos los resultados orgánicos (con ASIN, sin AdHolder)."""
+        out = []
+        for el in soup.select("[data-component-type='s-search-result']"):
+            asin = el.get("data-asin", "").strip()
+            if asin and "AdHolder" not in " ".join(el.get("class", [])):
+                out.append(el)
+        return out
 
-    def _title(self, soup: BeautifulSoup) -> Optional[str]:
-        el = soup.select_one("#productTitle, #title")
+    # ── Extractores (BeautifulSoupSource template method) ────────────────────
+
+    def _extract_title(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one("h2 span")
         return el.get_text(strip=True) if el else None
 
-    def _price(self, soup: BeautifulSoup) -> Optional[str]:
-        # Intentar múltiples selectores — Amazon varía por país/tipo de producto
-        for sel in [
-            ".a-price .a-offscreen",
-            "#priceblock_ourprice",
-            "#priceblock_dealprice",
-            "span.a-price-whole",
-        ]:
-            el = soup.select_one(sel)
-            if el:
-                text = el.get_text(strip=True)
-                if text:
-                    return text
+    def _extract_price(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one(".a-price .a-offscreen")
+        if el:
+            raw = el.get_text(strip=True)
+            if raw:
+                return raw
         return None
 
-    def _currency(self, soup: BeautifulSoup) -> Optional[str]:
-        el = soup.select_one("span.a-price-symbol")
-        symbol = el.get_text(strip=True) if el else None
-        _MAP = {"$": "USD", "€": "EUR", "£": "GBP", "₹": "INR"}
-        return _MAP.get(symbol, symbol) if symbol else "USD"
+    def _extract_currency(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        symbol_el = card.select_one(".a-price-symbol, span.a-price-symbol")
+        if symbol_el:
+            symbol = symbol_el.get_text(strip=True)
+            return _CURRENCY_SYMBOLS.get(symbol, "USD")
+        offscreen = card.select_one(".a-price .a-offscreen")
+        if offscreen:
+            raw = offscreen.get_text(strip=True)
+            for code in ("COP", "USD", "EUR", "GBP", "BRL"):
+                if raw.startswith(code):
+                    return code
+        return "USD"
 
-    def _availability(self, soup: BeautifulSoup) -> Optional[str]:
-        el = soup.select_one("#availability span, #availability")
-        if not el:
-            return None
-        text = el.get_text(strip=True).lower()
-        if "in stock" in text or "en stock" in text:
-            return "available"
-        if "out of stock" in text or "agotado" in text:
-            return "out_of_stock"
-        return text[:50] if text else None
+    def _extract_availability(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        return "available"
 
-    def _category(self, soup: BeautifulSoup) -> Optional[str]:
-        crumbs = soup.select(
-            "#wayfinding-breadcrumbs_feature_div li a, "
-            "ul.a-breadcrumb li a"
-        )
-        return crumbs[-1].get_text(strip=True) if crumbs else None
-
-    def _image(self, soup: BeautifulSoup) -> Optional[str]:
-        for sel in ["#landingImage", "#imgTagWrapperId img", "#main-image"]:
-            el = soup.select_one(sel)
-            if el:
-                # data-old-hires tiene la imagen de mayor resolución
-                return el.get("data-old-hires") or el.get("src")
+    def _extract_category(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        # Dato de página, no de card
+        el = soup.select_one("#searchDropdownBox option[selected]")
+        if el:
+            val = el.get_text(strip=True)
+            if val.lower() not in {"all departments", "todos los departamentos"}:
+                return val
         return None
 
-    def _description(self, soup: BeautifulSoup) -> Optional[str]:
-        el = soup.select_one("#productDescription p, #feature-bullets")
-        return el.get_text(" ", strip=True)[:500] if el else None
+    def _extract_image(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        img = card.select_one("img.s-image")
+        return img.get("src") if img else None
+
+    def _extract_description(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        el = card.select_one(".a-row.a-size-base.a-color-secondary")
+        if el:
+            desc = el.get_text(" ", strip=True)[:500]
+            if desc:
+                return desc
+        return None
+
+    def _extract_url(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
+        a = card.select_one("h2 a[href], a.a-link-normal[href*='/dp/']")
+        if a:
+            href = a.get("href", "")
+            return href if href.startswith("http") else f"https://www.amazon.com{href}"
+        return None
 
 
-# Auto-registro al importar el módulo
 registry.register(AmazonSource())
