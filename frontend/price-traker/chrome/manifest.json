@@ -9,8 +9,12 @@
     "tabs"
   ],
   "host_permissions": [
-    "http://*/*",
-    "https://*/*"
+    "http://localhost:8080/*",
+    "https://localhost:8080/*",
+    "https://www.google.com/*",
+    "https://www.google.com.co/*",
+    "https://google.com/*",
+    "https://google.com.co/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -26,8 +30,28 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "https://www.google.com/search*",
+        "https://www.google.com.co/search*",
+        "https://google.com/search*",
+        "https://google.com.co/search*"
+      ],
+      "js": [
+        "vendor/sockjs.min.js",
+        "vendor/stomp.umd.min.js",
+        "content/constants.js",
+        "content/state.js",
+        "content/domain/contracts.js",
+        "content/pom/google-search.page.js",
+        "content/transport/stomp-sockjs.client.js",
+        "content/services/pricing.service.js",
+        "content/application/search-workflow.service.js",
+        "content/presentation/search-panel.presenter.js",
+        "content/ui/status-indicator.ui.js",
+        "content/ui/overlay.ui.js",
+        "content/controllers/monitor.controller.js",
+        "content.js"
+      ],
       "css": ["content.css"],
       "run_at": "document_idle"
     }
@@ -40,8 +64,13 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["overlay.html", "dashboard.html"],
-      "matches": ["<all_urls>"]
+      "resources": ["dashboard.html"],
+      "matches": [
+        "https://www.google.com/*",
+        "https://www.google.com.co/*",
+        "https://google.com/*",
+        "https://google.com.co/*"
+      ]
     }
   ]
 }

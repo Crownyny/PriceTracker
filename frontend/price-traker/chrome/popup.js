@@ -9,6 +9,7 @@ const openDashboardButton = document.getElementById('openDashboard');
 // Cargar el estado guardado cuando se abre el popup
 document.addEventListener('DOMContentLoaded', async () => {
   await loadExtensionState();
+  bindStorageSync();
 });
 
 // Cargar estado desde chrome.storage
@@ -26,11 +27,24 @@ async function loadExtensionState() {
 async function saveExtensionState(active) {
   try {
     await chrome.storage.local.set({ extensionActive: active });
+    await chrome.runtime.sendMessage({ type: 'TOGGLE_EXTENSION', active });
     isExtensionActive = active;
     updateUI();
   } catch (error) {
     console.error('Error saving extension state:', error);
   }
+}
+
+// Mantener sincronizado el popup con cambios hechos desde otros contextos
+function bindStorageSync() {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !changes.extensionActive) {
+      return;
+    }
+
+    isExtensionActive = Boolean(changes.extensionActive.newValue);
+    updateUI();
+  });
 }
 
 // Actualizar la UI basado en el estado

@@ -4,15 +4,28 @@ console.log('Price Tracker Background Service Worker iniciado');
 // Estado global
 let extensionActive = false;
 
+// Hidratar estado al iniciar/reiniciar el service worker
+hydrateExtensionState();
+
+async function hydrateExtensionState() {
+  try {
+    const result = await chrome.storage.local.get(['extensionActive']);
+    extensionActive = result.extensionActive ?? false;
+    console.log(`Estado inicial cargado: ${extensionActive ? 'activada' : 'desactivada'}`);
+  } catch (error) {
+    console.error('Error cargando estado inicial:', error);
+  }
+}
+
 // Inicializar el estado cuando se instala la extensión
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('Extensión instalada');
-  
-  // Configurar valores por defecto
-  await chrome.storage.local.set({ 
-    extensionActive: false,
-    searchHistory: [],
-    subscriptions: []
+
+  const current = await chrome.storage.local.get(['extensionActive', 'searchHistory', 'subscriptions']);
+  await chrome.storage.local.set({
+    extensionActive: current.extensionActive ?? false,
+    searchHistory: current.searchHistory ?? [],
+    subscriptions: current.subscriptions ?? []
   });
 });
 
@@ -22,8 +35,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
   switch (message.type) {
     case 'TOGGLE_EXTENSION':
-      handleToggleExtension(message.active);
-      sendResponse({ success: true });
+      handleToggleExtension(message.active)
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
       break;
       
     case 'PRODUCT_DETECTED':
@@ -33,6 +48,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       
     case 'GET_EXTENSION_STATE':
       sendResponse({ active: extensionActive });
+      break;
+
+    case 'OPEN_DASHBOARD':
+      chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') })
+        .then(() => sendResponse({ success: true }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
       break;
       
     case 'FETCH_PRICES':
@@ -49,6 +71,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Manejar activación/desactivación de la extensión
 async function handleToggleExtension(active) {
   extensionActive = active;
+  await chrome.storage.local.set({ extensionActive: active });
   console.log(`Extensión ${active ? 'activada' : 'desactivada'}`);
   
   // Notificar a todos los content scripts del cambio
@@ -62,6 +85,14 @@ async function handleToggleExtension(active) {
     });
   }
 }
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local' || !changes.extensionActive) {
+    return;
+  }
+
+  extensionActive = Boolean(changes.extensionActive.newValue);
+});
 
 // Manejar cuando se detecta un producto
 async function handleProductDetected(data, tab) {
