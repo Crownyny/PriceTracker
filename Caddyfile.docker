@@ -1,0 +1,6 @@
+https://localhost:8443 {
+    tls internal
+
+    # Docker Compose network target
+    reverse_proxy api:8080
+}
