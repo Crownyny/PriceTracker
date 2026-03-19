@@ -241,7 +241,20 @@ sudo cp ~/.local/share/caddy/pki/authorities/local/root.crt /usr/local/share/ca-
 sudo update-ca-certificates
 ```
 
-- **Windows/macOS:** confiar el certificado raiz generado por Caddy cuando el sistema lo solicite.
+- **Windows (PowerShell, recomendado):**
+
+```powershell
+# Desde la raiz del repo
+./scripts/trust-caddy-cert.ps1
+```
+
+Si PowerShell bloquea scripts locales por politica de ejecucion:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\trust-caddy-cert.ps1
+```
+
+- **macOS:** confiar el certificado raiz generado por Caddy en Keychain Access (login + System Roots segun permisos).
 
 ### Opción B — Desarrollo local de un servicio
 
