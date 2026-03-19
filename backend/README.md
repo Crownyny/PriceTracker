@@ -237,8 +237,19 @@ curl http://localhost:8002/health   # {"status": "ok", "service": "normalizer"}
 - **Linux (Debian/Ubuntu):**
 
 ```bash
-sudo cp ~/.local/share/caddy/pki/authorities/local/root.crt /usr/local/share/ca-certificates/caddy-local-root.crt
+# Desde la raiz del repo (una sola vez)
+chmod +x ./scripts/trust-caddy-cert.sh
+./scripts/trust-caddy-cert.sh
+```
+
+Alternativa manual (si no quieres usar script):
+
+```bash
+docker compose up -d caddy
+docker cp pricetracker-caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-local-root.crt
+sudo cp ./caddy-local-root.crt /usr/local/share/ca-certificates/caddy-local-root.crt
 sudo update-ca-certificates
+curl -I https://localhost:8443/ws/info
 ```
 
 - **Windows (PowerShell, recomendado):**
