@@ -9,6 +9,7 @@ import java.util.List;
 
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -26,7 +27,7 @@ public class ProductRestController {
     ) {
         this.productService = productService;
     }
-    @GetMapping("/search")
+    @PostMapping("/search")
     public List<NormalizedProductDTO> searchProductQuery(@RequestBody QueryDTOIN query) {
         return productService.getProductByProductRef(query);
     }
