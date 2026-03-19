@@ -13,6 +13,8 @@
   const workflow = searchWorkflowFactory.createWorkflow();
   let workflowUnsubscribe = null;
   let visibilityHandlersBound = false;
+  let renderTimer = null;
+  let latestWorkflowState = null;
 
   function start() {
     if (state.monitoringActive) {
@@ -41,6 +43,8 @@
     workflow.stopSearch();
     statusIndicatorUi.hide();
     overlayUi.remove();
+    clearRenderTimer();
+    latestWorkflowState = null;
     state.overlayInjected = false;
     state.currentQuery = null;
 
@@ -69,7 +73,6 @@
     try {
       await workflow.startSearch({
         query,
-        sources: constants.SEARCH.DEFAULT_SOURCES,
       });
     } catch (error) {
       console.error(`${constants.LOG_PREFIX} Error iniciando busqueda:`, error);
@@ -139,7 +142,7 @@
     }
 
     workflowUnsubscribe = workflow.subscribe((workflowState) => {
-      renderFromWorkflow(workflowState);
+      scheduleRender(workflowState);
     });
   }
 
@@ -150,6 +153,30 @@
 
     workflowUnsubscribe();
     workflowUnsubscribe = null;
+    clearRenderTimer();
+  }
+
+  function scheduleRender(workflowState) {
+    latestWorkflowState = workflowState;
+    if (renderTimer) {
+      return;
+    }
+
+    const waitMs = Number(constants.UI?.RENDER_DEBOUNCE_MS || 250);
+    renderTimer = window.setTimeout(() => {
+      renderTimer = null;
+      if (latestWorkflowState) {
+        renderFromWorkflow(latestWorkflowState);
+      }
+    }, waitMs);
+  }
+
+  function clearRenderTimer() {
+    if (!renderTimer) {
+      return;
+    }
+    clearTimeout(renderTimer);
+    renderTimer = null;
   }
 
   function renderFromWorkflow(workflowState) {

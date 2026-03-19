@@ -533,6 +533,12 @@
   color: #4f46e5;
 }
 
+.stores-hidden-note {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
 /* ==========================================
    FOOTER
    ========================================== */
@@ -631,4 +637,104 @@
   font-size: 12px;
   color: #6b7280;
   margin: 8px 0 0;
+}
+
+/* ==========================================
+   TEMA OSCURO DEL OVERLAY
+   ========================================== */
+.price-tracker-overlay-inline.price-tracker-theme-dark .price-tracker-container {
+  background: #0f172a;
+  border-color: #2563eb;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.35),
+    0 20px 32px rgba(0, 0, 0, 0.35);
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .price-tracker-header {
+  background: #0f172a;
+  border-bottom-color: #334155;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .product-name {
+  color: #f8fafc;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .product-meta,
+.price-tracker-overlay-inline.price-tracker-theme-dark .stores-count,
+.price-tracker-overlay-inline.price-tracker-theme-dark .comparison-title,
+.price-tracker-overlay-inline.price-tracker-theme-dark .best-price-label .text,
+.price-tracker-overlay-inline.price-tracker-theme-dark .best-price-store span,
+.price-tracker-overlay-inline.price-tracker-theme-dark .best-price-store-empty,
+.price-tracker-overlay-inline.price-tracker-theme-dark .dashboard-link {
+  color: #cbd5e1;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .price-tracker-close {
+  color: #94a3b8;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .price-tracker-close:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .price-comparison-section {
+  border-left-color: #334155;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .best-price-card {
+  background-image: linear-gradient(#111827, #111827), linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .store-item {
+  background: #111827;
+  border-color: #334155;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .store-item:hover {
+  border-color: #6366f1;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .store-item.best {
+  background: linear-gradient(135deg, #1e293b, #312e81);
+  border-color: #6366f1;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .store-item .store-name,
+.price-tracker-overlay-inline.price-tracker-theme-dark .store-item .price-value {
+  color: #f8fafc;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .store-item .store-shipping {
+  color: #34d399;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .store-item .store-shipping.paid {
+  color: #94a3b8;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .stores-empty {
+  background: #0b1220;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .stores-hidden-note {
+  color: #94a3b8;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .savings-badge {
+  background: linear-gradient(135deg, #064e3b, #065f46);
+  border-color: #047857;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .savings-badge .text,
+.price-tracker-overlay-inline.price-tracker-theme-dark .savings-badge .text strong,
+.price-tracker-overlay-inline.price-tracker-theme-dark .savings-badge .icon {
+  color: #d1fae5;
+}
+
+.price-tracker-overlay-inline.price-tracker-theme-dark .price-tracker-footer {
+  background: #0b1220;
+  border-top-color: #334155;
 }

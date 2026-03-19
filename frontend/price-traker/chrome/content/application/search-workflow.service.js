@@ -56,10 +56,11 @@
       clearCurrentSearch();
       updateStatus('connecting');
 
-      const payload = {
-        query,
-        sources: input.sources || constants.SEARCH.DEFAULT_SOURCES,
-      };
+      const payload = { query };
+
+      if (Array.isArray(input.sources) && input.sources.length > 0) {
+        payload.sources = input.sources;
+      }
 
       if (input.searchId) {
         payload.search_id = input.searchId;

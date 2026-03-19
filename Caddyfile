@@ -1,0 +1,6 @@
+https://localhost:8443 {
+    tls internal
+
+    # Proxy all HTTP and SockJS/WebSocket traffic to the local backend
+    reverse_proxy localhost:8080
+}

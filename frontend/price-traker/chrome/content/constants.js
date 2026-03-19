@@ -20,14 +20,20 @@
       TIMEOUT_MS: 90 * 1000,
       DEFAULT_SOURCES: 'amazon,mercadolibre,walmart',
     },
+    UI: {
+      INITIAL_STORES_DISPLAY: 5,
+      STORES_PAGE_STEP: 5,
+      MAX_STORES_CANDIDATES: 120,
+      RENDER_DEBOUNCE_MS: 250,
+    },
     API: {
       USE_MOCK: false,
-      BASE_URL: 'http://localhost:8080',
+      BASE_URL: 'https://localhost:8443',
       REST_SEARCH_PATH: '/api/products/search',
       REST_FALLBACK_ENABLED: true,
     },
     WS: {
-      BASE_URL: 'http://localhost:8080',
+      BASE_URL: 'https://localhost:8443',
       ENDPOINT: '/ws',
       SEARCH_DESTINATION: '/app/search',
       USER_PRODUCTS_QUEUE: '/user/queue/products',
