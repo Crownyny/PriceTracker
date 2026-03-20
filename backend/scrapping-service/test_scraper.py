@@ -18,7 +18,9 @@ import argparse
 import asyncio
 import json
 import logging
+import re
 import sys
+from difflib import SequenceMatcher
 from pathlib import Path
 
 # Añadir el directorio padre al path para que `shared` sea importable
@@ -39,7 +41,38 @@ logger = logging.getLogger(__name__)
 _OUTPUT_FILE = Path(__file__).parent / "temp" / "results.json"
 
 
-async def run_scraping(query: str, sources_filter: list[str] | None, user_agent: str, limit: int | None) -> list[dict]:
+def _normalize_text(text: str | None) -> str:
+    value = (text or "").lower().strip()
+    value = re.sub(r"[^a-z0-9áéíóúñü\s]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _relevance_score(query: str, title: str | None) -> float:
+    normalized_query = _normalize_text(query)
+    normalized_title = _normalize_text(title)
+    if not normalized_query or not normalized_title:
+        return 0.0
+
+    query_tokens = set(normalized_query.split())
+    title_tokens = set(normalized_title.split())
+    overlap = len(query_tokens & title_tokens) / max(1, len(query_tokens))
+    sequence = SequenceMatcher(None, normalized_query, normalized_title).ratio()
+    return round((0.7 * overlap) + (0.3 * sequence), 3)
+
+
+async def _collect_job_results(scraper: PlaywrightScraper, job: ScrapingJob) -> list:
+    """Consume el async generator del scraper y acumula sus resultados."""
+    return [result async for result in scraper.scrape(job)]
+
+
+async def run_scraping(
+    query: str,
+    sources_filter: list[str] | None,
+    user_agent: str,
+    limit: int | None,
+    enable_relevance_guard: bool,
+    relevance_min_score: float,
+) -> list[dict]:
     """
     Ejecuta el scraping en paralelo en todas las fuentes seleccionadas.
     Devuelve lista de dicts agrupados por fuente, con todos los productos encontrados.
@@ -75,7 +108,7 @@ async def run_scraping(query: str, sources_filter: list[str] | None, user_agent:
 
     try:
         raw_results = await asyncio.gather(
-            *[scraper.scrape(job) for job in jobs],
+            *[_collect_job_results(scraper, job) for job in jobs],
             return_exceptions=True,
         )
     finally:
@@ -95,7 +128,20 @@ async def run_scraping(query: str, sources_filter: list[str] | None, user_agent:
                 "products": [],
             })
         else:
-            products = results if limit is None else results[:limit]
+            # Omitir fallidos y, opcionalmente, filtrar por relevancia con la query
+            valid_results = [r for r in results if getattr(r, "status", "success") != "failed"]
+
+            if enable_relevance_guard:
+                filtered_results = []
+                for result in valid_results:
+                    fields = result.raw_fields or {}
+                    title = fields.get("raw_title") or fields.get("title") or fields.get("name")
+                    score = _relevance_score(query, title)
+                    if score >= relevance_min_score:
+                        filtered_results.append(result)
+                valid_results = filtered_results
+
+            products = valid_results if limit is None else valid_results[:limit]
             output.append({
                 "source": job.source_name,
                 "job_id": job.job_id,
@@ -130,9 +176,30 @@ def main() -> None:
         default="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         help="User-Agent HTTP a usar",
     )
+    parser.add_argument(
+        "--disable-relevance-guard",
+        action="store_true",
+        help="Desactiva el filtro de relevancia por texto",
+    )
+    parser.add_argument(
+        "--relevance-min-score",
+        type=float,
+        default=0.35,
+        metavar="SCORE",
+        help="Umbral mínimo de relevancia (default: 0.35)",
+    )
     args = parser.parse_args()
 
-    results = asyncio.run(run_scraping(args.query, args.sources, args.user_agent, args.limit))
+    results = asyncio.run(
+        run_scraping(
+            args.query,
+            args.sources,
+            args.user_agent,
+            args.limit,
+            enable_relevance_guard=not args.disable_relevance_guard,
+            relevance_min_score=args.relevance_min_score,
+        )
+    )
 
     # JSON de salida: solo la búsqueda y los resultados
     export = {
