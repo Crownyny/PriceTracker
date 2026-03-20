@@ -93,10 +93,13 @@ class NormalizedProduct(BaseModel):
     source_name: str
     canonical_name: str
     price: float
-    currency: str           # ISO 4217: "COP", "USD", "EUR"
+    currency: str                            # ISO 4217: "COP", "USD", "EUR"
     category: str
     availability: bool
     updated_at: datetime.datetime
+    scraped_at: Optional[datetime.datetime] = None   # Fecha de captura por el scraper
+    source_url: Optional[str] = None                 # URL original del producto scrapeado
+    confidence: Optional[str] = None                 # "high" | "medium" | "low"
     image_url: Optional[str] = None
     description: Optional[str] = None
     extra: dict[str, Any] = Field(default_factory=dict)
@@ -115,6 +118,20 @@ class NormalizedEventMessage(BaseModel):
     state: ScrapingState            # "normalized" | "normalization_failed"
     schema_version: str = "2.0"
     error_message: Optional[str] = None
+    search_id: Optional[str] = None
+    normalized_product: Optional[NormalizedProduct] = None
+
+
+# ── Cierre de búsqueda normalizada (Normalizer → downstream) ─────────────────
+class SearchNormalizedMessage(BaseModel):
+    """
+    Publicado por el Normalizer cuando todos los jobs de un SearchRequest
+    han sido procesados. Cierra el ciclo de vida de una búsqueda.
+    """
+    search_id: str
+    product_ref: str
+    total_normalized: int
+    completed_at: datetime.datetime
 
 
 # ── Historial de precios ──────────────────────────────────────────────────────

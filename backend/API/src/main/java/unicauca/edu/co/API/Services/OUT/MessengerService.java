@@ -4,7 +4,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -26,7 +25,6 @@ import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
-import unicauca.edu.co.API.Services.Validators.InterfacesValidators.IProductValidator;
 
 
 /**
@@ -54,22 +52,19 @@ public class MessengerService implements IMessengerService {
     private final NormalizedProductMapper mapper;
     private final WebSocketConfig webSocket;
     private final ObjectMapper objectMapper;
-    private final IProductValidator productValidationChain;
 
     public MessengerService(
         SimpMessagingTemplate messagingTemplate,
         NormalizedProductMapper mapper,
         WebSocketConfig webSocket,
         ObjectMapper objectMapper,
-        ApplicationEventPublisher eventPublisher,
-        @Lazy IProductValidator productValidationChain
+        ApplicationEventPublisher eventPublisher
     ) {
         this.messagingTemplate = messagingTemplate;
         this.mapper = mapper;
         this.webSocket = webSocket;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
-        this.productValidationChain = productValidationChain;
     }
 
     /**
@@ -150,15 +145,13 @@ public class MessengerService implements IMessengerService {
 
     /**
      * Maneja el evento NormalizedProductReceivedEvent publicado cuando se recibe un producto normalizado desde RabbitMQ.
-     * Ejecuta la cadena de validadores (HU-3: coincidencia exacta, exclusión accesorios/variantes, umbral de similitud).
-     * Solo se envía al WebSocket si el producto pasa todas las validaciones.
      * @param event El evento que contiene el producto normalizado recibido.
      */
     @EventListener
     public void handleNormalizedProduct(
             NormalizedProductReceivedEvent event) {
         NormalizedProductDTO product = event.getProduct();
-        productValidationChain.validate(product);
+        sendToWebSocket(product);
     }
 
 }

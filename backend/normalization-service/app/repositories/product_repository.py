@@ -15,7 +15,7 @@ import datetime
 import logging
 from typing import Optional, Tuple
 
-from sqlalchemy import JSON, UniqueConstraint, select, text
+from sqlalchemy import JSON, Index, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -37,12 +37,20 @@ class Base(DeclarativeBase):
 class NormalizedProductORM(Base):
     __tablename__ = "normalized_products"
     __table_args__ = (
-        UniqueConstraint("product_ref", "source_name", name="uq_product_source"),
+        # NULLS NOT DISTINCT: (ref, source, NULL) == (ref, source, NULL) → misma fila.
+        # Permite múltiples URLs distintas del mismo source para el mismo product_ref.
+        Index(
+            "uq_product_source",
+            "product_ref", "source_name", "source_url",
+            unique=True,
+            postgresql_nulls_not_distinct=True,
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     product_ref: Mapped[str]
     source_name: Mapped[str]
+    source_url: Mapped[Optional[str]]
     canonical_name: Mapped[str]
     price: Mapped[float]
     currency: Mapped[str]
@@ -111,35 +119,67 @@ class ProductRepository:
         """Crea las tablas si no existen. Llamar una vez al arranque del servicio."""
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            # Migración para instalaciones existentes: añade source_url y reemplaza
+            # el antiguo CONSTRAINT único por un INDEX NULLS NOT DISTINCT que incluye
+            # source_url, de modo que cada URL distinta de una misma fuente se guarda
+            # como fila independiente.
+            await conn.execute(text("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'normalized_products'
+                          AND column_name = 'source_url'
+                    ) THEN
+                        ALTER TABLE normalized_products ADD COLUMN source_url VARCHAR;
+                    END IF;
+                    IF EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'uq_product_source' AND contype = 'u'
+                    ) THEN
+                        ALTER TABLE normalized_products DROP CONSTRAINT uq_product_source;
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_indexes
+                        WHERE tablename = 'normalized_products'
+                          AND indexname = 'uq_product_source'
+                    ) THEN
+                        CREATE UNIQUE INDEX uq_product_source
+                            ON normalized_products (product_ref, source_name, source_url)
+                            NULLS NOT DISTINCT;
+                    END IF;
+                END $$;
+            """))
         logger.info("Tablas PostgreSQL inicializadas.")
 
     async def upsert_product(self, product: NormalizedProduct) -> None:
-        """INSERT … ON CONFLICT DO UPDATE por (product_ref, source_name)."""
+        """INSERT … ON CONFLICT DO UPDATE por (product_ref, source_name, source_url)."""
+        updated_at = product.updated_at.replace(tzinfo=None) if product.updated_at.tzinfo else product.updated_at
         async with self._session_factory() as session:
             stmt = (
                 pg_insert(NormalizedProductORM)
                 .values(
                     product_ref=product.product_ref,
                     source_name=product.source_name,
+                    source_url=product.source_url,
                     canonical_name=product.canonical_name,
                     price=product.price,
                     currency=product.currency,
                     category=product.category,
                     availability=product.availability,
-                    updated_at=product.updated_at,
+                    updated_at=updated_at,
                     image_url=product.image_url,
                     description=product.description,
                     extra=product.extra,
                 )
                 .on_conflict_do_update(
-                    constraint="uq_product_source",
+                    index_elements=["product_ref", "source_name", "source_url"],
                     set_={
                         "canonical_name": product.canonical_name,
                         "price": product.price,
                         "currency": product.currency,
                         "category": product.category,
                         "availability": product.availability,
-                        "updated_at": product.updated_at,
+                        "updated_at": updated_at,
                         "image_url": product.image_url,
                         "description": product.description,
                         "extra": product.extra,
@@ -168,7 +208,7 @@ class ProductRepository:
                 source_name=source_name,
                 price=price,
                 currency=currency,
-                recorded_at=datetime.datetime.now(tz=datetime.timezone.utc),
+                recorded_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
                 job_id=job_id,
             )
             session.add(entry)
@@ -188,7 +228,7 @@ class ProductRepository:
         La operación es atómica: si los jobs ya llegaron antes del sentinel,
         completed_jobs reflejará el valor actual.
         """
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         async with self._session_factory() as session:
             stmt = (
                 pg_insert(SearchTrackingORM)
@@ -220,7 +260,7 @@ class ProductRepository:
         Retorna (nuevo_completed_jobs, expected_jobs).
         expected_jobs es None si el SearchCompletedMessage aún no llegó.
         """
-        now = datetime.datetime.now(tz=datetime.timezone.utc)
+        now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         async with self._session_factory() as session:
             stmt = (
                 pg_insert(SearchTrackingORM)

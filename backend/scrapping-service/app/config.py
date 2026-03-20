@@ -16,9 +16,11 @@ class Settings(BaseSettings):
     user_agent: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     http_timeout: float = 30.0
 
-    # SearXNG — discovery de URLs de producto
-    searxng_url: str = "http://searxng:8080"
-    searxng_max_results: int = 10
+    # Proxy residencial rotativo (opcional).
+    # Formato: http://usuario:password@host:puerto
+    # Ejemplo Smartproxy: http://user:pass@gate.smartproxy.com:10000
+    # Dejar vacío para no usar proxy.
+    residential_proxy_url: str = ""
 
 
 settings = Settings()

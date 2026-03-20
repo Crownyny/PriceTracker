@@ -248,6 +248,7 @@ python cli.py \
 4. Usar los modelos de `shared.model` para garantizar compatibilidad de contratos.
 
 ----
+-
 
 
 ## Dependencias key

@@ -73,7 +73,7 @@ public class StrategyService implements IStrategyServices{
      * @param query query que llega del websocket
      */
     private void registerSession(QueryDTOIN query){
-        webSocket.addSession(query.getProduct_ref(), query.getSessionId(), query.getQuery());
+        webSocket.addSession(query.getProduct_ref(), query.getSessionId());
     }
     
 }
