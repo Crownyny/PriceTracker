@@ -22,5 +22,13 @@ class Settings(BaseSettings):
     # Dejar vacío para no usar proxy.
     residential_proxy_url: str = ""
 
+    # Concurrencia: cuantos SearchRequest puede atender este worker en paralelo.
+    # Ajusta según capacidad de Playwright + CPU/memoria.
+    worker_prefetch_count: int = 5
+
+    # Relevancia de resultados (fácil de desactivar por env var)
+    enable_relevance_guard: bool = True
+    relevance_min_score: float = 0.35
+
 
 settings = Settings()
