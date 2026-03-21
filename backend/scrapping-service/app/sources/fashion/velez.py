@@ -1,9 +1,9 @@
-"""Fuente: Totto Colombia (co.totto.com).
+"""Fuente: Vélez Colombia (velez.com.co).
 
-Totto Colombia corre sobre VTEX IO (account: tottoco). Aplica la misma
-estrategia que Olimpica, Rimax, Miniso y Jumbo: se consulta directamente la
-API REST de catálogo VTEX, que devuelve JSON limpio sin necesidad de esperar
-el render SPA de React.
+Vélez Colombia (Cueros Vélez) corre sobre VTEX IO (account: cuerosvelezco).
+Aplica la misma estrategia que Olimpica, Rimax, Miniso, Jumbo y Totto: se
+consulta directamente la API REST de catálogo VTEX, que devuelve JSON limpio
+sin necesidad de esperar el render SPA de React.
 
 Estrategia (marzo 2026):
   - URL de búsqueda: /api/catalog_system/pub/products/search?ft=<query>&_from=0&_to=47
@@ -25,23 +25,23 @@ from bs4 import BeautifulSoup
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
-from .registry import registry
+from ..base import BaseSource
+from ..registry import registry
 
 logger = logging.getLogger(__name__)
 
-_BASE = "https://co.totto.com"
+_BASE = "https://www.velez.com.co"
 
 
-class TottoSource(BaseSource):
+class VelezSource(BaseSource):
     """
-    Fuente Totto Colombia usando la API REST VTEX catalog_system.
-    Mismo patrón que OlimpicaSource, RimaxSource, MinisoSource y JumboSource.
+    Fuente Vélez Colombia usando la API REST VTEX catalog_system.
+    Mismo patrón que OlimpicaSource, RimaxSource, MinisoSource, JumboSource y TottoSource.
     """
 
     @property
     def source_name(self) -> str:
-        return "totto"
+        return "velez"
 
     @property
     def user_agent(self) -> Optional[str]:
@@ -73,11 +73,11 @@ class TottoSource(BaseSource):
         try:
             products: list[dict] = json.loads(raw_text)
         except json.JSONDecodeError:
-            logger.warning("[totto] No se pudo parsear JSON de la respuesta VTEX")
+            logger.warning("[velez] No se pudo parsear JSON de la respuesta VTEX")
             return []
 
         if not isinstance(products, list):
-            logger.warning("[totto] Respuesta VTEX no es una lista: %s", type(products))
+            logger.warning("[velez] Respuesta VTEX no es una lista: %s", type(products))
             return []
 
         results = []
@@ -140,10 +140,10 @@ class TottoSource(BaseSource):
                 if fields["raw_title"] or fields["raw_price"]:
                     results.append(fields)
             except Exception as exc:
-                logger.debug("[totto] Error procesando producto: %s", exc)
+                logger.debug("[velez] Error procesando producto: %s", exc)
                 continue
 
         return results
 
 
-registry.register(TottoSource())
+registry.register(VelezSource())

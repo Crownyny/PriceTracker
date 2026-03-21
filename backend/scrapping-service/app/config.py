@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     # Ajusta según capacidad de Playwright + CPU/memoria.
     worker_prefetch_count: int = 5
 
+    # Fuentes por defecto a usar cuando no se especifican en la request.
+    # Lista de nombres de fuentes separadas por coma.
+    # Por defecto: solo fuentes de electrónica.
+    default_sources: str = "aliexpress,alkomprar,alkosto,amazon,computienda,exito,falabella,ishop,jumbo,mercadolibre,olimpica,tecnoplaza"
+
     # Relevancia de resultados (fácil de desactivar por env var)
     enable_relevance_guard: bool = True
     relevance_min_score: float = 0.35

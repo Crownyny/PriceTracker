@@ -148,7 +148,12 @@ class ScraperWorker(BaseConsumer):
         """
         request = SearchRequest.model_validate(payload)
 
-        sources = registry.filter(request.sources) if request.sources else registry.all()
+        if request.sources:
+            sources = registry.filter(request.sources)
+        else:
+            # Usar fuentes por defecto (electrónica) si no se especifican
+            default_source_names = [name.strip() for name in settings.default_sources.split(",") if name.strip()]
+            sources = registry.filter(default_source_names)
 
         if not sources:
             logger.warning("[%s] Sin fuentes registradas para la búsqueda '%s'",

@@ -32,8 +32,8 @@ from urllib.parse import parse_qs, quote, urlparse
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
-from .registry import registry
+from ..base import BaseSource
+from ..registry import registry
 
 logger = logging.getLogger(__name__)
 
