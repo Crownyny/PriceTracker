@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # Fuentes por defecto a usar cuando no se especifican en la request.
     # Lista de nombres de fuentes separadas por coma.
     # Por defecto: solo fuentes de electrónica.
-    default_sources: str = "aliexpress,alkomprar,alkosto,amazon,computienda,exito,falabella,ishop,jumbo,mercadolibre,olimpica,tecnoplaza"
+    default_sources: str = "aliexpress,alkomprar,alkosto,amazon,computienda,enjoyvideogames,exito,falabella,homecenter,ishop,jumbo,lenovo,mercadolibre,olimpica,tecnoplaza"
 
     # Relevancia de resultados (fácil de desactivar por env var)
     enable_relevance_guard: bool = True
