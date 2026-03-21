@@ -1,7 +1,7 @@
 package unicauca.edu.co.API.Services.OUT;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -11,13 +11,10 @@ import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Config.WebSocketConfig;
-import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.Presentation.DTO.IN.NormalizedEventDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
@@ -25,6 +22,7 @@ import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
+import unicauca.edu.co.API.Services.Validators.InterfacesValidators.IProductValidator;
 
 
 /**
@@ -49,21 +47,24 @@ public class MessengerService implements IMessengerService {
 
 
     private final SimpMessagingTemplate messagingTemplate;
-    private final NormalizedProductMapper mapper;
     private final WebSocketConfig webSocket;
     private final ObjectMapper objectMapper;
+    private final NormalizedProductMapper mapper;
+    private final IProductValidator productValidationChain;
 
     public MessengerService(
         SimpMessagingTemplate messagingTemplate,
         NormalizedProductMapper mapper,
         WebSocketConfig webSocket,
         ObjectMapper objectMapper,
+        @Lazy IProductValidator productValidationChain,
         ApplicationEventPublisher eventPublisher
     ) {
         this.messagingTemplate = messagingTemplate;
         this.mapper = mapper;
         this.webSocket = webSocket;
         this.objectMapper = objectMapper;
+        this.productValidationChain = productValidationChain;
         this.eventPublisher = eventPublisher;
     }
 
