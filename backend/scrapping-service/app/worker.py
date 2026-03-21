@@ -91,6 +91,7 @@ class ScraperWorker(BaseConsumer):
         Retorna cuántos productos reales se publicaron.
         """
         products_published = 0
+        seen_urls = set()  # Para evitar duplicados dentro de la misma fuente
         try:
             async for result in self._scraper.scrape(job):
                 if result.status == "failed":
@@ -110,6 +111,19 @@ class ScraperWorker(BaseConsumer):
                         job.source_name,
                     )
                     continue
+
+                # Filtrar duplicados por URL dentro de la misma fuente
+                raw_url = result.raw_fields.get("raw_url") if result.raw_fields else None
+                if raw_url and raw_url in seen_urls:
+                    logger.info(
+                        "[%s] Fuente '%s': producto duplicado omitido (URL ya procesada: %s)",
+                        request.search_id,
+                        job.source_name,
+                        raw_url,
+                    )
+                    continue
+                if raw_url:
+                    seen_urls.add(raw_url)
 
                 if settings.enable_relevance_guard:
                     title = result.raw_fields.get("raw_title") if result.raw_fields else None
