@@ -28,8 +28,8 @@ from bs4 import BeautifulSoup, Tag
 
 from shared.model import ScrapingJob
 
-from .base import BeautifulSoupSource
-from .registry import registry
+from ..base import BeautifulSoupSource
+from ..registry import registry
 
 logger = logging.getLogger(__name__)
 

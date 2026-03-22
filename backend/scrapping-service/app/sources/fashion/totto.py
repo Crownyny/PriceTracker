@@ -1,9 +1,9 @@
-"""Fuente: Miniso Colombia (miniso.co).
+"""Fuente: Totto Colombia (co.totto.com).
 
-Miniso Colombia corre sobre VTEX IO (account: minisocol). Aplica la misma
-estrategia que Olimpica y Rimax: se consulta directamente la API REST de
-catálogo VTEX, que devuelve JSON limpio sin necesidad de esperar el render
-SPA de React.
+Totto Colombia corre sobre VTEX IO (account: tottoco). Aplica la misma
+estrategia que Olimpica, Rimax, Miniso y Jumbo: se consulta directamente la
+API REST de catálogo VTEX, que devuelve JSON limpio sin necesidad de esperar
+el render SPA de React.
 
 Estrategia (marzo 2026):
   - URL de búsqueda: /api/catalog_system/pub/products/search?ft=<query>&_from=0&_to=47
@@ -25,23 +25,23 @@ from bs4 import BeautifulSoup
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
-from .registry import registry
+from ..base import BaseSource
+from ..registry import registry
 
 logger = logging.getLogger(__name__)
 
-_BASE = "https://www.miniso.co"
+_BASE = "https://co.totto.com"
 
 
-class MinisoSource(BaseSource):
+class TottoSource(BaseSource):
     """
-    Fuente Miniso Colombia usando la API REST VTEX catalog_system.
-    Mismo patrón que OlimpicaSource y RimaxSource.
+    Fuente Totto Colombia usando la API REST VTEX catalog_system.
+    Mismo patrón que OlimpicaSource, RimaxSource, MinisoSource y JumboSource.
     """
 
     @property
     def source_name(self) -> str:
-        return "miniso"
+        return "totto"
 
     @property
     def user_agent(self) -> Optional[str]:
@@ -73,11 +73,11 @@ class MinisoSource(BaseSource):
         try:
             products: list[dict] = json.loads(raw_text)
         except json.JSONDecodeError:
-            logger.warning("[miniso] No se pudo parsear JSON de la respuesta VTEX")
+            logger.warning("[totto] No se pudo parsear JSON de la respuesta VTEX")
             return []
 
         if not isinstance(products, list):
-            logger.warning("[miniso] Respuesta VTEX no es una lista: %s", type(products))
+            logger.warning("[totto] Respuesta VTEX no es una lista: %s", type(products))
             return []
 
         results = []
@@ -106,7 +106,7 @@ class MinisoSource(BaseSource):
                     if images:
                         image_url = images[0].get("imageUrl")
 
-                # Categoría: última en la lista (más específica)
+                # Categoría: más específica (última en la lista)
                 category: Optional[str] = None
                 cats = p.get("categories", [])
                 if cats:
@@ -140,10 +140,10 @@ class MinisoSource(BaseSource):
                 if fields["raw_title"] or fields["raw_price"]:
                     results.append(fields)
             except Exception as exc:
-                logger.debug("[miniso] Error procesando producto: %s", exc)
+                logger.debug("[totto] Error procesando producto: %s", exc)
                 continue
 
         return results
 
 
-registry.register(MinisoSource())
+registry.register(TottoSource())
