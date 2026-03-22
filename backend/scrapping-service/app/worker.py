@@ -139,7 +139,7 @@ class ScraperWorker(BaseConsumer):
                         )
                         continue
 
-                await self._publisher.publish_result(result)
+                await self._publisher.publish_result(result, query=request.query)
                 products_published += 1
         except Exception as exc:
             logger.error("[%s] Excepción no capturada en fuente '%s': %s",

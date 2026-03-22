@@ -73,6 +73,7 @@ class ScrapingMessage(BaseModel):
     source_name: str
     captured_at: datetime.datetime
     state: ScrapingState
+    query: Optional[str] = None
     raw_fields: dict[str, Any] = Field(default_factory=dict)
     error_message: Optional[str] = None
 
