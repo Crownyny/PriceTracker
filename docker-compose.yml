@@ -118,6 +118,11 @@ services:
       OPENAI_API_KEY: "ollama"
       OPENAI_MODEL: "qwen2:0.5b"
       OPENAI_BASE_URL: "http://ollama:11434/v1"
+      ENABLE_SEMANTIC_VALIDATOR: "true"
+      SEMANTIC_EMBEDDINGS_MODEL: "/models/all-MiniLM-L6-v2"
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      SENTENCE_TRANSFORMERS_HOME: "/models"
       # Concurrencia del worker
       NORMALIZER_PREFETCH_COUNT: "1"
     ports:

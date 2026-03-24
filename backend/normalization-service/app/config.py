@@ -1,4 +1,5 @@
 """Configuración del Normalizer Service via variables de entorno."""
+from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -28,6 +29,15 @@ class Settings(BaseSettings):
 
     # Archivo de fallos de normalización (JSONL). Vacío = desactivado.
     failures_log_path: str = "/tmp/normalization_failures.jsonl"
+
+    # Validador semántico (2 capas)
+    enable_semantic_validator: bool = True
+    semantic_config_path: str = str(Path(__file__).resolve().parent / "graph" / "nodes" / "semantic_kb.default.json")
+    semantic_embeddings_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    semantic_domain_threshold: Optional[float] = None
+    semantic_valid_threshold: Optional[float] = None
+    semantic_invalid_threshold: Optional[float] = None
+    semantic_top_k: int = 3
 
 
 settings = Settings()
