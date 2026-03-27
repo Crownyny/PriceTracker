@@ -4,6 +4,10 @@ import java.util.List;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+/**
+ * Servicio encargado de la logica de negocio relacionada con los productos.
+ * Se encarga de manejar la búsqueda de productos por w
+ */
 
 public interface IProductService {
     /**

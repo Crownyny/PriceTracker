@@ -112,7 +112,6 @@ public class MessengerService implements IMessengerService {
                 productDTO,
                 headerAccessor.getMessageHeaders()
             );
-            logger.info("Producto enviado al usuario {} a /queue/products: {}", sessionID, productDTO);
 
         } catch (Exception e) {
             logger.error("Error al enviar producto al WebSocket", e);
