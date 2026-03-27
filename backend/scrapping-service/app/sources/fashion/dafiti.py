@@ -17,8 +17,8 @@ from urllib.parse import quote_plus
 
 from bs4 import BeautifulSoup, Tag
 
-from .base import BeautifulSoupSource
-from .registry import registry
+from ..base import BeautifulSoupSource
+from ..registry import registry
 
 _BASE = "https://www.dafiti.com.co"
 

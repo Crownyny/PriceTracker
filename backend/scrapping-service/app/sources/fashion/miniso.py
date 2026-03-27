@@ -1,9 +1,9 @@
-"""Fuente: Jumbo Colombia (jumbocolombia.com).
+"""Fuente: Miniso Colombia (miniso.co).
 
-Jumbo Colombia (Cencosud) corre sobre VTEX IO (account: jumbocolombiaio).
-Aplica la misma estrategia que Olimpica, Rimax y Miniso: se consulta
-directamente la API REST de catálogo VTEX, que devuelve JSON limpio sin
-necesidad de esperar el render SPA de React.
+Miniso Colombia corre sobre VTEX IO (account: minisocol). Aplica la misma
+estrategia que Olimpica y Rimax: se consulta directamente la API REST de
+catálogo VTEX, que devuelve JSON limpio sin necesidad de esperar el render
+SPA de React.
 
 Estrategia (marzo 2026):
   - URL de búsqueda: /api/catalog_system/pub/products/search?ft=<query>&_from=0&_to=47
@@ -25,23 +25,23 @@ from bs4 import BeautifulSoup
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
-from .registry import registry
+from ..base import BaseSource
+from ..registry import registry
 
 logger = logging.getLogger(__name__)
 
-_BASE = "https://www.jumbocolombia.com"
+_BASE = "https://www.miniso.co"
 
 
-class JumboSource(BaseSource):
+class MinisoSource(BaseSource):
     """
-    Fuente Jumbo Colombia usando la API REST VTEX catalog_system.
-    Mismo patrón que OlimpicaSource, RimaxSource y MinisoSource.
+    Fuente Miniso Colombia usando la API REST VTEX catalog_system.
+    Mismo patrón que OlimpicaSource y RimaxSource.
     """
 
     @property
     def source_name(self) -> str:
-        return "jumbo"
+        return "miniso"
 
     @property
     def user_agent(self) -> Optional[str]:
@@ -73,11 +73,11 @@ class JumboSource(BaseSource):
         try:
             products: list[dict] = json.loads(raw_text)
         except json.JSONDecodeError:
-            logger.warning("[jumbo] No se pudo parsear JSON de la respuesta VTEX")
+            logger.warning("[miniso] No se pudo parsear JSON de la respuesta VTEX")
             return []
 
         if not isinstance(products, list):
-            logger.warning("[jumbo] Respuesta VTEX no es una lista: %s", type(products))
+            logger.warning("[miniso] Respuesta VTEX no es una lista: %s", type(products))
             return []
 
         results = []
@@ -140,10 +140,10 @@ class JumboSource(BaseSource):
                 if fields["raw_title"] or fields["raw_price"]:
                     results.append(fields)
             except Exception as exc:
-                logger.debug("[jumbo] Error procesando producto: %s", exc)
+                logger.debug("[miniso] Error procesando producto: %s", exc)
                 continue
 
         return results
 
 
-registry.register(JumboSource())
+registry.register(MinisoSource())

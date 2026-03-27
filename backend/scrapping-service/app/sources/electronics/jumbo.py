@@ -1,9 +1,9 @@
-"""Fuente: Vélez Colombia (velez.com.co).
+"""Fuente: Jumbo Colombia (jumbocolombia.com).
 
-Vélez Colombia (Cueros Vélez) corre sobre VTEX IO (account: cuerosvelezco).
-Aplica la misma estrategia que Olimpica, Rimax, Miniso, Jumbo y Totto: se
-consulta directamente la API REST de catálogo VTEX, que devuelve JSON limpio
-sin necesidad de esperar el render SPA de React.
+Jumbo Colombia (Cencosud) corre sobre VTEX IO (account: jumbocolombiaio).
+Aplica la misma estrategia que Olimpica, Rimax y Miniso: se consulta
+directamente la API REST de catálogo VTEX, que devuelve JSON limpio sin
+necesidad de esperar el render SPA de React.
 
 Estrategia (marzo 2026):
   - URL de búsqueda: /api/catalog_system/pub/products/search?ft=<query>&_from=0&_to=47
@@ -25,23 +25,23 @@ from bs4 import BeautifulSoup
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
-from .registry import registry
+from ..base import BaseSource
+from ..registry import registry
 
 logger = logging.getLogger(__name__)
 
-_BASE = "https://www.velez.com.co"
+_BASE = "https://www.jumbocolombia.com"
 
 
-class VelezSource(BaseSource):
+class JumboSource(BaseSource):
     """
-    Fuente Vélez Colombia usando la API REST VTEX catalog_system.
-    Mismo patrón que OlimpicaSource, RimaxSource, MinisoSource, JumboSource y TottoSource.
+    Fuente Jumbo Colombia usando la API REST VTEX catalog_system.
+    Mismo patrón que OlimpicaSource, RimaxSource y MinisoSource.
     """
 
     @property
     def source_name(self) -> str:
-        return "velez"
+        return "jumbo"
 
     @property
     def user_agent(self) -> Optional[str]:
@@ -73,11 +73,11 @@ class VelezSource(BaseSource):
         try:
             products: list[dict] = json.loads(raw_text)
         except json.JSONDecodeError:
-            logger.warning("[velez] No se pudo parsear JSON de la respuesta VTEX")
+            logger.warning("[jumbo] No se pudo parsear JSON de la respuesta VTEX")
             return []
 
         if not isinstance(products, list):
-            logger.warning("[velez] Respuesta VTEX no es una lista: %s", type(products))
+            logger.warning("[jumbo] Respuesta VTEX no es una lista: %s", type(products))
             return []
 
         results = []
@@ -106,7 +106,7 @@ class VelezSource(BaseSource):
                     if images:
                         image_url = images[0].get("imageUrl")
 
-                # Categoría: más específica (última en la lista)
+                # Categoría: última en la lista (más específica)
                 category: Optional[str] = None
                 cats = p.get("categories", [])
                 if cats:
@@ -140,10 +140,10 @@ class VelezSource(BaseSource):
                 if fields["raw_title"] or fields["raw_price"]:
                     results.append(fields)
             except Exception as exc:
-                logger.debug("[velez] Error procesando producto: %s", exc)
+                logger.debug("[jumbo] Error procesando producto: %s", exc)
                 continue
 
         return results
 
 
-registry.register(VelezSource())
+registry.register(JumboSource())

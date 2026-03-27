@@ -91,6 +91,7 @@ class ScraperWorker(BaseConsumer):
         Retorna cuántos productos reales se publicaron.
         """
         products_published = 0
+        seen_urls = set()  # Para evitar duplicados dentro de la misma fuente
         try:
             async for result in self._scraper.scrape(job):
                 if result.status == "failed":
@@ -111,6 +112,19 @@ class ScraperWorker(BaseConsumer):
                     )
                     continue
 
+                # Filtrar duplicados por URL dentro de la misma fuente
+                raw_url = result.raw_fields.get("raw_url") if result.raw_fields else None
+                if raw_url and raw_url in seen_urls:
+                    logger.info(
+                        "[%s] Fuente '%s': producto duplicado omitido (URL ya procesada: %s)",
+                        request.search_id,
+                        job.source_name,
+                        raw_url,
+                    )
+                    continue
+                if raw_url:
+                    seen_urls.add(raw_url)
+
                 if settings.enable_relevance_guard:
                     title = result.raw_fields.get("raw_title") if result.raw_fields else None
                     score = _relevance_score(request.query, title)
@@ -125,7 +139,7 @@ class ScraperWorker(BaseConsumer):
                         )
                         continue
 
-                await self._publisher.publish_result(result)
+                await self._publisher.publish_result(result, query=request.query)
                 products_published += 1
         except Exception as exc:
             logger.error("[%s] Excepción no capturada en fuente '%s': %s",
@@ -148,7 +162,12 @@ class ScraperWorker(BaseConsumer):
         """
         request = SearchRequest.model_validate(payload)
 
-        sources = registry.filter(request.sources) if request.sources else registry.all()
+        if request.sources:
+            sources = registry.filter(request.sources)
+        else:
+            # Usar fuentes por defecto (electrónica) si no se especifican
+            default_source_names = [name.strip() for name in settings.default_sources.split(",") if name.strip()]
+            sources = registry.filter(default_source_names)
 
         if not sources:
             logger.warning("[%s] Sin fuentes registradas para la búsqueda '%s'",

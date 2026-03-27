@@ -5,6 +5,7 @@ desde ``app.graph.nodes`` sin cambiar la interfaz.
 """
 from .input_sanitizer import input_sanitizer_node
 from .field_standardizer import field_standardizer_node
+from .semantic_validation import make_semantic_validation_node
 from .text_canonicalizer import text_canonicalizer_node
 from .attribute_extractor import attribute_extractor_node
 from .quality_evaluator import quality_evaluator_node
@@ -18,6 +19,7 @@ from .error_end import error_end_node
 __all__ = [
     "input_sanitizer_node",
     "field_standardizer_node",
+    "make_semantic_validation_node",
     "text_canonicalizer_node",
     "attribute_extractor_node",
     "quality_evaluator_node",
