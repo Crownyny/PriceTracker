@@ -51,34 +51,5 @@ public class IntentProductService implements IIntentProductService {
                 });
     }
 
-    public Mono<Object> resolveIntentProduct(QueryDTOIN query) {
-        return getIntentResponse(query.getQuery())
-                .flatMap(intentResponse -> {
-                    if ("compra".equalsIgnoreCase(intentResponse.getIntent())) {
-                        logger.info("Intención detectada: {} para query: {}", intentResponse.getIntent(), query.getQuery());
-                        return Mono.fromRunnable(() -> strategyService.resolveSearchStrategy(query));
-                    } else {
-                        logger.warn("Intención no válida: {}. Cerrando conexión para sessionId: {}", 
-                            intentResponse.getIntent(), query.getSessionId());
-                        
-                        ExceptionDTO exceptionDTO = messengerService.createExceptionDTO(
-                            query,
-                            "Intención inválida: " + intentResponse.getIntent() + ". Solo se aceptan búsquedas de compra.",
-                            LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)
-                        );
-                        
-                        messengerService.disconnectWebSocket(
-                            query.getSessionId(),
-                            query.getProduct_ref(),
-                            exceptionDTO
-                        );
-                        
-                        return Mono.error(new RuntimeException("Intención no válida: " + intentResponse.getIntent()));
-                    }
-                })
-                .onErrorResume(e -> {
-                    logger.error("Error resolviendo intención del producto: {}", e.getMessage());
-                    return Mono.empty();
-                });
-    }
+    
 }
