@@ -22,19 +22,22 @@ public class StrategyService implements IStrategyServices{
     private final ProductRepository productRepository;
     private final MessengerService messengerService;
     private final WebSocketConfig webSocket;
+    private final IntentProductService intentProductService;
 
     public StrategyService(
         ReferenceCheckService referenceCheckService,
         ProductService productService,
         ProductRepository productRepository,
         MessengerService messengerService,
-        WebSocketConfig webSocket
+        WebSocketConfig webSocket,
+        IntentProductService intentProductService
     ) {
         this.referenceCheckService = referenceCheckService;
         this.productService = productService;
         this.productRepository = productRepository;
         this.messengerService = messengerService;
         this.webSocket = webSocket;
+        this.intentProductService = intentProductService;   
     }
     @Override
     public void resolveSearchStrategy(QueryDTOIN query) {
@@ -59,6 +62,7 @@ public class StrategyService implements IStrategyServices{
     @Override
     public void resolveStrategyAPI(QueryDTOIN query, String var_productRef) {
         NormalizedProductEntity entity = productRepository.findByProductRefStartingWith(var_productRef).get(0);
+        System.out.println("Producto encontrado en base de datos: " + entity.getProductRef());
         ExceptionDTO error= messengerService.createExceptionDTO(query, "PRODUCT_IN_BD", entity.getUpdatedAt());
         messengerService.disconnectWebSocket(query.getSessionId(), entity.getProductRef(), error);
     }

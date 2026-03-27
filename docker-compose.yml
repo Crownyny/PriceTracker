@@ -119,8 +119,33 @@ services:
       # Concurrencia del worker
       NORMALIZER_PREFETCH_COUNT: "1"
     ports:
-      - "8002:8002"   # Health check: GET http://localhost:8002/health
+      - "8002:8002"
     restart: unless-stopped
+
+  # ── microServiceModelProduct ─────────────────────────────────────────────────
+  model-product:
+    build:
+      context: ./backend
+      dockerfile: microServiceModelProduct/Dockerfile
+    container_name: pricetracker-model-product
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      API_HOST: "0.0.0.0"
+      API_PORT: "8015"
+    ports:
+      - "8015:8015"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8015/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── API Service ─────────────────────────────────────────────────────────────
   api:
     build:
       context: ./backend/API
@@ -130,6 +155,8 @@ services:
       rabbitmq:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      model-product:
         condition: service_healthy
     environment:
       # Database Configuration
@@ -146,6 +173,8 @@ services:
       # Server Configuration
       SERVER_PORT: 8080
       JAVA_OPTS: "-Xmx512m -Xms256m"
+      # Model Product Configuration
+      MODEL_PRODUCT_URL: http://model-product:8015
     ports:
       - "8080:8080"   # API REST
     healthcheck:
