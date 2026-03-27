@@ -17,7 +17,7 @@ def home():
 def predict(query: Query):
     pred = pipeline.predict([query.text])[0]
     proba = pipeline.predict_proba([query.text])[0]
-
+    print(f"Predicted intent: {pred} with confidence: {max(proba)} for query: '{query.text}'")
     return {
         "input": query.text,
         "intent": pred,

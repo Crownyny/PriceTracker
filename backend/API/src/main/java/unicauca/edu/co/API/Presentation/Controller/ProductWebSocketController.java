@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
+import unicauca.edu.co.API.Services.IN.IntentProductService;
 import unicauca.edu.co.API.Services.IN.ProductService;
 import unicauca.edu.co.API.Services.IN.StrategyService;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,16 +21,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class ProductWebSocketController {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductWebSocketController.class);
-    private final StrategyService strategyService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final IntentProductService intentProductService;
 
     public ProductWebSocketController(
         ProductService productService,
-        StrategyService strategyService, 
-        SimpMessagingTemplate messagingTemplate
+        SimpMessagingTemplate messagingTemplate,
+        IntentProductService intentProductService
     ) {
-        this.strategyService = strategyService; 
+
         this.messagingTemplate = messagingTemplate;
+        this.intentProductService = intentProductService;
     }
 
     /**
@@ -42,7 +44,9 @@ public class ProductWebSocketController {
     public void searchProduct(QueryDTOIN query,
                               @Header("simpSessionId") String sessionId) {
         query.setSessionId(sessionId);
-        strategyService.resolveSearchStrategy(query);
+        intentProductService.resolveIntentProduct(query)
+            .doOnError(e -> logger.error("Error al resolver intención del producto: ", e))
+            .subscribe();
     }
     
     @GetMapping("/test-ws")
