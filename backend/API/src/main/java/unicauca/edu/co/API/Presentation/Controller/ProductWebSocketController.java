@@ -1,6 +1,6 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
-import org.springframework.boot.autoconfigure.web.WebProperties.Resources.Chain.Strategy;
+
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -20,18 +20,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 public class ProductWebSocketController {
 
+    private final  ProductService productService;
     private static final Logger logger = LoggerFactory.getLogger(ProductWebSocketController.class);
     private final SimpMessagingTemplate messagingTemplate;
-    private final IntentProductService intentProductService;
+    private final StrategyService strategyService;
 
     public ProductWebSocketController(
         ProductService productService,
         SimpMessagingTemplate messagingTemplate,
-        IntentProductService intentProductService
+        StrategyService strategyService
     ) {
 
         this.messagingTemplate = messagingTemplate;
-        this.intentProductService = intentProductService;
+        this.strategyService = strategyService;
+        this.productService = productService;
     }
 
     /**
@@ -41,12 +43,13 @@ public class ProductWebSocketController {
      * @param sessionId ID de la sesión WebSocket para identificar al usuario
      */
     @MessageMapping("/search")
-    public void searchProduct(QueryDTOIN query,
-                              @Header("simpSessionId") String sessionId) {
+    public void searchProduct(QueryDTOIN query, @Header("simpSessionId") String sessionId) {
         query.setSessionId(sessionId);
-        intentProductService.resolveIntentProduct(query)
-            .doOnError(e -> logger.error("Error al resolver intención del producto: ", e))
-            .subscribe();
+        try {
+            strategyService.resolveSearchStrategy(query);
+        } catch (Exception e) {
+            logger.error("Error al resolver la estrategia para el producto: ", e);
+        }
     }
     
     @GetMapping("/test-ws")

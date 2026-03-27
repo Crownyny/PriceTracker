@@ -64,8 +64,7 @@ public class ProductService implements IProductService {
     @Override
     public QueryDTOIN createProductRef(QueryDTOIN query){
         String baseRef = query.getQuery().trim().replaceAll(" ", "");
-        int randomSuffix = (int) (Math.random() * 900) + 100; // Número aleatorio de 3 dígitos
-        String var_productRef = baseRef + "" + randomSuffix;
+        String var_productRef = baseRef;
         query.setProduct_ref(var_productRef);
         query.setSearch_id(var_productRef);
         return query;
