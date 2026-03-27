@@ -14,6 +14,7 @@ Cobertura de 20 pruebas:
   - Pipeline completo (product dict final, canonical_name, image_url, source_url)
 """
 import datetime
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -39,6 +40,7 @@ def _initial_state(
     source: str = "amazon",
     product_ref: str = "camiseta-001",
     job_id: str = "test-job-001",
+    query: str = "camiseta hombre",
 ) -> dict:
     """Construye el estado inicial mínimo requerido por el pipeline."""
     # Asegurar raw_url para que input_sanitizer no falle por URL faltante
@@ -49,7 +51,15 @@ def _initial_state(
         "product_ref": product_ref,
         "source_name": source,
         "captured_at": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+        "query": query,
         "raw_fields": raw_fields,
+        "semantic_decision": None,
+        "semantic_score": None,
+        "semantic_pattern_used": None,
+        "semantic_reason": None,
+        "semantic_domain_gap": None,
+        "semantic_is_tech": None,
+        "semantic_latency_ms": None,
         "validation_errors": [],
         "outcome": "",
     }
@@ -473,3 +483,62 @@ async def test_pipeline_producto_completo_todos_los_campos(pipeline):
     assert fp["source_name"] == "amazon"
     assert fp["image_url"] == "https://m.media-amazon.com/images/I/51wDsZxtTLL._AC_UL320_.jpg"
     assert fp["source_url"] == "https://www.amazon.com/-/es/Gildan-Camisetas/dp/B07JDFPQTC"
+
+
+@pytest.mark.asyncio
+async def test_pipeline_expone_campos_semanticos(pipeline):
+    """El estado final debe contener semantic_* para trazabilidad del nodo semántico."""
+    state = _initial_state({
+        "raw_title": "Gildan Camiseta de algodón para Hombre",
+        "raw_price": "COP 77,586.60",
+        "raw_currency": "COP",
+        "raw_availability": "available",
+        "raw_url": "https://www.amazon.com/dp/B09312N4RH",
+    }, query="iphone 15 pro")
+
+    result = await pipeline.ainvoke(state)
+
+    assert "semantic_decision" in result
+    assert "semantic_score" in result
+    assert "semantic_pattern_used" in result
+    assert "semantic_reason" in result
+
+
+class _FilteredSemanticEngine:
+    def evaluate(self, *, query: str, title: str | None):
+        return SimpleNamespace(
+            decision="FILTERED",
+            score=-0.8,
+            pattern_used="samsung s23u",
+            reason="Accessory keyword guard: funda",
+            domain_gap=0.3,
+            is_tech=True,
+            latency_ms=1.0,
+        )
+
+
+@pytest.mark.asyncio
+async def test_pipeline_filtered_semantico_no_persiste():
+    pipeline = build_pipeline(
+        product_repo=_mock_repo(),
+        llm=None,
+        semantic_validator=_FilteredSemanticEngine(),
+    )
+
+    state = _initial_state(
+        {
+            "raw_title": "Funda para Samsung S23 Ultra",
+            "raw_price": "COP 77,586.60",
+            "raw_currency": "COP",
+            "raw_availability": "available",
+            "raw_url": "https://example.com/funda-s23u",
+        },
+        query="s23u",
+    )
+
+    result = await pipeline.ainvoke(state)
+
+    assert result.get("semantic_decision") == "FILTERED"
+    assert result.get("outcome") == "normalization_failed"
+    assert result.get("final_product") is None
+    assert any("Semantic filtered" in err for err in (result.get("validation_errors") or []))

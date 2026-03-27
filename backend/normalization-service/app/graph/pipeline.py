@@ -24,6 +24,7 @@ from langgraph.graph import END, StateGraph
 from .nodes import (
     input_sanitizer_node,
     field_standardizer_node,
+    make_semantic_validation_node,
     text_canonicalizer_node,
     attribute_extractor_node,
     quality_evaluator_node,
@@ -65,7 +66,7 @@ def _route_after_validation(state: NormalizationState) -> str:
 
 # ── Factory del pipeline ──────────────────────────────────────────────────────
 
-def build_pipeline(product_repo, llm=None, enable_enricher: bool = False):
+def build_pipeline(product_repo, llm=None, enable_enricher: bool = False, semantic_validator=None):
     """
     Construye y compila el grafo de normalización de 9 nodos.
 
@@ -84,6 +85,7 @@ def build_pipeline(product_repo, llm=None, enable_enricher: bool = False):
     # ── Nodos ───────────────────────────────────────────────────────────────
     graph.add_node("input_sanitizer", input_sanitizer_node)
     graph.add_node("field_standardizer", field_standardizer_node)
+    graph.add_node("semantic_validation", make_semantic_validation_node(semantic_validator))
     graph.add_node("text_canonicalizer", text_canonicalizer_node)
     graph.add_node("attribute_extractor", attribute_extractor_node)
     graph.add_node("quality_evaluator", quality_evaluator_node)
@@ -104,7 +106,8 @@ def build_pipeline(product_repo, llm=None, enable_enricher: bool = False):
         {"error_end": "error_end", "field_standardizer": "field_standardizer"},
     )
 
-    graph.add_edge("field_standardizer", "text_canonicalizer")
+    graph.add_edge("field_standardizer", "semantic_validation")
+    graph.add_edge("semantic_validation", "text_canonicalizer")
     graph.add_edge("text_canonicalizer", "attribute_extractor")
     graph.add_edge("attribute_extractor", "quality_evaluator")
 

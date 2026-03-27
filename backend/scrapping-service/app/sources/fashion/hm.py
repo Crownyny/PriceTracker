@@ -1,89 +1,109 @@
-"""Fuente: Rimax Colombia (rimax.com.co).
+"""Fuente: H&M Colombia (co.hm.com).
 
-Rimax es una marca colombiana de productos plásticos y muebles para el hogar.
-Su tienda online corre sobre VTEX IO, por lo que aplica la misma estrategia
-que Olimpica: se consulta directamente la API REST de catálogo de VTEX.
+H&M Colombia corre sobre VTEX IO (account: hmcolombia).
+Si bien la API REST de catálogo VTEX devuelve JSON limpio, el dominio
+co.hm.com bloquea Playwright headless. Por eso la extracción se hace
+directamente con httpx (mismo patrón que iShop/Alkomprar), ignorando
+el html_content que entrega Playwright.
 
 Estrategia (marzo 2026):
-  - URL de búsqueda: /api/catalog_system/pub/products/search?ft=<query>&_from=0&_to=47
-  - El browser carga la URL de la API; Playwright recibe JSON envuelto en
-    <html><body><pre>...</pre></body></html>.
-  - wait_for_selector: "pre"  (siempre presente en respuestas JSON del browser)
-  - extract_all_results parsea el texto de <pre> como JSON directamente.
+  - build_url retorna la URL de búsqueda HTML canónica (usada como raw_url).
+  - wait_for_selector: None  (Playwright solo navega, no extrae).
+  - extract_all_results llama directamente al endpoint VTEX REST con httpx.
+
+Endpoint VTEX:
+  /api/catalog_system/pub/products/search?ft=<query>&_from=0&_to=47&O=OrderByScoreDESC
 
 Campos clave de la respuesta VTEX:
   productName, brand, link, items[0].sellers[0].commertialOffer.Price,
   items[0].images[0].imageUrl, categories[-1]
 """
-import json
 import logging
 from typing import Any, Optional
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse
 
-from bs4 import BeautifulSoup
+import httpx
 
 from shared.model import ScrapingJob
 
-from .base import BaseSource
-from .registry import registry
+from ..base import BaseSource
+from ..registry import registry
 
 logger = logging.getLogger(__name__)
 
-_BASE = "https://www.rimax.com.co"
+_BASE = "https://co.hm.com"
+_VTEX_SEARCH = f"{_BASE}/api/catalog_system/pub/products/search"
+_RESULTS_LIMIT = 47
+
+_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json",
+    "Accept-Language": "es-CO,es;q=0.9",
+}
 
 
-class RimaxSource(BaseSource):
+class HMSource(BaseSource):
     """
-    Fuente Rimax usando la API REST VTEX catalog_system.
-    Extiende BaseSource directamente (no BeautifulSoupSource) porque el
-    contenido es JSON, no HTML de un listing SPA.
+    Fuente H&M Colombia usando la API REST VTEX catalog_system.
+    Mismo patrón que JumboSource, RimaxSource, MinisoSource, etc.
     """
 
     @property
     def source_name(self) -> str:
-        return "rimax"
+        return "hm"
 
     @property
     def user_agent(self) -> Optional[str]:
-        return (
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-            "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
-        )
+        return _HEADERS["User-Agent"]
 
     @property
     def wait_for_selector(self) -> Optional[str]:
-        # El browser envuelve JSON en <pre>; siempre aparece al instante.
-        return "pre"
+        # Playwright solo navega; la extracción real es via httpx
+        return None
 
     @property
     def scroll_before_extract(self) -> bool:
         return False
 
     def build_url(self, query: str, product_ref: str) -> str:
-        return (
-            f"{_BASE}/api/catalog_system/pub/products/search"
-            f"?ft={quote(query, safe='')}&_from=0&_to=47&O=OrderByScoreDESC"
-        )
+        """URL canónica de búsqueda (usada como raw_url)."""
+        return f"{_BASE}/search?q={quote(query, safe='')}"
 
     def extract_all_results(self, html_content: str, job: ScrapingJob) -> list[dict[str, Any]]:
-        """
-        El browser carga la URL de la API VTEX y el contenido es JSON
-        envuelto en etiquetas HTML mínimas. Se extrae el texto de <pre>
-        y se parsea como JSON.
-        """
-        soup = BeautifulSoup(html_content, "lxml")
+        """Llama directamente a la API VTEX REST vía httpx, ignorando html_content."""
+        parsed = urlparse(job.source_url)
+        query_params = parse_qs(parsed.query)
+        query = query_params.get("q", [""])[0]
 
-        pre = soup.find("pre")
-        raw_text = pre.get_text() if pre else html_content.strip()
+        if not query:
+            logger.warning("[hm] No se pudo extraer query de %s", job.source_url)
+            return []
 
+        params = {
+            "ft": query,
+            "_from": "0",
+            "_to": str(_RESULTS_LIMIT),
+            "O": "OrderByScoreDESC",
+        }
         try:
-            products: list[dict] = json.loads(raw_text)
-        except json.JSONDecodeError:
-            logger.warning("[rimax] No se pudo parsear JSON de la respuesta VTEX")
+            resp = httpx.get(
+                _VTEX_SEARCH,
+                params=params,
+                headers=_HEADERS,
+                timeout=15,
+                follow_redirects=True,
+            )
+            resp.raise_for_status()
+            products: list[dict] = resp.json()
+        except Exception as exc:
+            logger.error("[hm] Error API VTEX: %s", exc)
             return []
 
         if not isinstance(products, list):
-            logger.warning("[rimax] Respuesta VTEX no es una lista: %s", type(products))
+            logger.warning("[hm] Respuesta VTEX no es una lista: %s", type(products))
             return []
 
         results = []
@@ -116,7 +136,6 @@ class RimaxSource(BaseSource):
                 category: Optional[str] = None
                 cats = p.get("categories", [])
                 if cats:
-                    # Formato VTEX: "/Muebles/Sillas/" → "Sillas"
                     last_cat = cats[-1].strip("/").split("/")[-1]
                     if last_cat:
                         category = last_cat
@@ -130,7 +149,6 @@ class RimaxSource(BaseSource):
                         if offer.get("AvailableQuantity", 1) == 0:
                             availability = "out_of_stock"
 
-                # URL del producto: VTEX proporciona link directo o linkText
                 product_url = p.get("link") or (
                     f"{_BASE}/{p['linkText']}/p" if p.get("linkText") else None
                 )
@@ -148,10 +166,10 @@ class RimaxSource(BaseSource):
                 if fields["raw_title"] or fields["raw_price"]:
                     results.append(fields)
             except Exception as exc:
-                logger.debug("[rimax] Error procesando producto: %s", exc)
+                logger.debug("[hm] Error procesando producto: %s", exc)
                 continue
 
         return results
 
 
-registry.register(RimaxSource())
+registry.register(HMSource())

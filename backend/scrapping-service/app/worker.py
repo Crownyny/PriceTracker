@@ -11,6 +11,8 @@ Flujo por mensaje:
 """
 import asyncio
 import logging
+import re
+from difflib import SequenceMatcher
 from typing import Any
 
 from shared.messaging import (
@@ -29,6 +31,25 @@ from .sources import registry
 logger = logging.getLogger(__name__)
 
 
+def _normalize_text(text: str | None) -> str:
+    value = (text or "").lower().strip()
+    value = re.sub(r"[^a-z0-9áéíóúñü\s]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _relevance_score(query: str, title: str | None) -> float:
+    normalized_query = _normalize_text(query)
+    normalized_title = _normalize_text(title)
+    if not normalized_query or not normalized_title:
+        return 0.0
+
+    query_tokens = set(normalized_query.split())
+    title_tokens = set(normalized_title.split())
+    overlap = len(query_tokens & title_tokens) / max(1, len(query_tokens))
+    sequence = SequenceMatcher(None, normalized_query, normalized_title).ratio()
+    return round((0.7 * overlap) + (0.3 * sequence), 3)
+
+
 class ScraperWorker(BaseConsumer):
     """
     Consumer de SearchRequest.
@@ -40,6 +61,7 @@ class ScraperWorker(BaseConsumer):
             connection=connection,
             queue_name=QUEUE_SCRAPING_JOBS,
             dlq_name=QUEUE_SCRAPING_JOBS_DLQ,
+            prefetch_count=settings.worker_prefetch_count,
         )
         self._scraper = PlaywrightScraper(
             registry=registry,
@@ -69,6 +91,7 @@ class ScraperWorker(BaseConsumer):
         Retorna cuántos productos reales se publicaron.
         """
         products_published = 0
+        seen_urls = set()  # Para evitar duplicados dentro de la misma fuente
         try:
             async for result in self._scraper.scrape(job):
                 if result.status == "failed":
@@ -79,7 +102,44 @@ class ScraperWorker(BaseConsumer):
                         result.error_message or "sin detalle",
                     )
                     continue
-                await self._publisher.publish_result(result)
+
+                raw_price = result.raw_fields.get("raw_price") if result.raw_fields else None
+                if raw_price in (None, ""):
+                    logger.info(
+                        "[%s] Fuente '%s': producto omitido por raw_price nulo/vacío",
+                        request.search_id,
+                        job.source_name,
+                    )
+                    continue
+
+                # Filtrar duplicados por URL dentro de la misma fuente
+                raw_url = result.raw_fields.get("raw_url") if result.raw_fields else None
+                if raw_url and raw_url in seen_urls:
+                    logger.info(
+                        "[%s] Fuente '%s': producto duplicado omitido (URL ya procesada: %s)",
+                        request.search_id,
+                        job.source_name,
+                        raw_url,
+                    )
+                    continue
+                if raw_url:
+                    seen_urls.add(raw_url)
+
+                if settings.enable_relevance_guard:
+                    title = result.raw_fields.get("raw_title") if result.raw_fields else None
+                    score = _relevance_score(request.query, title)
+                    if score < settings.relevance_min_score:
+                        logger.info(
+                            "[%s] Fuente '%s': producto omitido por baja relevancia (score=%.3f < %.3f, title=%r)",
+                            request.search_id,
+                            job.source_name,
+                            score,
+                            settings.relevance_min_score,
+                            title,
+                        )
+                        continue
+
+                await self._publisher.publish_result(result, query=request.query)
                 products_published += 1
         except Exception as exc:
             logger.error("[%s] Excepción no capturada en fuente '%s': %s",
@@ -102,7 +162,12 @@ class ScraperWorker(BaseConsumer):
         """
         request = SearchRequest.model_validate(payload)
 
-        sources = registry.filter(request.sources) if request.sources else registry.all()
+        if request.sources:
+            sources = registry.filter(request.sources)
+        else:
+            # Usar fuentes por defecto (electrónica) si no se especifican
+            default_source_names = [name.strip() for name in settings.default_sources.split(",") if name.strip()]
+            sources = registry.filter(default_source_names)
 
         if not sources:
             logger.warning("[%s] Sin fuentes registradas para la búsqueda '%s'",
