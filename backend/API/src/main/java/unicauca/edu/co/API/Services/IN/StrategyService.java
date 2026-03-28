@@ -40,13 +40,12 @@ public class StrategyService implements IStrategyServices{
     public void resolveSearchStrategy(QueryDTOIN query) {
         query = productService.createProductRef(query);
         registerSession(query);
-        String var_productRef = DecryptProductRef(query.getProduct_ref());
-        if(referenceCheckService.checkReferenceExists(var_productRef)) {
-            logger.info(var_productRef + " ya existe en la base de datos, enviando producto existente al usuario");
-            resolveStrategyAPI(query, var_productRef);
+        if(referenceCheckService.checkReferenceExists(query.getProduct_ref())) {
+            logger.info(query.getProduct_ref() + " ya existe en la base de datos, enviando producto existente al usuario");
+            resolveStrategyAPI(query, query.getProduct_ref());
         } else {
-            referenceCheckService.save(var_productRef);
-            resolveStrategyWebScraping(query, var_productRef);
+            referenceCheckService.save(query.getProduct_ref());
+            resolveStrategyWebScraping(query, query.getProduct_ref());
         }
     }
     @Override
@@ -59,14 +58,12 @@ public class StrategyService implements IStrategyServices{
     @Override
     public void resolveStrategyAPI(QueryDTOIN query, String var_productRef) {
         NormalizedProductEntity entity = productRepository.findByProductRefStartingWith(var_productRef).get(0);
+        System.out.println("Producto encontrado en base de datos: " + entity.getProductRef());
         ExceptionDTO error= messengerService.createExceptionDTO(query, "PRODUCT_IN_BD", entity.getUpdatedAt());
         messengerService.disconnectWebSocket(query.getSessionId(), entity.getProductRef(), error);
     }
 
-    private String DecryptProductRef(String productRef) {
-        String baseRef = productRef.substring(0, productRef.length() - 3);
-        return baseRef;
-    }
+    
     
     /**
      * Encargada de agregar la sesión WebSocket del usuario para el productRef generado
