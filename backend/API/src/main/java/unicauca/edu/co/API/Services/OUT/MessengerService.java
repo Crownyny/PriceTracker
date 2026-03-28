@@ -2,7 +2,6 @@ package unicauca.edu.co.API.Services.OUT;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -16,14 +15,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Config.WebSocketConfig;
-import unicauca.edu.co.API.Presentation.DTO.Enum.ProcessStatus;
 import unicauca.edu.co.API.Presentation.DTO.IN.NormalizedEventDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
-import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.NormlaizedProductEventDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ProcessStatusDTO;
-import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
+import unicauca.edu.co.API.Services.Events.NormlaizedProductFinalizedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
 
 
@@ -47,26 +45,22 @@ public class MessengerService implements IMessengerService {
     private static final Logger logger = LoggerFactory.getLogger(MessengerService.class);
     private final ApplicationEventPublisher eventPublisher;
 
-
     private final SimpMessagingTemplate messagingTemplate;
-    private final NormalizedProductMapper mapper;
     private final WebSocketConfig webSocket;
     private final ObjectMapper objectMapper;
 
     private final String RABBITMQ_QUEUE = "normalized.events";
-    private final String WEBSOCKET_PRODUCTS = "/queue/products";
+    private final String RABBITMQ_QUEUE_SEARCH_NORMALIZED = "search.normalized";
     private final String WEBSOCKET_ERRORS = "/queue/errors";
     private final String WEBSOCKET_STATUS = "/queue/status";
 
     public MessengerService(
         SimpMessagingTemplate messagingTemplate,
-        NormalizedProductMapper mapper,
         WebSocketConfig webSocket,
         ObjectMapper objectMapper,
         ApplicationEventPublisher eventPublisher
     ) {
         this.messagingTemplate = messagingTemplate;
-        this.mapper = mapper;
         this.webSocket = webSocket;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
@@ -92,6 +86,25 @@ public class MessengerService implements IMessengerService {
             }
         } catch (Exception e) {
             logger.error("Error al procesar el mensaje de la cola normalized.events", e);
+        }
+    }
+
+    /**
+     * Escucha la cola de finalización de búsqueda normalizada.
+     * Cuando se recibe un mensaje, se convierte de JSON a un objeto NormlaizedProductEventDTO
+     * Se publica un evento NormlaizedProductFinalizedEvent
+     * @param message el mensaje recibido de la cola como String JSON
+     */
+    @RabbitListener(queues = RABBITMQ_QUEUE_SEARCH_NORMALIZED, concurrency = "1-2")
+    public void listenToSearchNormalized(@Payload String message) {
+        try {
+            NormlaizedProductEventDTO eventDTO = objectMapper.readValue(message, NormlaizedProductEventDTO.class);
+            logger.info("Evento de finalización de búsqueda normalizada recibido: {}", eventDTO.getSearchId());
+            eventPublisher.publishEvent(
+                new NormlaizedProductFinalizedEvent(eventDTO)
+            );
+        } catch (Exception e) {
+            logger.error("Error al procesar el mensaje de la cola search.normalized", e);
         }
     }
 
@@ -125,7 +138,7 @@ public class MessengerService implements IMessengerService {
 
 
     @Override
-    public void disconnectWebSocket(String sessionId, String productRef, ExceptionDTO errorMessage) {
+    public void disconnectWebSocket(String productRef, String sessionId, ExceptionDTO errorMessage) {
         try {
             messagingTemplate.convertAndSendToUser(
                 sessionId,
