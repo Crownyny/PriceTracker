@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Map;
@@ -146,6 +148,7 @@ public class MessengerService implements IMessengerService {
      * Maneja el evento NormalizedProductReceivedEvent publicado cuando se recibe un producto normalizado desde RabbitMQ.
      * @param event El evento que contiene el producto normalizado recibido.
      */
+    @Async
     @EventListener
     public void handleNormalizedProduct(
             NormalizedProductReceivedEvent event) {
