@@ -6,7 +6,7 @@ import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 /**
  * Servicio encargado de la logica de negocio relacionada con los productos.
- * Se encarga de manejar la búsqueda de productos por w
+ * Se encarga de manejar la búsqueda de productos, la obtención de productos 
  */
 
 public interface IProductService {

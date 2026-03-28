@@ -43,6 +43,13 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
      * Encuentra un producto por referencia y fuente.
      */
     Optional<NormalizedProductEntity> findByProductRefAndSourceName(String productRef, String sourceName);
+
+    /**
+     * Encuentra el último producto normalizado por referencia.
+     * @param productRef La referencia del producto para la cual se desea encontrar el último producto normalizado.
+     * @return Un Optional que contiene el último producto normalizado encontrado, o vacío si no se encontró ninguno.
+     */
+    Optional<NormalizedProductEntity> findTopByProductRefOrderByUpdatedAtDesc(String productRef);   
     
     /**
      * Cuenta productos por referencia.
