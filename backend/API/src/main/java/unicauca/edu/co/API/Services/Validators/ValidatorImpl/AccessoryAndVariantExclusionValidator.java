@@ -40,7 +40,7 @@ public class AccessoryAndVariantExclusionValidator extends AbstractProductValida
         String lower = text.toLowerCase(Locale.ROOT);
         for (String keyword : EXCLUSION_KEYWORDS) {
             if (lower.contains(keyword)) {
-                logger.debug("Producto descartado por palabra de exclusión '{}': productRef={}, canonicalName={}",
+                logger.info("Producto descartado por palabra de exclusión '{}': productRef={}, canonicalName={}",
                     keyword, request.getProductRef(), request.getCanonicalName());
                 return;
             }
@@ -49,13 +49,17 @@ public class AccessoryAndVariantExclusionValidator extends AbstractProductValida
     }
 
     private String buildSearchableText(NormalizedProductDTO request) {
-        StringBuilder sb = new StringBuilder();
-        if (request.getCanonicalName() != null) {
-            sb.append(request.getCanonicalName());
+        // IMPORTANTE:
+        // Usar SOLO canonicalName para evitar falsos positivos como:
+        // "NO incluye cargador" (descripciones de reacondicionados) que contiene
+        // keywords de accesorios pero el producto NO es un cargador.
+        String canonicalName = request.getCanonicalName();
+        if (canonicalName != null && !canonicalName.isBlank()) {
+            return canonicalName.trim();
         }
-        if (request.getDescription() != null) {
-            sb.append(" ").append(request.getDescription());
-        }
-        return sb.toString().trim();
+
+        // Fallback: si no hay canonicalName, entonces usar descripción.
+        String description = request.getDescription();
+        return description == null ? "" : description.trim();
     }
 }

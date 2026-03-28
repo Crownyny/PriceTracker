@@ -152,7 +152,16 @@ public class MessengerService implements IMessengerService {
     public void handleNormalizedProduct(
             NormalizedProductReceivedEvent event) {
         NormalizedProductDTO product = event.getProduct();
-        sendToWebSocket(product);
-    }
+        logger.info(
+            "Recibido producto normalizado para validar/enviar: productRef={}, canonicalName={}, price={}, currency={}",
+            product != null ? product.getProductRef() : null,
+            product != null ? product.getCanonicalName() : null,
+            product != null ? product.getPrice() : null,
+            product != null ? product.getCurrency() : null
+        );
+        // el envío al WebSocket debe pasar por la cadena de validadores.
+        // Esto evita que entren al WS productos irrelevantes y centraliza el filtrado.
+        productValidationChain.validate(product);
+    } 
 
 }

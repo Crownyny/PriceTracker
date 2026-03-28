@@ -27,6 +27,8 @@ public class SendToWebSocketValidator extends AbstractProductValidator {
             return;
         }
         try {
+            logger.info("Producto pasó validadores: enviando productRef={} canonicalName={}",
+                request.getProductRef(), request.getCanonicalName());
             messengerService.sendToWebSocket(request);
         } catch (Exception e) {
             logger.error("Error al enviar producto al WebSocket: productRef={}", request.getProductRef(), e);

@@ -35,13 +35,15 @@ public class SimilarityThresholdValidator extends AbstractProductValidator {
         }
         String searchQuery = webSocketConfig.getSearchQuery(request.getProductRef());
         if (searchQuery == null || searchQuery.isBlank()) {
+            logger.info("Similarity: no hay searchQuery guardada para productRef={}, dejando pasar",
+                request.getProductRef());
             next(request);
             return;
         }
         String productName = request.getCanonicalName() != null ? request.getCanonicalName() : "";
         double similarity = computeSimilarity(normalizeForComparison(searchQuery), normalizeForComparison(productName));
         if (similarity < similarityThreshold) {
-            logger.debug("Producto descartado por similitud insuficiente ({} < {}): productRef={}, canonicalName={}",
+            logger.info("Producto descartado por similitud insuficiente ({} < {}): productRef={}, canonicalName={}",
                 String.format("%.2f", similarity), similarityThreshold, request.getProductRef(), request.getCanonicalName());
             return;
         }
@@ -50,7 +52,12 @@ public class SimilarityThresholdValidator extends AbstractProductValidator {
 
     private String normalizeForComparison(String text) {
         if (text == null) return "";
-        return text.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ");
+        // Normalizar quitando separadores no alfanuméricos (ej: "iphone-12" -> "iphone 12")
+        return text
+            .toLowerCase(Locale.ROOT)
+            .replaceAll("[^\\p{L}\\p{N}]+", " ")
+            .trim()
+            .replaceAll("\\s+", " ");
     }
 
     /**
@@ -62,15 +69,18 @@ public class SimilarityThresholdValidator extends AbstractProductValidator {
         }
         Set<String> queryTokens = tokenize(query);
         Set<String> productTokens = tokenize(product);
-        if (queryTokens.isEmpty()) return 1.0;
+        // Evitar el Jaccard sobre tokens del producto completo:
+        // al comparar contra canonicalName con muchos atributos (apple, 64gb, a14...)
+        // la similitud cae demasiado y descarta casi todo con thresholds altos.
+        // Aquí usamos cobertura: % de tokens de la consulta que aparecen en el producto.
+        if (queryTokens.isEmpty()) return 0.0;
+
         long intersection = queryTokens.stream().filter(productTokens::contains).count();
-        int union = queryTokens.size() + productTokens.size() - (int) intersection;
-        if (union == 0) return 1.0;
-        return (double) intersection / union;
+        return intersection / (double) queryTokens.size();
     }
 
     private Set<String> tokenize(String text) {
-        return Arrays.stream(text.split("\\s+"))
+        return Arrays.stream(text.split("[^\\p{L}\\p{N}]+"))
             .filter(s -> s.length() > 1)
             .collect(Collectors.toSet());
     }
