@@ -25,7 +25,7 @@ class ScrapingResultPublisher(BasePublisher):
     def __init__(self, connection: RabbitMQConnection) -> None:
         super().__init__(connection)
 
-    async def publish_result(self, result: RawScrapingResult) -> None:
+    async def publish_result(self, result: RawScrapingResult, query: str | None = None) -> None:
         state = ScrapingState.SCRAPED if result.status == "success" else ScrapingState.FAILED
         message = ScrapingMessage(
             job_id=result.job_id,
@@ -34,6 +34,7 @@ class ScrapingResultPublisher(BasePublisher):
             source_name=result.source_name,
             captured_at=result.scraped_at,
             state=state,
+            query=query,
             raw_fields=result.raw_fields,
             error_message=result.error_message,
         )

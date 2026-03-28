@@ -27,6 +27,7 @@ import datetime
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, Optional
 
 from shared.messaging import (
@@ -50,6 +51,8 @@ from shared.model import (
 
 from .config import settings
 from .graph.pipeline import build_pipeline
+from .graph.nodes.semantic_validation_config import load_semantic_validation_config, SemanticThresholds
+from .graph.nodes.semantic_validation_engine import SemanticValidationEngine
 from .repositories.product_repository import ProductRepository
 
 logger = logging.getLogger(__name__)
@@ -87,6 +90,7 @@ class NormalizerWorker(BaseConsumer):
         )
         self._publisher = BasePublisher(connection)
         self._product_repo = product_repo
+        self._semantic_validator = None
 
         llm = None
         if settings.enable_enricher and settings.openai_api_key:
@@ -106,10 +110,58 @@ class NormalizerWorker(BaseConsumer):
                     "langchain-openai no instalado. Enriquecimiento LLM deshabilitado."
                 )
 
+        if settings.enable_semantic_validator:
+            config_path = Path(settings.semantic_config_path)
+            if not config_path.is_absolute():
+                config_path = Path.cwd() / config_path
+            semantic_config = load_semantic_validation_config(config_path)
+
+            thresholds_override = None
+            if any(
+                value is not None
+                for value in (
+                    settings.semantic_domain_threshold,
+                    settings.semantic_valid_threshold,
+                    settings.semantic_invalid_threshold,
+                )
+            ):
+                thresholds_override = SemanticThresholds(
+                    domain_threshold=(
+                        settings.semantic_domain_threshold
+                        if settings.semantic_domain_threshold is not None
+                        else semantic_config.thresholds.domain_threshold
+                    ),
+                    valid_threshold=(
+                        settings.semantic_valid_threshold
+                        if settings.semantic_valid_threshold is not None
+                        else semantic_config.thresholds.valid_threshold
+                    ),
+                    invalid_threshold=(
+                        settings.semantic_invalid_threshold
+                        if settings.semantic_invalid_threshold is not None
+                        else semantic_config.thresholds.invalid_threshold
+                    ),
+                )
+
+            self._semantic_validator = SemanticValidationEngine(
+                config=semantic_config,
+                model_name=settings.semantic_embeddings_model,
+                top_k=settings.semantic_top_k,
+                thresholds_override=thresholds_override,
+            )
+            logger.info(
+                "Validador semántico habilitado (model=%s, config=%s)",
+                settings.semantic_embeddings_model,
+                config_path,
+            )
+        else:
+            logger.info("Validador semántico deshabilitado (ENABLE_SEMANTIC_VALIDATOR=false)")
+
         self._pipeline = build_pipeline(
             product_repo=product_repo,
             llm=llm,
             enable_enricher=settings.enable_enricher,
+            semantic_validator=self._semantic_validator,
         )
 
     async def setup(self) -> None:
@@ -206,16 +258,45 @@ class NormalizerWorker(BaseConsumer):
                 state=ScrapingState.NORMALIZATION_FAILED,
                 error_message=message.error_message or "El scraping del job había fallado",
             )
+        elif not (message.query or "").strip():
+            logger.warning("[%s] Missing query in ScrapingMessage", message.job_id)
+            _append_failure({
+                "ts": datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                "failure_type": "missing_query",
+                "job_id": message.job_id,
+                "search_id": message.search_id,
+                "source_name": message.source_name,
+                "product_ref": message.product_ref,
+                "reason": "Missing query",
+                "raw_fields": message.raw_fields,
+            })
+            event = NormalizedEventMessage(
+                job_id=message.job_id,
+                search_id=message.search_id,
+                product_ref=message.product_ref,
+                source_name=message.source_name,
+                normalized_at=datetime.datetime.now(tz=datetime.timezone.utc),
+                state=ScrapingState.NORMALIZATION_FAILED,
+                error_message="Missing query",
+            )
         else:
             initial_state = {
                 "job_id": message.job_id,
                 "product_ref": message.product_ref,
                 "source_name": message.source_name,
                 "captured_at": message.captured_at.isoformat(),
+                "query": message.query,
                 "raw_fields": message.raw_fields,
                 "sanitized_product": None,
                 "product_invalid": False,
                 "standardized_product": None,
+                "semantic_decision": None,
+                "semantic_score": None,
+                "semantic_pattern_used": None,
+                "semantic_reason": None,
+                "semantic_domain_gap": None,
+                "semantic_is_tech": None,
+                "semantic_latency_ms": None,
                 "canonical_text": None,
                 "heuristic_attributes": None,
                 "heuristic_confidence": None,

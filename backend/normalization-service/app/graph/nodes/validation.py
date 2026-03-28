@@ -25,6 +25,16 @@ async def validation_node(state: NormalizationState) -> NormalizationState:
     if state.get("error"):
         return state
 
+    if state.get("semantic_decision") == "FILTERED":
+        reason = state.get("semantic_reason") or "Semantic validator filtered candidate"
+        logger.warning("[%s] Semantic validation filtered product: %s", state.get("job_id"), reason)
+        return {
+            **state,
+            "validation_errors": [f"Semantic filtered: {reason}"],
+            "outcome": ScrapingState.NORMALIZATION_FAILED,
+            "final_product": None,
+        }
+
     normalized = dict(state.get("normalized_product") or {})
     std = state.get("standardized_product") or {}
     domain = detect_domain(std.get("category", ""), fallback_text=std.get("title", ""))

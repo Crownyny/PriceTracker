@@ -20,6 +20,7 @@ class NormalizationState(TypedDict):
     product_ref: str
     source_name: str
     captured_at: str                         # ISO-8601
+    query: str                               # Query original de búsqueda (obligatoria)
     raw_fields: dict                         # Campos crudos del scraper
 
     # ── Node 1: Input Sanitizer ───────────────────────────────────────────────
@@ -28,6 +29,15 @@ class NormalizationState(TypedDict):
 
     # ── Node 2: Field Standardizer ────────────────────────────────────────────
     standardized_product: Optional[dict]     # Esquema interno unificado
+
+    # ── Node 2.5: Semantic Validation (2 capas) ──────────────────────────────
+    semantic_decision: Optional[str]         # "SKIP" | "VALID" | "FILTERED" | "UNCERTAIN"
+    semantic_score: Optional[float]          # score capa 2 (valid - invalid)
+    semantic_pattern_used: Optional[str]     # patrón KB seleccionado
+    semantic_reason: Optional[str]           # explicación breve de la decisión
+    semantic_domain_gap: Optional[float]     # gap = sim_tech - sim_non_tech
+    semantic_is_tech: Optional[bool]         # resultado capa 1
+    semantic_latency_ms: Optional[float]     # latencia total del nodo
 
     # ── Node 3: Text Canonicalizer ────────────────────────────────────────────
     canonical_text: Optional[str]            # Texto preparado para extracción

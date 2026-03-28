@@ -44,6 +44,7 @@ def _make_scraping_msg(
     job_id: str = "integration-job-001",
     search_id: str | None = "search-001",
     error_message: str | None = None,
+    query: str | None = "camiseta hombre",
 ) -> ScrapingMessage:
     # Asegurar raw_url para que input_sanitizer no falle por URL faltante
     if "raw_url" not in raw_fields and state == ScrapingState.SCRAPED:
@@ -55,6 +56,7 @@ def _make_scraping_msg(
         source_name=source,
         captured_at=datetime.datetime.now(tz=datetime.timezone.utc),
         state=state,
+        query=query,
         raw_fields=raw_fields,
         error_message=error_message,
     )
@@ -390,3 +392,31 @@ async def test_publisher_llamado_con_queue_y_job_id_correctos():
     assert payload["job_id"] == "publisher-check-job-009"
     assert payload["product_ref"] == "gildan-hombre-001"
     assert payload["source_name"] == "amazon"
+
+
+@pytest.mark.asyncio
+async def test_missing_query_short_circuit_no_ejecuta_pipeline():
+    """Si query llega vacía o nula, el worker debe fallar sin invocar el pipeline."""
+    worker, repo, publisher = _make_worker()
+    worker._pipeline = MagicMock()
+    worker._pipeline.ainvoke = AsyncMock(return_value={})
+
+    msg = _make_scraping_msg(
+        {
+            "raw_title": "Gildan Camiseta",
+            "raw_price": "COP 77,586.60",
+            "raw_currency": "COP",
+            "raw_availability": "available",
+            "raw_url": "https://www.amazon.com/dp/B09312N4RH",
+        },
+        job_id="missing-query-job-010",
+        query="",
+    )
+
+    await worker._handle_scraping_message(msg.model_dump(mode="json"))
+
+    worker._pipeline.ainvoke.assert_not_called()
+    repo.upsert_product.assert_not_called()
+    published_payload = publisher.publish.call_args[0][1]
+    assert published_payload["state"] == "normalization_failed"
+    assert published_payload["error_message"] == "Missing query"

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.slf4j.Logger;
@@ -19,6 +21,7 @@ import unicauca.edu.co.API.Presentation.DTO.IN.NormalizedEventDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.ProcessStatusDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
@@ -52,6 +55,11 @@ public class MessengerService implements IMessengerService {
     private final NormalizedProductMapper mapper;
     private final IProductValidator productValidationChain;
 
+    private final String RABBITMQ_QUEUE = "normalized.events";
+    private final String WEBSOCKET_PRODUCTS = "/queue/products";
+    private final String WEBSOCKET_ERRORS = "/queue/errors";
+    private final String WEBSOCKET_STATUS = "/queue/status";
+
     public MessengerService(
         SimpMessagingTemplate messagingTemplate,
         NormalizedProductMapper mapper,
@@ -75,7 +83,7 @@ public class MessengerService implements IMessengerService {
      * @param message el mensaje recibido de la cola como String JSON
      */
     @Override
-    @RabbitListener(queues = "normalized.events", concurrency = "3-5")
+    @RabbitListener(queues = RABBITMQ_QUEUE, concurrency = "3-5")
     public void listenToResults(@Payload String message) {
         try {
             NormalizedEventDTO eventDTO = objectMapper.readValue(message, NormalizedEventDTO.class);
@@ -96,12 +104,12 @@ public class MessengerService implements IMessengerService {
      * Consulta en memoria el sessionID por medio de webSocketConfig 
      * @param productDTO Producto a enviar 
      */
-    @Override
-    public void sendToWebSocket(NormalizedProductDTO productDTO) {
+     @Override
+    public <T> void sendToWebSocket(String productRef, String destination, T payload) {
         try {
-            String sessionID = webSocket.getSession(productDTO.getProductRef());
+            String sessionID = webSocket.getSession(productRef);
             if (sessionID == null) {
-                logger.warn("No se encontró sessionID para productRef: {}", productDTO.getProductRef());
+                logger.warn("No se encontró sessionID para productRef: {}", productRef);
                 return;
             }
             SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
@@ -109,23 +117,23 @@ public class MessengerService implements IMessengerService {
             headerAccessor.setLeaveMutable(true);
             messagingTemplate.convertAndSendToUser(
                 sessionID,
-                "/queue/products",
-                productDTO,
+                destination,
+                payload,    
                 headerAccessor.getMessageHeaders()
             );
-            logger.info("Producto enviado al usuario {} a /queue/products: {}", sessionID, productDTO);
 
         } catch (Exception e) {
             logger.error("Error al enviar producto al WebSocket", e);
         }
     }
 
+
     @Override
     public void disconnectWebSocket(String sessionId, String productRef, ExceptionDTO errorMessage) {
         try {
             messagingTemplate.convertAndSendToUser(
                 sessionId,
-                "/queue/errors",
+                WEBSOCKET_ERRORS,
                 errorMessage
             );
             webSocket.removeSession(productRef, sessionId);
@@ -149,8 +157,7 @@ public class MessengerService implements IMessengerService {
      * @param event El evento que contiene el producto normalizado recibido.
      */
     @EventListener
-    public void handleNormalizedProduct(
-            NormalizedProductReceivedEvent event) {
+    public void handleNormalizedProduct(NormalizedProductReceivedEvent event) {
         NormalizedProductDTO product = event.getProduct();
         logger.info(
             "Recibido producto normalizado para validar/enviar: productRef={}, canonicalName={}, price={}, currency={}",
@@ -165,8 +172,14 @@ public class MessengerService implements IMessengerService {
         if (productValidationChain.validate(product)) {
             logger.info("Producto pasó validadores; enviando al WebSocket: productRef={} canonicalName={}",
                 product.getProductRef(), product.getCanonicalName());
-            sendToWebSocket(product);
+            sendToWebSocket(product.getProductRef(), WEBSOCKET_PRODUCTS, product);
         }
+    }
+
+    @Async
+    @Override
+    public void sendProcessStatus(ProcessStatusDTO status, String productRef) {
+        sendToWebSocket(productRef, WEBSOCKET_STATUS, status);
     }
 
 }
