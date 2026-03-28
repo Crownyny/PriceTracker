@@ -1,7 +1,6 @@
 package unicauca.edu.co.API.Services.OUT;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -13,17 +12,16 @@ import org.springframework.scheduling.annotation.Async;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Config.WebSocketConfig;
-import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
+import unicauca.edu.co.API.Presentation.DTO.Enum.ProcessStatus;
 import unicauca.edu.co.API.Presentation.DTO.IN.NormalizedEventDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.ProcessStatusDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
@@ -55,6 +53,11 @@ public class MessengerService implements IMessengerService {
     private final WebSocketConfig webSocket;
     private final ObjectMapper objectMapper;
 
+    private final String RABBITMQ_QUEUE = "normalized.events";
+    private final String WEBSOCKET_PRODUCTS = "/queue/products";
+    private final String WEBSOCKET_ERRORS = "/queue/errors";
+    private final String WEBSOCKET_STATUS = "/queue/status";
+
     public MessengerService(
         SimpMessagingTemplate messagingTemplate,
         NormalizedProductMapper mapper,
@@ -76,7 +79,7 @@ public class MessengerService implements IMessengerService {
      * @param message el mensaje recibido de la cola como String JSON
      */
     @Override
-    @RabbitListener(queues = "normalized.events", concurrency = "3-5")
+    @RabbitListener(queues = RABBITMQ_QUEUE, concurrency = "3-5")
     public void listenToResults(@Payload String message) {
         try {
             NormalizedEventDTO eventDTO = objectMapper.readValue(message, NormalizedEventDTO.class);
@@ -97,12 +100,12 @@ public class MessengerService implements IMessengerService {
      * Consulta en memoria el sessionID por medio de webSocketConfig 
      * @param productDTO Producto a enviar 
      */
-    @Override
-    public void sendToWebSocket(NormalizedProductDTO productDTO) {
+     @Override
+    public <T> void sendToWebSocket(String productRef, String destination, T payload) {
         try {
-            String sessionID = webSocket.getSession(productDTO.getProductRef());
+            String sessionID = webSocket.getSession(productRef);
             if (sessionID == null) {
-                logger.warn("No se encontró sessionID para productRef: {}", productDTO.getProductRef());
+                logger.warn("No se encontró sessionID para productRef: {}", productRef);
                 return;
             }
             SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
@@ -110,8 +113,8 @@ public class MessengerService implements IMessengerService {
             headerAccessor.setLeaveMutable(true);
             messagingTemplate.convertAndSendToUser(
                 sessionID,
-                "/queue/products",
-                productDTO,
+                destination,
+                payload,    
                 headerAccessor.getMessageHeaders()
             );
 
@@ -120,12 +123,13 @@ public class MessengerService implements IMessengerService {
         }
     }
 
+
     @Override
     public void disconnectWebSocket(String sessionId, String productRef, ExceptionDTO errorMessage) {
         try {
             messagingTemplate.convertAndSendToUser(
                 sessionId,
-                "/queue/errors",
+                WEBSOCKET_ERRORS,
                 errorMessage
             );
             webSocket.removeSession(productRef, sessionId);
@@ -144,16 +148,12 @@ public class MessengerService implements IMessengerService {
         return exceptionDTO;
     }
 
-    /**
-     * Maneja el evento NormalizedProductReceivedEvent publicado cuando se recibe un producto normalizado desde RabbitMQ.
-     * @param event El evento que contiene el producto normalizado recibido.
-     */
+    
     @Async
-    @EventListener
-    public void handleNormalizedProduct(
-            NormalizedProductReceivedEvent event) {
-        NormalizedProductDTO product = event.getProduct();
-        sendToWebSocket(product);
+    @Override
+    public void sendProcessStatus(ProcessStatusDTO status, String productRef) {
+        sendToWebSocket(productRef, WEBSOCKET_STATUS, status);
     }
+
 
 }
