@@ -9,9 +9,9 @@ import lombok.Setter;
 @AllArgsConstructor
 public class IntentResponseDTOIN {
     private String input;
-    private String intent;
-    private double confidence;
-
+    private String p_buy;
+    private String label;
+    private String threshold;
     public IntentResponseDTOIN() {
     }   
 }
