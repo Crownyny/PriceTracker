@@ -3,6 +3,7 @@ package unicauca.edu.co.API.Presentation.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import unicauca.edu.co.API.Presentation.DTO.IN.IntentResponseDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Services.IN.IntentProductService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,7 @@ public class IntentProductController {
     }
 
     @PostMapping("intent")
-    public String getMethodName(@RequestBody QueryDTOIN param) {
+    public String getIntentPredict(@RequestBody QueryDTOIN param) {
         return intentProductService.getIntentResponse(param.getQuery()).block().getIntent();
     }
 
