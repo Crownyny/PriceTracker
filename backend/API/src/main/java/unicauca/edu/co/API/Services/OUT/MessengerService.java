@@ -159,9 +159,14 @@ public class MessengerService implements IMessengerService {
             product != null ? product.getPrice() : null,
             product != null ? product.getCurrency() : null
         );
-        // el envío al WebSocket debe pasar por la cadena de validadores.
-        // Esto evita que entren al WS productos irrelevantes y centraliza el filtrado.
-        productValidationChain.validate(product);
-    } 
+        if (product == null) {
+            return;
+        }
+        if (productValidationChain.validate(product)) {
+            logger.info("Producto pasó validadores; enviando al WebSocket: productRef={} canonicalName={}",
+                product.getProductRef(), product.getCanonicalName());
+            sendToWebSocket(product);
+        }
+    }
 
 }

@@ -13,9 +13,9 @@ public class LogicalPriceValidator extends AbstractProductValidator {
     private static final Logger logger = LoggerFactory.getLogger(LogicalPriceValidator.class);
 
     @Override
-    public void validate(NormalizedProductDTO request) {
+    public boolean validate(NormalizedProductDTO request) {
         if (request == null) {
-            return;
+            return false;
         }
 
         Double price = request.getPrice();
@@ -24,7 +24,7 @@ public class LogicalPriceValidator extends AbstractProductValidator {
                 "Producto descartado por precio inválido: productRef={}, canonicalName={}, price={}",
                 request.getProductRef(), request.getCanonicalName(), price
             );
-            return;
+            return false;
         }
 
         String currency = request.getCurrency();
@@ -33,7 +33,7 @@ public class LogicalPriceValidator extends AbstractProductValidator {
                 "Producto descartado por moneda vacía: productRef={}, canonicalName={}",
                 request.getProductRef(), request.getCanonicalName()
             );
-            return;
+            return false;
         }
 
         String normalizedCurrency = currency.trim().toUpperCase(java.util.Locale.ROOT);
@@ -44,10 +44,10 @@ public class LogicalPriceValidator extends AbstractProductValidator {
                 "Producto descartado por moneda no-ISO4217: productRef={}, canonicalName={}, currency={}",
                 request.getProductRef(), request.getCanonicalName(), currency
             );
-            return;
+            return false;
         }
 
-        next(request);
+        return next(request);
     }
 
 }

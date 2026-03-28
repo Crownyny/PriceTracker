@@ -29,25 +29,24 @@ public class SimilarityThresholdValidator extends AbstractProductValidator {
     }
 
     @Override
-    public void validate(NormalizedProductDTO request) {
+    public boolean validate(NormalizedProductDTO request) {
         if (request == null) {
-            return;
+            return false;
         }
         String searchQuery = webSocketConfig.getSearchQuery(request.getProductRef());
         if (searchQuery == null || searchQuery.isBlank()) {
             logger.info("Similarity: no hay searchQuery guardada para productRef={}, dejando pasar",
                 request.getProductRef());
-            next(request);
-            return;
+            return next(request);
         }
         String productName = request.getCanonicalName() != null ? request.getCanonicalName() : "";
         double similarity = computeSimilarity(normalizeForComparison(searchQuery), normalizeForComparison(productName));
         if (similarity < similarityThreshold) {
             logger.info("Producto descartado por similitud insuficiente ({} < {}): productRef={}, canonicalName={}",
                 String.format("%.2f", similarity), similarityThreshold, request.getProductRef(), request.getCanonicalName());
-            return;
+            return false;
         }
-        next(request);
+        return next(request);
     }
 
     private String normalizeForComparison(String text) {

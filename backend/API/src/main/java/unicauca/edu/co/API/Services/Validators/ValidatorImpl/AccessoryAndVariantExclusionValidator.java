@@ -28,24 +28,23 @@ public class AccessoryAndVariantExclusionValidator extends AbstractProductValida
     }).collect(Collectors.toSet());
 
     @Override
-    public void validate(NormalizedProductDTO request) {
+    public boolean validate(NormalizedProductDTO request) {
         if (request == null) {
-            return;
+            return false;
         }
         String text = buildSearchableText(request);
         if (text.isBlank()) {
-            next(request);
-            return;
+            return next(request);
         }
         String lower = text.toLowerCase(Locale.ROOT);
         for (String keyword : EXCLUSION_KEYWORDS) {
             if (lower.contains(keyword)) {
                 logger.info("Producto descartado por palabra de exclusión '{}': productRef={}, canonicalName={}",
                     keyword, request.getProductRef(), request.getCanonicalName());
-                return;
+                return false;
             }
         }
-        next(request);
+        return next(request);
     }
 
     private String buildSearchableText(NormalizedProductDTO request) {
