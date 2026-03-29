@@ -504,6 +504,61 @@ async def test_pipeline_expone_campos_semanticos(pipeline):
     assert "semantic_reason" in result
 
 
+@pytest.mark.asyncio
+async def test_descripcion_html_se_convierte_a_texto_plano(pipeline):
+    """Si raw_description llega en HTML, debe guardarse como texto plano limpio."""
+    state = _initial_state(
+        {
+            "raw_title": "Auriculares Inalambricos Bluetooth Wave Buds 2",
+            "raw_price": "COP 349,900",
+            "raw_currency": "COP",
+            "raw_availability": "available",
+            "raw_url": "https://example.com/jbl-wave-buds-2",
+            "raw_description": (
+                "<p><span><strong>Auriculares Inalambricos Bluetooth de ruido Wave Buds 2 "
+                "</strong></span></p>"
+                "<p>La vida es demasiado corta como para aburrirse</p>"
+                "<p>Con hasta 40 horas de reproduccion&nbsp;y ANC.</p>"
+            ),
+        },
+        source="exito",
+        product_ref="jbl-wave-buds-2",
+    )
+
+    result = await pipeline.ainvoke(state)
+
+    assert result.get("outcome") == "normalized"
+    description = result["final_product"].get("description")
+    assert description is not None
+    assert "<" not in description and ">" not in description
+    assert "Auriculares Inalambricos Bluetooth de ruido Wave Buds 2" in description
+    assert "La vida es demasiado corta como para aburrirse" in description
+    assert "Con hasta 40 horas de reproduccion y ANC." in description
+
+
+@pytest.mark.asyncio
+async def test_descripcion_texto_plano_se_preserva(pipeline):
+    """Si raw_description no es HTML, no debe alterarse por la limpieza de tags."""
+    plain_description = "Auriculares con Bluetooth 5.3 y hasta 40 horas de reproduccion"
+    state = _initial_state(
+        {
+            "raw_title": "Auriculares Bluetooth",
+            "raw_price": "COP 199,900",
+            "raw_currency": "COP",
+            "raw_availability": "available",
+            "raw_url": "https://example.com/auriculares-bt",
+            "raw_description": plain_description,
+        },
+        source="exito",
+        product_ref="auriculares-bt-001",
+    )
+
+    result = await pipeline.ainvoke(state)
+
+    assert result.get("outcome") == "normalized"
+    assert result["final_product"].get("description") == plain_description
+
+
 class _FilteredSemanticEngine:
     def evaluate(self, *, query: str, title: str | None):
         return SimpleNamespace(
