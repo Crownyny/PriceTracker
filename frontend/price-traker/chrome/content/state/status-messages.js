@@ -34,12 +34,12 @@
       type: 'info',
     },
     normalizing: {
-      message: 'Normalizando datos... {count} productos',
+      message: 'Normalizando datos... {count} productos recolectados',
       icon: 'spinner',
       type: 'info',
     },
     comparing: {
-      message: 'Creando tabla de comparación...',
+      message: 'Comparando precios... {count} productos',
       icon: 'spinner',
       type: 'info',
     },
@@ -61,7 +61,7 @@
     
     // Streaming states
     streaming: {
-      message: 'Recibiendo productos...',
+      message: 'Esperando productos... {count} recolectados (mín. 15)',
       icon: 'spinner',
       type: 'info',
     },
@@ -144,25 +144,39 @@
         if (backendPhase && STATUS_MESSAGES[backendPhase]) {
           const messageData = STATUS_MESSAGES[backendPhase];
           
-          // Interpolate {count} placeholder for normalizing phase
-          if (backendPhase === 'normalizing' && messageData.message.includes('{count}')) {
-            return {
-              status: backendPhase,
-              ...messageData,
-              message: messageData.message.replace('{count}', productCount),
-            };
+          // Interpolate {count} placeholder in any message that contains it
+          let message = messageData.message;
+          if (message.includes('{count}')) {
+            message = message.replace('{count}', productCount);
           }
           
           return {
             status: backendPhase,
             ...messageData,
+            message: message,
           };
         }
 
-        // Use current status message
+        // Use current status message with interpolation
+        const statusMsg = STATUS_MESSAGES[currentStatus];
+        if (statusMsg) {
+          let message = statusMsg.message;
+          if (message.includes('{count}')) {
+            message = message.replace('{count}', productCount);
+          }
+          return {
+            status: currentStatus,
+            ...statusMsg,
+            message: message,
+          };
+        }
+
+        // Fallback if status not found
         return {
           status: currentStatus,
-          ...STATUS_MESSAGES[currentStatus],
+          message: 'Procesando...',
+          icon: 'spinner',
+          type: 'info',
         };
       },
 

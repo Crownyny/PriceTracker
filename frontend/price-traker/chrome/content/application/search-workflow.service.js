@@ -30,7 +30,7 @@
     let statusUpdateInterval = null;
     let renderTimeout = null;
     let pendingRender = false;
-    const minProductsBeforeShow = 20; // Wait for at least 20 products before showing table
+    const minProductsBeforeShow = 15; // Wait for at least 15 products before showing table
     const RENDER_BATCH_DELAY = 500;
     
     // Helper: Generate UUID for search_id
@@ -521,15 +521,35 @@
     }
 
     function getState() {
+      // Only show products if we have at least minProductsBeforeShow (15) OR search is completed with fewer
+      // This ensures spinner/loading messages show until we have a meaningful dataset
+      const shouldShowProducts = products.length >= minProductsBeforeShow || status === 'completed';
+      const productsToReturn = shouldShowProducts ? [...products] : [];
+      
       return {
         status,
-        products: [...products],
+        products: productsToReturn,
         activeSearch,
         fallbackInProgress,
         backendStatus,
         statusMessage: statusTracker && statusTracker.getCurrentMessage ? statusTracker.getCurrentMessage() : null,
         elapsedTime: statusTracker && statusTracker.getElapsedTime ? statusTracker.getElapsedTime() : 0,
       };
+    }
+
+    function emitStatusOnly() {
+      // Emit status updates immediately without batching (for UI message updates)
+      // Only include statusMessage, not products yet
+      const stateWithoutProducts = {
+        status,
+        products: [], // Don't include products in status-only updates
+        activeSearch,
+        fallbackInProgress,
+        backendStatus,
+        statusMessage: statusTracker && statusTracker.getCurrentMessage ? statusTracker.getCurrentMessage() : null,
+        elapsedTime: statusTracker && statusTracker.getElapsedTime ? statusTracker.getElapsedTime() : 0,
+      };
+      listeners.forEach(listener => listener(stateWithoutProducts));
     }
 
     async function runFallback(reason) {
@@ -559,7 +579,8 @@
       
       fallbackInProgress = true;
       updateStatus('fetching-rest'); // Show we're fetching from REST backend
-      emit();
+      emitStatusOnly(); // Show status message immediately, no products yet
+      
       try {
         const restoredProducts = await pricingService.restoreByProductRef(fallbackProductRef, activeSearch.query);
         console.log(`${constants.LOG_PREFIX} [FALLBACK] REST returned ${restoredProducts.length} products`);
@@ -583,7 +604,7 @@
           statusTracker.setBackendPhase('normalizing');
         }
         updateStatus('streaming');
-        emit({ reason });
+        emitStatusOnly(); // Show "Normalizando..." message, no products yet
         
         // Simulate normalization delay (2 seconds)
         await new Promise(resolve => setTimeout(resolve, 2000));
@@ -592,20 +613,19 @@
           statusTracker.setBackendPhase('comparing');
         }
         updateStatus('streaming');
-        emit({ reason });
+        emitStatusOnly(); // Show "Creando tabla..." message, no products yet
         
         // Simulate comparison delay (1 second)
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         updateStatus('completed');
-        emit({ reason });
+        scheduleRender(); // Now render with all products if >= 20
       } catch (error) {
         console.error(`${constants.LOG_PREFIX} [FALLBACK] ❌ Fallback failed:`, error.message);
         updateStatus('error');
-        emit({ reason, error: error.message });
+        emitStatusOnly();
       } finally {
         fallbackInProgress = false;
-        emit();
       }
     }
 
