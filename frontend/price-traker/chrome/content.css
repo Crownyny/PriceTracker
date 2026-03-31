@@ -227,12 +227,12 @@
 }
 
 /* ==========================================
-   CONTENIDO - GRID DE 2 COLUMNAS
+   CONTENIDO - LAYOUT MEJORADO
    ========================================== */
 .price-tracker-content {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: 0;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
   padding: 24px;
 }
 
@@ -240,7 +240,7 @@
    COLUMNA IZQUIERDA - MEJOR PRECIO
    ========================================== */
 .best-price-section {
-  padding-right: 24px;
+  padding-right: 0;
 }
 
 .best-price-card {
@@ -397,11 +397,14 @@
   color: #94a3b8;
 }
 
-/* Grid de tiendas 2x2 */
+/* Grid de tiendas con miniaturas - mostrar en columna única para mejor visibilidad */
 .stores-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .stores-empty {
@@ -425,11 +428,13 @@
   text-decoration: none;
   transition: all 0.2s;
   cursor: pointer;
+  min-height: 100px;
 }
 
 .store-item:hover {
   border-color: #c7d2fe;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
 }
 
 .store-item.best {
@@ -474,13 +479,16 @@
 .store-item .store-info {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .store-item .store-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #0f172a;
-  margin: 0 0 2px 0;
+  margin: 0 0 4px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
