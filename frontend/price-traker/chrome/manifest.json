@@ -41,6 +41,7 @@
       "js": [
         "content/constants.js",
         "content/state.js",
+        "content/state/status-messages.js",
         "content/domain/contracts.js",
         "content/pom/google-search.page.js",
         "content/transport/stomp-relay-client.js",

@@ -584,6 +584,75 @@
 }
 
 /* ==========================================
+   STATUS MESSAGE & SPINNERS
+   ========================================== */
+.status-message-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  gap: 16px;
+  min-height: 120px;
+}
+
+.status-spinner {
+  display: inline-block;
+}
+
+.status-spinner.connecting::after,
+.status-spinner.spinner::after {
+  content: '';
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.status-spinner.warning::after {
+  content: '⚠️';
+  font-size: 24px;
+}
+
+.status-spinner.error::after {
+  content: '❌';
+  font-size: 24px;
+}
+
+.status-spinner.check::after {
+  content: '✓';
+  font-size: 24px;
+  color: #10b981;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.status-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  text-align: center;
+}
+
+.status-text.warning {
+  color: #f59e0b;
+}
+
+.status-text.error {
+  color: #ef4444;
+}
+
+.status-text.success {
+  color: #10b981;
+}
+
+/* ==========================================
    RESPONSIVE
    ========================================== */
 @media (max-width: 768px) {

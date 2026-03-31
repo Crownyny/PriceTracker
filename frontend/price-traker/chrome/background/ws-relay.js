@@ -115,11 +115,12 @@
         // Subscribe to errors queue
         this.stompClient.subscribe('/user/queue/errors', (message) => {
           try {
+            console.log('[WS RELAY] Raw error message received:', message.body);
             const payload = JSON.parse(message.body);
-            console.log('[WS RELAY] Error recibido:', payload);
+            console.log('[WS RELAY] ❌ ERROR RECIBIDO DEL BACKEND:', payload);
             this.broadcastToAllTabs('error-received', payload);
           } catch (e) {
-            console.error('[WS RELAY] Error parseando error:', e);
+            console.error('[WS RELAY] Error parseando error message:', e, message.body);
           }
         });
         
@@ -135,6 +136,11 @@
         });
         
         console.log('[WS RELAY] ✅ Subscripciones completadas');
+        
+        // Small delay to ensure backend has processed subscriptions
+        setTimeout(() => {
+          console.log('[WS RELAY] Subscriptions delay complete - ready for searches');
+        }, 100);
       } catch (error) {
         console.error('[WS RELAY] Error suscribiéndose:', error);
       }
@@ -182,6 +188,117 @@
       if (this.stompClient) {
         this.stompClient.deactivate();
       }
+    },
+
+    fetchCachedProducts: async function(productRef) {
+      // Make REST call from background (no CORS issues)
+      try {
+        const apiUrl = 'http://localhost:8080/api/products/search';
+        console.log('[WS RELAY] Fetching cached products:', productRef);
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_ref: productRef }),
+        });
+
+        if (!response.ok) {
+          console.error('[WS RELAY] Error fetching cached products:', response.statusText);
+          this.broadcastToAllTabs('fetch-error', { error: response.statusText, productRef });
+          return;
+        }
+
+        const cachedProducts = await response.json();
+        if (!Array.isArray(cachedProducts)) {
+          console.warn('[WS RELAY] Expected array, got:', cachedProducts);
+          return;
+        }
+
+        console.log(`[WS RELAY] ✓ Fetched ${cachedProducts.length} cached products`);
+        
+        // Broadcast each product as if it came from WebSocket
+        for (const product of cachedProducts) {
+          this.broadcastToAllTabs('product-received', product);
+        }
+        
+        // Send completion marker
+        this.broadcastToAllTabs('cached-products-loaded', { count: cachedProducts.length });
+      } catch (error) {
+        console.error('[WS RELAY] Error in fetchCachedProducts:', error);
+        this.broadcastToAllTabs('fetch-error', { error: error.message, productRef });
+      }
+    },
+
+    restoreByProductRef: async function(productRef, query) {
+      // Make REST call from background (no CORS issues)
+      try {
+        const apiUrl = 'http://localhost:8080/api/products/search';
+        console.log('[WS RELAY] REST: Fetching products for productRef:', productRef);
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_ref: productRef }),
+        });
+
+        if (!response.ok) {
+          console.error('[WS RELAY] REST Error:', response.status, response.statusText);
+          this.broadcastToAllTabs('rest-search-error', { status: response.status });
+          return;
+        }
+
+        const products = await response.json();
+        console.log(`[WS RELAY] ✓ REST returned ${Array.isArray(products) ? products.length : '?'} products`);
+        
+        // Send all products in a single message
+        this.broadcastToAllTabs('rest-search-complete', { 
+          count: Array.isArray(products) ? products.length : 0,
+          products: Array.isArray(products) ? products : []
+        });
+      } catch (error) {
+        console.error('[WS RELAY] REST Error:', error.message);
+        this.broadcastToAllTabs('rest-search-error', { error: error.message });
+      }
+    },
+
+    checkIfProductExists: async function(productRef) {
+      // Quick check if product exists in backend
+      try {
+        const apiUrl = 'http://localhost:8080/api/products/search';
+        console.log('[WS RELAY] CHECK: Checking if product exists:', productRef);
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_ref: productRef }),
+        });
+
+        if (!response.ok) {
+          console.log('[WS RELAY] CHECK: API error ' + response.status + ' - product does not exist');
+          this.broadcastToAllTabs('check-product-response', { 
+            exists: false,
+            productRef: productRef
+          });
+          return;
+        }
+
+        const products = await response.json();
+        const exists = Array.isArray(products) && products.length > 0;
+        console.log(`[WS RELAY] CHECK: Product ${exists ? 'EXISTS' : 'NOT FOUND'} (${Array.isArray(products) ? products.length : 0} items)`);
+        
+        this.broadcastToAllTabs('check-product-response', { 
+          exists: exists,
+          productRef: productRef,
+          count: Array.isArray(products) ? products.length : 0
+        });
+      } catch (error) {
+        console.error('[WS RELAY] CHECK Error:', error.message);
+        this.broadcastToAllTabs('check-product-response', { 
+          exists: false,
+          productRef: productRef,
+          error: error.message
+        });
+      }
     }
   };
   
@@ -195,6 +312,18 @@
         sendResponse({ success: true });
       } else if (message.type === 'ws-relay-send-search') {
         wsRelayService.sendSearch(message.payload);
+        sendResponse({ success: true });
+      } else if (message.type === 'ws-relay-fetch-cached') {
+        // Handle cached product fetch asynchronously
+        wsRelayService.fetchCachedProducts(message.productRef);
+        sendResponse({ success: true });
+      } else if (message.type === 'ws-relay-rest-search') {
+        // Handle REST search asynchronously
+        wsRelayService.restoreByProductRef(message.productRef, message.query);
+        sendResponse({ success: true });
+      } else if (message.type === 'ws-relay-check-product') {
+        // Handle product existence check
+        wsRelayService.checkIfProductExists(message.productRef);
         sendResponse({ success: true });
       } else if (message.type === 'ws-relay-disconnect') {
         wsRelayService.disconnect();

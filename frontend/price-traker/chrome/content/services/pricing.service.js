@@ -11,26 +11,62 @@
       throw new Error('No se recibio product_ref para fallback REST');
     }
 
-    // Contrato backend actual: POST /api/products/search con body QueryDTOIN.
-    const endpoint = `${constants.API.BASE_URL}${constants.API.REST_SEARCH_PATH}`;
+    const prefix = '[PRICING SERVICE]';
+    
+    console.log(`${prefix} ℹ Requesting REST search via background worker`);
+    console.log(`${prefix} ℹ Payload: { "product_ref": "${productRef}" }`);
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        product_ref: productRef,
-      }),
-    }).catch(() => null);
+    // Use background worker to avoid CORS issues
+    return new Promise((resolve, reject) => {
+      const messageListener = (message, sender, sendResponse) => {
+        // Wait for completion message
+        if (message.type === 'ws-relay-rest-search-complete') {
+          const { count, products } = message.data || {};
+          console.log(`${prefix} ✓ REST returned ${count} products`);
+          chrome.runtime.onMessage.removeListener(messageListener);
+          clearTimeout(timeoutId);
+          
+          // Extract and map products from message
+          const productList = Array.isArray(products) ? products : [];
+          resolve(mapProducts(productList));
+          return;
+        }
 
-    if (!response?.ok) {
-      throw new Error('No se pudo recuperar estado por REST fallback (POST /api/products/search)');
-    }
+        if (message.type === 'ws-relay-rest-search-error') {
+          const { error, status } = message.data || {};
+          console.error(`${prefix} ❌ REST error:`, error || status);
+          chrome.runtime.onMessage.removeListener(messageListener);
+          clearTimeout(timeoutId);
+          reject(new Error(error || `REST API error ${status}`));
+          return;
+        }
+      };
 
-    const payload = await response.json();
-    return mapProducts(payload);
+      chrome.runtime.onMessage.addListener(messageListener);
+
+      // Send request to background worker
+      chrome.runtime.sendMessage(
+        {
+          type: 'ws-relay-rest-search',
+          productRef: productRef,
+          query: query,
+        },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.error(`${prefix} ❌ Message error:`, chrome.runtime.lastError.message);
+            chrome.runtime.onMessage.removeListener(messageListener);
+            clearTimeout(timeoutId);
+            reject(new Error(chrome.runtime.lastError.message));
+          }
+        }
+      );
+
+      // Set timeout in case background worker doesn't respond
+      const timeoutId = setTimeout(() => {
+        chrome.runtime.onMessage.removeListener(messageListener);
+        reject(new Error('REST search timeout'));
+      }, 15000);
+    });
   }
 
   function mapProducts(payload) {

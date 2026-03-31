@@ -26,41 +26,61 @@
       // Bind message listener only once
       if (!messageListenerBound) {
         chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-          handleBackgroundMessage(message);
+          if (message && message.type) {
+            handleBackgroundMessage(message);
+          }
         });
         messageListenerBound = true;
       }
       
       // Tell background service worker to initialize WebSocket
-      chrome.runtime.sendMessage(
-        {
-          type: 'ws-relay-init',
-          config: {
-            wsBaseUrl: constants.WS.BASE_URL,
-            wsEndpoint: constants.WS.ENDPOINT,
-            headers: headers || {}
+      try {
+        chrome.runtime.sendMessage(
+          {
+            type: 'ws-relay-init',
+            config: {
+              wsBaseUrl: constants.WS.BASE_URL,
+              wsEndpoint: constants.WS.ENDPOINT,
+              headers: headers || {}
+            }
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              console.error(`${constants.LOG_PREFIX} [RELAY] Chrome error:`, chrome.runtime.lastError.message);
+              handlers.onTransportError(new Error(chrome.runtime.lastError.message));
+              return;
+            }
+            if (response && response.success) {
+              console.log(`${constants.LOG_PREFIX} [RELAY] Background inicializado`);
+            } else {
+              console.error(`${constants.LOG_PREFIX} [RELAY] Background error:`, response?.error);
+              handlers.onTransportError(new Error(response?.error || 'Failed to initialize'));
+            }
           }
-        },
-        (response) => {
-          if (response && response.success) {
-            console.log(`${constants.LOG_PREFIX} [RELAY] Background WebSocket inicializado`);
-          } else {
-            console.error(`${constants.LOG_PREFIX} [RELAY] Error inicializando background:`, response?.error);
-            handlers.onTransportError(new Error('Failed to initialize background WebSocket'));
-          }
-        }
-      );
+        );
+      } catch (error) {
+        console.error(`${constants.LOG_PREFIX} [RELAY] Error enviando ws-relay-init:`, error.message);
+        handlers.onTransportError(error);
+      }
     }
 
     function disconnect() {
       console.log(`${constants.LOG_PREFIX} [RELAY] Desconectando...`);
-      chrome.runtime.sendMessage(
-        { type: 'ws-relay-disconnect' },
-        (response) => {
-          connected = false;
-          handlers.onDisconnect();
-        }
-      );
+      connected = false;
+      try {
+        chrome.runtime.sendMessage(
+          { type: 'ws-relay-disconnect' },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              console.warn(`${constants.LOG_PREFIX} [RELAY] Disconnect chrome error:`, chrome.runtime.lastError.message);
+            }
+            handlers.onDisconnect();
+          }
+        );
+      } catch (error) {
+        console.warn(`${constants.LOG_PREFIX} [RELAY] Disconnect exception:`, error.message);
+        handlers.onDisconnect();
+      }
     }
 
     function sendSearch(payload) {
@@ -68,18 +88,28 @@
         throw new Error('Cliente no conectado');
       }
 
-      chrome.runtime.sendMessage(
-        {
-          type: 'ws-relay-send-search',
-          payload: payload
-        },
-        (response) => {
-          if (!response || !response.success) {
-            console.error(`${constants.LOG_PREFIX} [RELAY] Error enviando búsqueda:`, response?.error);
-            handlers.onTransportError(new Error(response?.error || 'Failed to send search'));
+      try {
+        chrome.runtime.sendMessage(
+          {
+            type: 'ws-relay-send-search',
+            payload: payload
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              console.error(`${constants.LOG_PREFIX} [RELAY] Chrome error:`, chrome.runtime.lastError.message);
+              handlers.onTransportError(new Error(chrome.runtime.lastError.message));
+              return;
+            }
+            if (!response || !response.success) {
+              console.error(`${constants.LOG_PREFIX} [RELAY] Send error:`, response?.error);
+              handlers.onTransportError(new Error(response?.error || 'Failed to send search'));
+            }
           }
-        }
-      );
+        );
+      } catch (error) {
+        console.error(`${constants.LOG_PREFIX} [RELAY] Exception sending search:`, error.message);
+        throw error;
+      }
     }
 
     function handleBackgroundMessage(message) {
@@ -94,7 +124,11 @@
         case 'ws-relay-connected':
           console.log(`${constants.LOG_PREFIX} [RELAY] ✅ Conectado al servidor`);
           connected = true;
-          handlers.onConnect();
+          // Small delay to ensure subscriptions are processed
+          setTimeout(() => {
+            console.log(`${constants.LOG_PREFIX} [RELAY] Calling onConnect after subscription delay`);
+            handlers.onConnect();
+          }, 50);
           break;
 
         case 'ws-relay-disconnected':
@@ -109,7 +143,7 @@
           break;
 
         case 'ws-relay-error-received':
-          console.log(`${constants.LOG_PREFIX} [RELAY] Error recibido:`, data);
+          console.log(`${constants.LOG_PREFIX} [RELAY] ❌ ERROR RECEIVED FROM BACKEND:`, data);
           handlers.onErrors(data);
           break;
 

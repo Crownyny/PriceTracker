@@ -16,9 +16,15 @@
       return false;
     }
 
-    return typeof payload.message === 'string'
+    const isValid = typeof payload.message === 'string'
       && Object.prototype.hasOwnProperty.call(payload, 'product_ref')
       && Object.prototype.hasOwnProperty.call(payload, 'update_at');
+    
+    if (!isValid) {
+      console.warn('[DOMAIN] Invalid ExceptionDTO:', payload);
+    }
+    
+    return isValid;
   }
 
   function toDomainProduct(dto) {

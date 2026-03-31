@@ -28,7 +28,7 @@
     },
     API: {
       USE_MOCK: false,
-      BASE_URL: 'https://localhost:8443',
+      BASE_URL: 'http://localhost:8080',
       REST_SEARCH_PATH: '/api/products/search',
       REST_INTENT_PATH: '/api/intent/intent',
       REST_FALLBACK_ENABLED: true,

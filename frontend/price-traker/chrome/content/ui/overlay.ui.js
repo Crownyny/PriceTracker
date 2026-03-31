@@ -89,42 +89,48 @@
           </div>
 
           <div class="price-comparison-section">
-            <div class="comparison-header">
-              <span class="comparison-title">Comparacion de precios</span>
-              <span class="stores-count">${visibleStores.length} tiendas</span>
-            </div>
+            ${visibleStores.length > 0 ? `
+              <div class="comparison-header">
+                <span class="comparison-title">Comparacion de precios</span>
+                <span class="stores-count">${visibleStores.length} tiendas</span>
+              </div>
 
-            <div class="stores-grid">
-              ${visibleStores
-                .map((store) => {
-                  const shippingClass = store.shipping.toLowerCase().includes('gratis') ? '' : 'paid';
-                  const diff = store.price - bestStore.price;
-                  return `
-                    <a href="${escapeHtml(store.url)}" target="_blank" class="store-item ${store.isBest ? 'best' : ''}">
-                      ${store.isBest ? '<span class="best-badge">Mejor</span>' : ''}
-                      ${store.thumbnail ? `<img src="${escapeHtml(store.thumbnail)}" alt="${escapeHtml(store.name)}" class="store-thumbnail">` : `<img src="${escapeHtml(store.logo)}" alt="${escapeHtml(store.name)}" class="store-logo">`}
-                      <div class="store-info">
-                        <p class="store-name">${escapeHtml(store.name)}</p>
-                        <p class="store-shipping ${shippingClass}">${escapeHtml(store.shipping)}</p>
-                      </div>
-                      <div class="store-price">
-                        <p class="price-value">$${store.price.toLocaleString('es-CO')}</p>
-                        ${store.isBest ? '' : `<p class="price-diff">+$${diff.toLocaleString('es-CO')}</p>`}
-                      </div>
-                    </a>
-                  `;
-                })
-                .join('')}
-              ${!hasStores ? '<div class="stores-empty">Aun no llegan productos desde la cola de eventos.</div>' : ''}
-            </div>
+              <div class="stores-grid">
+                ${visibleStores
+                  .map((store) => {
+                    const shippingClass = store.shipping.toLowerCase().includes('gratis') ? '' : 'paid';
+                    const diff = store.price - bestStore.price;
+                    return `
+                      <a href="${escapeHtml(store.url)}" target="_blank" class="store-item ${store.isBest ? 'best' : ''}">
+                        ${store.isBest ? '<span class="best-badge">Mejor</span>' : ''}
+                        ${store.thumbnail ? `<img src="${escapeHtml(store.thumbnail)}" alt="${escapeHtml(store.name)}" class="store-thumbnail">` : `<img src="${escapeHtml(store.logo)}" alt="${escapeHtml(store.name)}" class="store-logo">`}
+                        <div class="store-info">
+                          <p class="store-name">${escapeHtml(store.name)}</p>
+                          <p class="store-shipping ${shippingClass}">${escapeHtml(store.shipping)}</p>
+                        </div>
+                        <div class="store-price">
+                          <p class="price-value">$${store.price.toLocaleString('es-CO')}</p>
+                          ${store.isBest ? '' : `<p class="price-diff">+$${diff.toLocaleString('es-CO')}</p>`}
+                        </div>
+                      </a>
+                    `;
+                  })
+                  .join('')}
+              </div>
 
-            ${hasMoreStores ? `<button class="see-more-stores" id="see-more-stores-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-              Ver ${nextBatchCount} tiendas mas (${hiddenStoresCount} pendientes)
-            </button>` : ''}
-            ${hiddenResultsCount > 0 ? `<p class="stores-hidden-note">${hiddenResultsCount} resultados adicionales fueron agrupados para evitar ruido.</p>` : ''}
+              ${hasMoreStores ? `<button class="see-more-stores" id="see-more-stores-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+                Ver ${nextBatchCount} tiendas mas (${hiddenStoresCount} pendientes)
+              </button>` : ''}
+              ${hiddenResultsCount > 0 ? `<p class="stores-hidden-note">${hiddenResultsCount} resultados adicionales fueron agrupados para evitar ruido.</p>` : ''}
+            ` : `
+              <div class="status-message-container">
+                <div class="status-spinner ${data.statusIcon}"></div>
+                <p class="status-text ${data.statusType}">${escapeHtml(data.statusMessage)}</p>
+              </div>
+            `}
           </div>
         </div>
 

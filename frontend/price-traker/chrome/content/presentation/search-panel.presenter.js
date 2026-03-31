@@ -18,6 +18,7 @@
     }));
 
     const fallback = workflowState.activeSearch?.query || 'Busqueda';
+    const statusMessage = workflowState.statusMessage || {};
 
     return {
       productName: best?.canonicalName || fallback,
@@ -29,6 +30,10 @@
       hiddenResultsCount: Math.max(0, totalResults - stores.length),
       searchKey: workflowState.activeSearch?.query || 'default-search',
       status: workflowState.status,
+      statusMessage: statusMessage.message || '',
+      statusIcon: statusMessage.icon || 'info',
+      statusType: statusMessage.type || 'info',
+      elapsedTime: workflowState.elapsedTime || 0,
       fallbackInProgress: workflowState.fallbackInProgress,
     };
   }
