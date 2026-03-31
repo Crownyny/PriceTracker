@@ -67,9 +67,33 @@
     return `${product.productRef || ''}|${product.sourceName || ''}|${product.updatedAt || ''}`;
   }
 
+  function isValidIntentResponseDto(payload) {
+    if (!payload || typeof payload !== 'object') {
+      return false;
+    }
+
+    return typeof payload.input === 'string'
+      && (typeof payload.p_buy === 'string' || typeof payload.p_buy === 'number')
+      && typeof payload.label === 'string'
+      && (typeof payload.threshold === 'string' || typeof payload.threshold === 'number');
+  }
+
+  function isValidSearchStatusDto(payload) {
+    if (!payload || typeof payload !== 'object') {
+      return false;
+    }
+
+    return typeof payload.search_id === 'string'
+      && typeof payload.product_ref === 'string'
+      && typeof payload.total_normalized === 'number'
+      && payload.completed_at != null;
+  }
+
   PriceTracker.domainContracts = {
     isValidNormalizedProductDto,
     isValidExceptionDto,
+    isValidIntentResponseDto,
+    isValidSearchStatusDto,
     toDomainProduct,
     toDomainException,
     buildDedupeKey,

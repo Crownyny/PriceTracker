@@ -102,7 +102,7 @@
                   return `
                     <a href="${escapeHtml(store.url)}" target="_blank" class="store-item ${store.isBest ? 'best' : ''}">
                       ${store.isBest ? '<span class="best-badge">Mejor</span>' : ''}
-                      <img src="${escapeHtml(store.logo)}" alt="${escapeHtml(store.name)}" class="store-logo">
+                      ${store.thumbnail ? `<img src="${escapeHtml(store.thumbnail)}" alt="${escapeHtml(store.name)}" class="store-thumbnail">` : `<img src="${escapeHtml(store.logo)}" alt="${escapeHtml(store.name)}" class="store-logo">`}
                       <div class="store-info">
                         <p class="store-name">${escapeHtml(store.name)}</p>
                         <p class="store-shipping ${shippingClass}">${escapeHtml(store.shipping)}</p>

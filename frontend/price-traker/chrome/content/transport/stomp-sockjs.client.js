@@ -14,6 +14,7 @@
       onDisconnect: () => {},
       onProducts: () => {},
       onErrors: () => {},
+      onStatus: () => {},
       onTransportError: () => {},
     };
 
@@ -45,19 +46,34 @@
     }
 
     function sendSearch(payload) {
-      if (!connected || !stompClient) {
-        throw new Error('Cliente STOMP no conectado');
-      }
+      try {
+        if (!connected || !stompClient) {
+          throw new Error('Cliente STOMP no conectado');
+        }
 
-      stompClient.publish({
-        destination: constants.WS.SEARCH_DESTINATION,
-        body: JSON.stringify(payload),
-      });
+        if (!stompClient.connected) {
+          throw new Error('STOMP client no está en estado conectado');
+        }
+
+        stompClient.publish({
+          destination: constants.WS.SEARCH_DESTINATION,
+          body: JSON.stringify(payload),
+        });
+      } catch (error) {
+        console.error(`${constants.LOG_PREFIX} Error enviando búsqueda:`, error);
+        throw error;
+      }
     }
 
     function initClient(headers) {
+      // Usar WebSocket nativo directamente sin SockJS para evitar requests HTTP de CORS
+      const wsUrl = constants.WS.BASE_URL.replace('https://', 'wss://').replace('http://', 'ws://') + constants.WS.ENDPOINT;
+      
       stompClient = new global.StompJs.Client({
-        webSocketFactory: () => new global.SockJS(`${constants.WS.BASE_URL}${constants.WS.ENDPOINT}`),
+        webSocketFactory: () => {
+          console.debug(`${constants.LOG_PREFIX} Conectando a WebSocket: ${wsUrl}`);
+          return new WebSocket(wsUrl);
+        },
         connectHeaders: headers,
         reconnectDelay: 0,
         heartbeatIncoming: 10000,
@@ -112,6 +128,15 @@
           const payload = safeJsonParse(frame.body);
           if (payload) {
             handlers.onErrors(payload);
+          }
+        })
+      );
+
+      subscriptions.push(
+        stompClient.subscribe(constants.WS.USER_STATUS_QUEUE, (frame) => {
+          const payload = safeJsonParse(frame.body);
+          if (payload) {
+            handlers.onStatus(payload);
           }
         })
       );

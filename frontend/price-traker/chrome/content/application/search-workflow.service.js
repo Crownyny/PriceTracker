@@ -13,12 +13,88 @@
     let searchTimeout = null;
     let listeners = [];
     let fallbackInProgress = false;
+    let backendStatus = null;
 
+    // Definir todas las funciones handlers ANTES de usarlas en client.configure
+    function handleProduct(payload) {
+      if (!domainContracts.isValidNormalizedProductDto(payload)) {
+        return;
+      }
+
+      const domainProduct = domainContracts.toDomainProduct(payload);
+      if (domainProduct.productRef && activeSearch) {
+        activeSearch.productRef = domainProduct.productRef;
+      }
+      const dedupeKey = domainContracts.buildDedupeKey(domainProduct);
+      if (dedupeSet.has(dedupeKey)) {
+        return;
+      }
+      dedupeSet.add(dedupeKey);
+
+      products.push(domainProduct);
+      products = products.sort((a, b) => a.price - b.price);
+
+      clearSearchTimeout();
+      startSearchTimeout();
+      updateStatus('streaming');
+      emit();
+    }
+
+    async function handleError(payload) {
+      if (!domainContracts.isValidExceptionDto(payload)) {
+        return;
+      }
+
+      const event = domainContracts.toDomainException(payload);
+      if (event.productRef && activeSearch) {
+        activeSearch.productRef = event.productRef;
+      }
+
+      if (event.code === 'PRODUCT_IN_BD') {
+        await runFallback('Producto existente en BD');
+        updateStatus('completed');
+        emit({ event });
+        return;
+      }
+
+      updateStatus('error');
+      clearSearchTimeout();
+      emit({ event });
+    }
+
+    function handleStatus(payload) {
+      if (!domainContracts.isValidSearchStatusDto(payload)) {
+        return;
+      }
+
+      backendStatus = {
+        searchId: payload.search_id,
+        productRef: payload.product_ref,
+        totalNormalized: payload.total_normalized,
+        completedAt: payload.completed_at,
+      };
+
+      clearSearchTimeout();
+      startSearchTimeout();
+      emit({ status: backendStatus });
+    }
+
+    // Configurar el cliente DESPUÉS de definir los handlers
     client.configure({
       onConnect: () => {
         updateStatus('searching');
         if (activeSearch) {
-          client.sendSearch(activeSearch.payload);
+          try {
+            client.sendSearch(activeSearch.payload);
+          } catch (error) {
+            console.error(`${constants.LOG_PREFIX} Error enviando búsqueda en onConnect:`, error);
+            if (restFallbackEnabled) {
+              runFallback('Error enviando búsqueda');
+            } else {
+              updateStatus('error');
+              emit({ error: error.message });
+            }
+          }
         }
       },
       onDisconnect: async () => {
@@ -34,6 +110,7 @@
       },
       onProducts: handleProduct,
       onErrors: handleError,
+      onStatus: handleStatus,
       onTransportError: async () => {
         if (!activeSearch) {
           return;
@@ -98,53 +175,8 @@
         products: [...products],
         activeSearch,
         fallbackInProgress,
+        backendStatus,
       };
-    }
-
-    function handleProduct(payload) {
-      if (!domainContracts.isValidNormalizedProductDto(payload)) {
-        return;
-      }
-
-      const domainProduct = domainContracts.toDomainProduct(payload);
-      if (domainProduct.productRef && activeSearch) {
-        activeSearch.productRef = domainProduct.productRef;
-      }
-      const dedupeKey = domainContracts.buildDedupeKey(domainProduct);
-      if (dedupeSet.has(dedupeKey)) {
-        return;
-      }
-      dedupeSet.add(dedupeKey);
-
-      products.push(domainProduct);
-      products = products.sort((a, b) => a.price - b.price);
-
-      clearSearchTimeout();
-      startSearchTimeout();
-      updateStatus('streaming');
-      emit();
-    }
-
-    async function handleError(payload) {
-      if (!domainContracts.isValidExceptionDto(payload)) {
-        return;
-      }
-
-      const event = domainContracts.toDomainException(payload);
-      if (event.productRef && activeSearch) {
-        activeSearch.productRef = event.productRef;
-      }
-
-      if (event.code === 'PRODUCT_IN_BD') {
-        await runFallback('Producto existente en BD');
-        updateStatus('completed');
-        emit({ event });
-        return;
-      }
-
-      updateStatus('error');
-      clearSearchTimeout();
-      emit({ event });
     }
 
     async function runFallback(reason) {

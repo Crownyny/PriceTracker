@@ -13,6 +13,7 @@
       shipping: product.availability ? 'Disponible' : 'Sin disponibilidad',
       url: product.sourceUrl || '#',
       logo: buildLogoFromSource(product.sourceName),
+      thumbnail: product.imageUrl || buildImagePlaceholder('Product', '#e2e8f0', '#94a3b8'),
       isBest: index === 0,
     }));
 
@@ -38,25 +39,49 @@
     }
 
     const validProducts = products.filter((product) => Number.isFinite(Number(product?.price)) && Number(product.price) > 0);
-    const filteredByOutlier = removePriceOutliers(validProducts);
+    
+    // Reduce outlier filtering to avoid removing too many products
+    const filteredByOutlier = removePriceOutliersLenient(validProducts);
     const sourcePool = filteredByOutlier.length > 0 ? filteredByOutlier : validProducts;
 
     if (sourcePool.length === 0) {
       return [];
     }
 
-    // El workflow ya trae orden por precio; conservamos solo la mejor opcion por tienda.
-    const bestByStore = new Map();
-    for (const product of sourcePool) {
-      const sourceKey = normalizeSource(product.sourceName);
-      if (!bestByStore.has(sourceKey)) {
-        bestByStore.set(sourceKey, product);
-      }
-    }
-
-    return [...bestByStore.values()]
+    // Sort by price and take top N directly without grouping by store
+    // This shows product variety, not just one per store
+    return sourcePool
       .sort((a, b) => Number(a.price || 0) - Number(b.price || 0))
       .slice(0, limit);
+  }
+  
+  function removePriceOutliersLenient(products) {
+    if (!Array.isArray(products) || products.length < 4) {
+      return products || [];
+    }
+    
+    const sorted = products
+      .map((p) => Number(p.price))
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .sort((a, b) => a - b);
+    
+    if (sorted.length < 4) {
+      return products;
+    }
+    
+    const median = computeMedian(sorted);
+    if (!Number.isFinite(median) || median <= 0) {
+      return products;
+    }
+    
+    // More lenient outlier detection: 0.05 to 20x median (instead of 0.1 to 10x)
+    const minReasonable = median * 0.05;
+    const maxReasonable = median * 20;
+    
+    return products.filter((product) => {
+      const price = Number(product.price);
+      return Number.isFinite(price) && price >= minReasonable && price <= maxReasonable;
+    });
   }
 
   function removePriceOutliers(products) {

@@ -1,4 +1,6 @@
 // Background Service Worker para la extensión
+importScripts('vendor/sockjs.min.js', 'vendor/stomp.umd.min.js', 'background/ws-relay.js');
+
 console.log('Price Tracker Background Service Worker iniciado');
 
 // Estado global

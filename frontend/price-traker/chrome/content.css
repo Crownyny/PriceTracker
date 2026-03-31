@@ -416,7 +416,7 @@
 
 .store-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
@@ -457,6 +457,16 @@
   border-radius: 10px;
   object-fit: cover;
   background: white;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.store-item .store-thumbnail {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #f3f4f6;
   border: 1px solid #e5e7eb;
   flex-shrink: 0;
 }
