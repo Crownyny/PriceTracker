@@ -23,6 +23,8 @@ jobs:
     name: Python tests (${{ matrix.service }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      PYTHONPATH: ${{ github.workspace }}/backend
     strategy:
       fail-fast: false
       matrix:
@@ -67,6 +69,7 @@ jobs:
 
       - name: Upload test results
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.service }}
