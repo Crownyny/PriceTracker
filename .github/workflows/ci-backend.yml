@@ -1,0 +1,96 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+      - dev/julian
+      - dev/miguel
+      - dev/santiago
+  pull_request:
+    branches:
+      - main
+      - dev/julian
+      - dev/miguel
+      - dev/santiago
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-python:
+    name: Python tests (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: normalization-service
+            test_path: tests
+            needs_playwright: false
+          - service: scrapping-service
+            test_path: app/scraper/test
+            needs_playwright: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/shared/pyproject.toml
+            backend/normalization-service/pyproject.toml
+            backend/scrapping-service/pyproject.toml
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install shared package
+        run: pip install ./backend/shared
+
+      - name: Install service test dependencies
+        run: pip install "./backend/${{ matrix.service }}[test]"
+
+      - name: Install Playwright browser dependencies
+        if: matrix.needs_playwright
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run pytest
+        working-directory: backend/${{ matrix.service }}
+        run: pytest ${{ matrix.test_path }} -v --tb=short --junitxml=test-results.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.service }}
+          path: backend/${{ matrix.service }}/test-results.xml
+
+  # Reserved for future Spring Boot services.
+  # Enable this job when a Java service is added to backend/.
+  test-java:
+    name: Java tests (future)
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Run Spring Boot tests
+        run: |
+          echo "Add Spring Boot test command here"
+          # Example:
+          # cd backend/your-spring-service
+          # ./mvnw test
