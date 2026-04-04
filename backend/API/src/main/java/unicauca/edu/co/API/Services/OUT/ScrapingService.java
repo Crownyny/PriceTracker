@@ -6,7 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import unicauca.edu.co.API.Presentation.DTO.Enum.ProcessStatus;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
+import unicauca.edu.co.API.Presentation.DTO.OUT.ProcessStatusDTO;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IScrapingService;
 
 /**
@@ -21,23 +24,23 @@ public class ScrapingService implements IScrapingService {
     
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-    
-    public ScrapingService(RabbitTemplate rabbitTemplate, ObjectMapper objectMapper) {
+    private final IMessengerService messengerService;
+
+    public ScrapingService(RabbitTemplate rabbitTemplate, ObjectMapper objectMapper, IMessengerService messengerService) {
         this.rabbitTemplate = rabbitTemplate;
         this.objectMapper = objectMapper;
+        this.messengerService = messengerService;   
     }
 
-    /**
-     * Envía un query de scraping a la cola de RabbitMQ.
-     *
-     * @param query el query con los detalles del producto a scrapear
-     */
+    
     @Override
     public void sendData(QueryDTOIN query) {
         try {
             String queryJson = objectMapper.writeValueAsString(query);
             logger.info("Enviando query a la cola '{}': {}", SCRAPING_QUEUE, queryJson);
             rabbitTemplate.convertAndSend(SCRAPING_QUEUE, queryJson);
+            ProcessStatusDTO status = new ProcessStatusDTO(ProcessStatus.SCRAPING);
+            messengerService.sendProcessStatus(status, query.getProduct_ref());
             logger.info("Query enviado exitosamente a la cola '{}'", SCRAPING_QUEUE);
         } catch (Exception e) {
             logger.error("Error al enviar query a la cola '{}': {}", SCRAPING_QUEUE, e.getMessage(), e);

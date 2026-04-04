@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import reactor.core.publisher.Mono;
+import unicauca.edu.co.API.Presentation.DTO.ModelQueryDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.IntentResponseDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.ModelProductRequestDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
@@ -38,10 +39,10 @@ public class IntentProductService implements IIntentProductService {
     }
 
     @Override
-    public Mono<IntentResponseDTOIN> getIntentResponse(String queryTitle) {
+    public Mono<IntentResponseDTOIN> getIntentResponse(ModelQueryDTO query) {
         return webClient.post()
                 .uri("/predict")
-                .bodyValue(new ModelProductRequestDTO(queryTitle))
+                .bodyValue(query)
                 .retrieve()
                 .bodyToMono(IntentResponseDTOIN.class)
                 .timeout(Duration.ofSeconds(10))

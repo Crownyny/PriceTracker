@@ -1,11 +1,11 @@
 package unicauca.edu.co.API.Config;
 
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.amqp.support.converter.SimpleMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Configuración de RabbitMQ para la aplicación.
@@ -25,11 +25,15 @@ public class RabbitMQConfig {
     }
     
     /**
-     * Proporciona un ObjectMapper como Bean.
-     * @return ObjectMapper
+     * Proporciona un ObjectMapper como Bean con soporte para Java 8 date/time types.
+     * Registra el módulo JavaTimeModule para deserializar LocalDateTime, LocalDate, etc.
+     * @return ObjectMapper configurado
      */
     @Bean
     public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule()); // Permite deserializar LocalDateTime
+        mapper.findAndRegisterModules(); // También registra otros módulos automáticamente
+        return mapper;
     }
 }

@@ -4,6 +4,7 @@ import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.ProcessStatusDTO;
 
 public interface IMessengerService {
     /**
@@ -14,9 +15,11 @@ public interface IMessengerService {
     void listenToResults(String message);
     /**
      * Consulta en memoria el sessionID por medio de webSocketConfig y envía el producto al cliente correspondiente
-     * @param productDTO Producto a enviar normalizado a través del WebSocket privado del usuario.
+     * @param payload Objeto a enviar  a través del WebSocket privado del usuario.
+     * @param destination Destino al que se enviará el mensaje a través del WebSocket, por ejemplo, "/queue/products". 
+     * @param productRef Referencia del producto, utilizada para obtener el sessionID del usuario correspondiente a ese producto. Este sessionID es necesario para enviar el mensaje al WebSocket privado del usuario correcto.
      */
-    public void sendToWebSocket(NormalizedProductDTO productDTO);
+    public <T> void sendToWebSocket(String productRef, String destination, T payload);
 
     /**
      * Desconecta el WebSocket del usuario correspondiente al sessionId.
@@ -32,4 +35,11 @@ public interface IMessengerService {
      * @return Un objeto ExceptionDTO que encapsula la información del error, incluyendo detalles relevantes de la consulta y el mensaje de error proporcionado. Este DTO puede ser utilizado para comunicar errores de manera efectiva a través de la aplicación, facilitando la identificación y resolución de problemas.
      */
     ExceptionDTO createExceptionDTO(QueryDTOIN query, String errorMessage, String update_at);
+
+    /**
+     * Envía el estado del proceso a través del WebSocket al cliente correspondiente. 
+     * @param status El estado del proceso a enviar.
+     * @param productRef La referencia del producto asociado al estado del proceso.
+     */
+    void sendProcessStatus(ProcessStatusDTO status, String productRef);
 }
