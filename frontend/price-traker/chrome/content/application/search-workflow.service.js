@@ -25,6 +25,7 @@
     let backendStatus = null;
     let expectedDisconnect = false; // Flag for graceful disconnections (e.g., PRODUCT_IN_BD)
     let intentCheckPending = false;
+    let searchTimestamp = null; // Timestamp para cache expiry de 20 minutos
     
     // Buffering: don't emit on every product, batch updates
     let statusUpdateInterval = null;
@@ -32,10 +33,25 @@
     let pendingRender = false;
     const minProductsBeforeShow = 15; // Wait for at least 15 products before showing table
     const RENDER_BATCH_DELAY = 500;
+    const CACHE_EXPIRY_MS = 20 * 60 * 1000; // 20 minutos en ms
     
     // Helper: Generate UUID for search_id
     function generateSearchId() {
       return 'search_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // Helper: Checkea si el cache ha expirado (20 minutos)
+    function isCacheExpired() {
+      if (!searchTimestamp) {
+        return false; // Sin timestamp conocido, cache no expira
+      }
+      const now = Date.now();
+      const elapsedMs = now - searchTimestamp;
+      const isExpired = elapsedMs > CACHE_EXPIRY_MS;
+      if (isExpired) {
+        console.log(`${constants.LOG_PREFIX} [CACHE] Cache expired: ${elapsedMs}ms > ${CACHE_EXPIRY_MS}ms`);
+      }
+      return isExpired;
     }
     
     // Call /api/intent/intent to check if query is a purchase intent
@@ -189,22 +205,28 @@
       }
 
       if (event.code === 'PRODUCT_IN_BD') {
-        console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ PRODUCT_IN_BD detected - loading cached products`);
-        // Búsqueda existe en BD - traer resultados guardados
-        expectedDisconnect = true; // Mark disconnect as expected
-        
-        if (statusTracker && statusTracker.setBackendPhase) {
-          statusTracker.setBackendPhase('cached');
+        // Checkea si el cache ha expirado (20 minutos)
+        if (isCacheExpired()) {
+          console.log(`${constants.LOG_PREFIX} [HANDLER] ⏰ Cache EXPIRED (>20 min) - ignoring PRODUCT_IN_BD, continuing search...`);
+          // Continúa con búsqueda normal, no usa cache
+        } else {
+          console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ PRODUCT_IN_BD detected - loading cached products`);
+          // Búsqueda existe en BD - traer resultados guardados
+          expectedDisconnect = true; // Mark disconnect as expected
+          
+          if (statusTracker && statusTracker.setBackendPhase) {
+            statusTracker.setBackendPhase('cached');
+          }
+          
+          if (statusTracker && statusTracker.setStatus) {
+            statusTracker.setStatus('streaming');
+          }
+          
+          await fetchCachedProducts(event.productRef);
+          updateStatus('completed');
+          emit({ event });
+          return;
         }
-        
-        if (statusTracker && statusTracker.setStatus) {
-          statusTracker.setStatus('streaming');
-        }
-        
-        await fetchCachedProducts(event.productRef);
-        updateStatus('completed');
-        emit({ event });
-        return;
       }
 
       // BACKEND ERROR: Close WebSocket and immediately fallback to REST
@@ -407,6 +429,7 @@
       status = 'idle';
       fallbackInProgress = false;
       expectedDisconnect = false;
+      searchTimestamp = Date.now(); // Inicia conteo de 20 minutos para cache
       if (statusTracker && statusTracker.reset) {
         statusTracker.reset();
       }
