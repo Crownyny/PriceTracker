@@ -422,12 +422,22 @@
       clearCurrentSearch();
       updateStatus('connecting');
 
-      // Fire-and-forget: Check purchase intent in background (don't block search)
-      checkPurchaseIntent(query).then(isBuyIntent => {
-        console.log(`${constants.LOG_PREFIX} [SEARCH] Intent check result: ${isBuyIntent ? 'BUY' : 'NOT_BUY'}`);
-      }).catch(err => {
+      // Check purchase intent BEFORE proceeding with search
+      try {
+        const isBuyIntent = await checkPurchaseIntent(query);
+        console.log(`${constants.LOG_PREFIX} [SEARCH] Intent check result: ${isBuyIntent ? '✓ BUY' : '✗ NOT_BUY'}`);
+        
+        if (!isBuyIntent) {
+          console.log(`${constants.LOG_PREFIX} [SEARCH] NO PURCHASE INTENT DETECTED - Extension will not be shown`);
+          console.log(`${constants.LOG_PREFIX} [SEARCH] Query: "${query}"`);
+          updateStatus('idle');
+          emit();
+          return;
+        }
+      } catch (err) {
         console.log(`${constants.LOG_PREFIX} [SEARCH] Intent check failed:`, err.message);
-      });
+        // Continue anyway if intent check fails
+      }
 
       // STEP 1: Generate search_id (frontend responsibility)
       const searchId = generateSearchId();
