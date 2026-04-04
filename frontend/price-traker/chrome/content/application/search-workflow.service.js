@@ -426,16 +426,20 @@
       try {
         const isBuyIntent = await checkPurchaseIntent(query);
         console.log(`${constants.LOG_PREFIX} [SEARCH] Intent check result: ${isBuyIntent ? '✓ BUY' : '✗ NOT_BUY'}`);
+        console.log(`${constants.LOG_PREFIX} [SEARCH] isBuyIntent value:`, isBuyIntent, `| type:`, typeof isBuyIntent);
         
         if (!isBuyIntent) {
           console.log(`${constants.LOG_PREFIX} [SEARCH] NO PURCHASE INTENT DETECTED - Extension will not be shown`);
           console.log(`${constants.LOG_PREFIX} [SEARCH] Query: "${query}"`);
+          console.log(`${constants.LOG_PREFIX} [SEARCH] Stopping search now...`);
           updateStatus('idle');
           emit();
           return;
         }
+        console.log(`${constants.LOG_PREFIX} [SEARCH] Purchase intent confirmed - proceeding with search`);
       } catch (err) {
-        console.log(`${constants.LOG_PREFIX} [SEARCH] Intent check failed:`, err.message);
+        console.error(`${constants.LOG_PREFIX} [SEARCH] Intent check FAILED:`, err.message);
+        console.log(`${constants.LOG_PREFIX} [SEARCH] Continuing anyway due to error...`);
         // Continue anyway if intent check fails
       }
 

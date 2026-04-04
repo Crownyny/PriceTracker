@@ -55,7 +55,7 @@
         "content/debug/ws-debug.js",
         "content.js"
       ],
-      "css": ["content.css"],
+      "css": ["content.css", "content/ui/minimized-tab.css"],
       "run_at": "document_idle"
     }
   ],
