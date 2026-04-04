@@ -41,6 +41,7 @@
             config: {
               wsBaseUrl: constants.WS.BASE_URL,
               wsEndpoint: constants.WS.ENDPOINT,
+              apiBaseUrl: constants.API.BASE_URL,
               headers: headers || {}
             }
           },

@@ -9,6 +9,10 @@
     initialize: function(config) {
       console.log('[WS RELAY] Inicializando con config:', config);
       
+      // Store API base URL for use in REST calls
+      this.apiBaseUrl = config.apiBaseUrl || 'http://localhost:8080';
+      console.log('[WS RELAY] API Base URL:', this.apiBaseUrl);
+      
       if (typeof StompJs === 'undefined') {
         console.error('[WS RELAY] ERROR: StompJS no disponible. Verificar importScripts.');
         return;
@@ -193,7 +197,9 @@
     fetchCachedProducts: async function(productRef) {
       // Make REST call from background (no CORS issues)
       try {
-        const apiUrl = 'http://localhost:8080/api/products/search';
+        // Get base URL from stored config or default to localhost
+        const apiBaseUrl = this.apiBaseUrl || 'http://localhost:8080';
+        const apiUrl = apiBaseUrl + '/api/products/search';
         console.log('[WS RELAY] Fetching cached products:', productRef);
         
         const response = await fetch(apiUrl, {
@@ -232,7 +238,9 @@
     restoreByProductRef: async function(productRef, query) {
       // Make REST call from background (no CORS issues)
       try {
-        const apiUrl = 'http://localhost:8080/api/products/search';
+        // Get base URL from stored config or default to localhost
+        const apiBaseUrl = this.apiBaseUrl || 'http://localhost:8080';
+        const apiUrl = apiBaseUrl + '/api/products/search';
         console.log('[WS RELAY] REST: Fetching products for productRef:', productRef);
         
         const response = await fetch(apiUrl, {
@@ -264,7 +272,8 @@
     checkIfProductExists: async function(productRef) {
       // Quick check if product exists in backend
       try {
-        const apiUrl = 'http://localhost:8080/api/products/search';
+        const apiBaseUrl = this.apiBaseUrl || 'http://localhost:8080';
+        const apiUrl = apiBaseUrl + '/api/products/search';
         console.log('[WS RELAY] CHECK: Checking if product exists:', productRef);
         
         const response = await fetch(apiUrl, {
