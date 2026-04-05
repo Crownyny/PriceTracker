@@ -227,6 +227,130 @@ BUY,Samsung Galaxy Tab S9
 BUY,Samsung Galaxy Tab S9 FE
 BUY,Samsung Galaxy Tab S10
 BUY,Samsung Galaxy Tab A
+BUY,Samsung Galaxy A10
+BUY,Samsung Galaxy A12
+BUY,Samsung Galaxy A14
+BUY,Samsung Galaxy A15
+BUY,Samsung Galaxy A20
+BUY,Samsung Galaxy A22
+BUY,Samsung Galaxy A24
+BUY,Samsung Galaxy A25
+BUY,Samsung Galaxy A30
+BUY,Samsung Galaxy A32
+BUY,Samsung Galaxy A34
+BUY,Samsung Galaxy A35
+BUY,Samsung Galaxy A50
+BUY,Samsung Galaxy A52
+BUY,Samsung Galaxy A54
+BUY,Samsung Galaxy A55
+
+BUY,Samsung  A10
+BUY,Samsung  A12
+BUY,Samsung  A14
+BUY,Samsung  A15
+BUY,Samsung  A20
+BUY,Samsung  A22
+BUY,Samsung  A24
+BUY,Samsung  A25
+BUY,Samsung  A30
+BUY,Samsung  A32
+BUY,Samsung  A34
+BUY,Samsung  A35
+BUY,Samsung  A50
+BUY,Samsung  A52
+BUY,Samsung  A54
+BUY,Samsung  A55
+
+BUY,Samsung Galaxy M10
+BUY,Samsung Galaxy M12
+BUY,Samsung Galaxy M14
+BUY,Samsung Galaxy M20
+BUY,Samsung Galaxy M22
+BUY,Samsung Galaxy M30
+BUY,Samsung Galaxy M32
+BUY,Samsung Galaxy M34
+BUY,Samsung Galaxy M52
+BUY,Samsung Galaxy M54
+
+BUY,Samsung Galaxy S20
+BUY,Samsung Galaxy S21
+BUY,Samsung Galaxy S22
+BUY,Samsung Galaxy S23
+BUY,Samsung Galaxy S24
+BUY,Samsung Galaxy S25
+
+BUY,Samsung Galaxy S20 FE
+BUY,Samsung Galaxy S21 FE
+BUY,Samsung Galaxy S23 FE
+
+BUY,Samsung Galaxy S22 Plus
+BUY,Samsung Galaxy S23 Plus
+BUY,Samsung Galaxy S24 Plus
+
+BUY,Samsung Galaxy S22 Ultra
+BUY,Samsung Galaxy S23 Ultra
+BUY,Samsung Galaxy S24 Ultra
+
+BUY,Samsung Galaxy A14 5G
+BUY,Samsung Galaxy A15 5G
+BUY,Samsung Galaxy A22 5G
+BUY,Samsung Galaxy A25 5G
+BUY,Samsung Galaxy A34 5G
+BUY,Samsung Galaxy A54 5G
+
+BUY,Samsung Galaxy M14 5G
+BUY,Samsung Galaxy M34 5G
+BUY,Samsung Galaxy M54 5G
+
+BUY,Samsung Galaxy S21 5G
+BUY,Samsung Galaxy S22 5G
+BUY,Samsung Galaxy S23 5G
+BUY,Samsung Galaxy S24 5G
+
+BUY,celular Samsung Galaxy A
+BUY,telefono Samsung Galaxy M
+BUY,celular Samsung Galaxy S
+BUY,Samsung Galaxy 5G comprar
+BUY,Samsung Galaxy barato
+
+
+BUY,Infinix Note 10
+BUY,Infinix Note 11
+BUY,Infinix Note 12
+BUY,Infinix Note 13
+BUY,Infinix Note 30
+BUY,Infinix Note 30 Pro
+BUY,Infinix Note 30 5G
+
+BUY,Infinix Hot 10
+BUY,Infinix Hot 11
+BUY,Infinix Hot 12
+BUY,Infinix Hot 20
+BUY,Infinix Hot 30
+BUY,Infinix Hot 30i
+BUY,Infinix Hot 30 Play
+
+BUY,Infinix Smart 5
+BUY,Infinix Smart 6
+BUY,Infinix Smart 7
+BUY,Infinix Smart 8
+
+BUY,Infinix Zero 20
+BUY,Infinix Zero 30
+BUY,Infinix Zero 30 5G
+
+BUY,Infinix GT 10 Pro
+BUY,Infinix GT 20 Pro
+
+BUY,Infinix Note barato
+BUY,Infinix Hot comprar
+BUY,Infinix Smart economico
+BUY,Infinix Zero premium
+
+BUY,celular Infinix Note 30
+BUY,telefono Infinix Hot 30
+BUY,Infinix 5G comprar
+BUY,Infinix barato
 
 BUY,Lenovo Tab
 BUY,Lenovo Tab M10
@@ -258,6 +382,31 @@ BUY,Tablet para niños
 BUY,Tablet Android
 BUY,Tablet iOS
 BUY,Tablet 5G
+
+BUY,Redmi Note 10
+BUY,Redmi Note 11
+BUY,Redmi Note 12
+BUY,Redmi Note 13
+BUY,Redmi Note 14
+
+BUY,Redmi Note 10 Pro
+BUY,Redmi Note 11 Pro
+BUY,Redmi Note 12 Pro
+BUY,Redmi Note 13 Pro
+
+BUY,Redmi Note 11S
+BUY,Redmi Note 12S
+BUY,Redmi Note 13S
+
+BUY,Redmi Note 12 5G
+BUY,Redmi Note 13 5G
+BUY,Redmi Note 13 Pro Plus
+
+BUY,celular Redmi Note 13
+BUY,telefono Redmi Note 12
+BUY,Redmi Note comprar
+BUY,Redmi Note barato
+
 
 BUY,Accesorios tablet
 BUY,Accesorios iPad
@@ -803,8 +952,57 @@ BUY,comprar motherboard
 BUY,motherboard barata
 BUY,motherboard en venta
 
+BUY,mouse comprar
+BUY,raton comprar
+BUY,mouse barato
+BUY,mouse economico
+BUY,mouse calidad precio
+BUY,mouse gamer
+BUY,mouse inalambrico
+BUY,mouse bluetooth
+BUY,mouse usb
+BUY,mouse ergonomico
+BUY,mouse para laptop
+BUY,mouse para mac
+BUY,mouse para oficina
 
-label,text
+BUY,raton gamer
+BUY,raton inalambrico
+BUY,raton bluetooth
+BUY,raton usb
+BUY,raton ergonomico
+
+BUY,teclado comprar
+BUY,teclado barato
+BUY,teclado economico
+BUY,teclado calidad precio
+BUY,teclado mecanico
+BUY,teclado membrana
+BUY,teclado gamer
+BUY,teclado inalambrico
+BUY,teclado bluetooth
+BUY,teclado usb
+BUY,teclado ergonomico
+BUY,teclado compacto
+BUY,teclado numerico
+
+BUY,teclado para mac
+BUY,teclado para windows
+BUY,teclado para laptop
+BUY,teclado para tablet
+
+BUY,combo teclado mouse
+BUY,combo teclado mouse inalambrico
+BUY,combo perifericos
+BUY,kit teclado mouse
+
+BUY,mouse segunda mano
+BUY,mouse usado
+BUY,mouse reacondicionado
+BUY,teclado segunda mano
+BUY,teclado usado
+BUY,teclado reacondicionado
+
 BUY,ram 8gb ddr3
 BUY,ram 8gb ddr4
 BUY,ram 16gb ddr3
@@ -877,6 +1075,91 @@ BUY,intel i5 13400f
 BUY,intel i7 12700k 12 cores
 BUY,intel i9 12900k 16 cores
 
+BUY,procesador intel
+BUY,intel comprar
+BUY,cpu intel
+BUY,procesador intel barato
+BUY,procesador intel economico
+BUY,procesador intel calidad precio
+BUY,procesador intel gama media
+BUY,procesador intel gama alta
+
+BUY,intel core i3
+BUY,intel core i5
+BUY,intel core i7
+BUY,intel core i9
+
+BUY,intel core ultra
+BUY,intel core ultra 5
+BUY,intel core ultra 7
+BUY,intel core ultra 9
+
+BUY,intel i3 10th gen
+BUY,intel i5 11th gen
+BUY,intel i5 12th gen
+BUY,intel i5 13th gen
+BUY,intel i5 14th gen
+
+BUY,intel i7 12th gen
+BUY,intel i7 13th gen
+BUY,intel i7 14th gen
+
+BUY,intel i9 13th gen
+BUY,intel i9 14th gen
+
+BUY,procesador intel para gaming
+BUY,procesador intel para programar
+BUY,procesador intel para edicion
+BUY,procesador intel para oficina
+
+BUY,intel con graficos integrados
+BUY,intel sin graficos integrados
+BUY,intel con gpu integrada
+
+BUY,procesador intel socket 1700
+BUY,procesador intel socket 1200
+
+BUY,intel segunda mano
+BUY,intel usado
+BUY,intel reacondicionado
+BUY,intel refurbished
+
+BUY,Intel Core i3 Octava generacion
+BUY,Intel Core i3 Novena generacion
+BUY,Intel Core i3 Decima generacion
+BUY,Intel Core i3 Onceava generacion
+BUY,Intel Core i3 Doceava generacion
+BUY,Intel Core i3 Treceava generacion
+BUY,Intel Core i3 Catorceava generacion
+
+BUY,Intel Core i5 Octava generacion
+BUY,Intel Core i5 Novena generacion
+BUY,Intel Core i5 Decima generacion
+BUY,Intel Core i5 Onceava generacion
+BUY,Intel Core i5 Doceava generacion
+BUY,Intel Core i5 Treceava generacion
+BUY,Intel Core i5 Catorceava generacion
+
+BUY,Intel Core i7 Octava generacion
+BUY,Intel Core i7 Novena generacion
+BUY,Intel Core i7 Decima generacion
+BUY,Intel Core i7 Onceava generacion
+BUY,Intel Core i7 Doceava generacion
+BUY,Intel Core i7 Treceava generacion
+BUY,Intel Core i7 Catorceava generacion
+
+BUY,Intel Core i9 Octava generacion
+BUY,Intel Core i9 Novena generacion
+BUY,Intel Core i9 Decima generacion
+BUY,Intel Core i9 Onceava generacion
+BUY,Intel Core i9 Doceava generacion
+BUY,Intel Core i9 Treceava generacion
+BUY,Intel Core i9 Catorceava generacion
+
+BUY,Intel Core Ultra 5
+BUY,Intel Core Ultra 7
+BUY,Intel Core Ultra 9
+
 BUY,comprar intel i5 12400f
 BUY,precio intel i7 12700k
 BUY,intel i9 12900k barato
@@ -916,3 +1199,354 @@ NOT_BUY,PRISMA
 NOT_BUY,PRISMA-ScR
 NOT_BUY,PRISMACOLOR 
 NOT_BUY, QUIEN ES persona
+NOT_BUY,metodologias de programacion
+NOT_BUY,patrones de diseño
+NOT_BUY,arquitectura de software
+NOT_BUY,clean code
+NOT_BUY,solid principios
+NOT_BUY,dry principio
+NOT_BUY,kiss principio
+NOT_BUY,yagni principio
+
+NOT_BUY,scrum metodologia
+NOT_BUY,Scrum master
+NOT_BUY,programador
+NOT_BUY,kanban metodologia
+NOT_BUY,metodologia agile
+NOT_BUY,metodologia agil
+NOT_BUY,extreme programming xp
+NOT_BUY,lean software development
+NOT_BUY,devops metodologia
+
+NOT_BUY,programacion orientada a objetos
+NOT_BUY,programacion funcional
+NOT_BUY,programacion estructurada
+NOT_BUY,programacion reactiva
+NOT_BUY,programacion concurrente
+NOT_BUY,programacion asincrona
+
+NOT_BUY,algoritmos
+NOT_BUY,estructuras de datos
+NOT_BUY,complejidad algoritmica
+NOT_BUY,big o notacion
+NOT_BUY,teoria de grafos
+
+NOT_BUY,finanzas
+NOT_BUY,educacion financiera
+NOT_BUY,finanzas personales
+NOT_BUY,finanzas corporativas
+NOT_BUY,finanzas empresariales
+
+NOT_BUY,inversiones
+NOT_BUY,bolsa de valores
+NOT_BUY,mercado de valores
+NOT_BUY,acciones
+NOT_BUY,criptomonedas
+NOT_BUY,trading
+
+NOT_BUY,analisis financiero
+NOT_BUY,indicadores financieros
+NOT_BUY,flujo de caja
+NOT_BUY,estado de resultados
+NOT_BUY,balance general
+
+NOT_BUY,interes compuesto
+NOT_BUY,tasa de interes
+NOT_BUY,inflacion
+NOT_BUY,deuda
+NOT_BUY,ahorro
+
+NOT_BUY,contabilidad
+NOT_BUY,contabilidad basica
+NOT_BUY,contabilidad financiera
+NOT_BUY,contabilidad de costos
+NOT_BUY,Estados unidos
+NOT_BUY,Colombia 
+NOT_BUY,Himno nacional
+NOT_BUY,Ecuador
+NOT_BUY,Chile
+NOT_BUY,pais
+NOT_BUY,Donde se origino el orinoco
+NOT_BUY,Donde se origino el gran salto
+NOT_BUY,Donde se origino apple
+NOT_BUY,De donde es Iphone
+NOT_BUY,Origen del Iphone 
+NOT_BUY,De donde es Samsung
+NOT_BUY,Origen del samsung
+NOT_BUY,De donde es MAc
+NOT_BUY,Origen del MAc 
+
+NOT_BUY,Donde se creo Apple
+NOT_BUY,Historia de Apple
+NOT_BUY,Quien creo Apple
+NOT_BUY,Cuando se fundo Apple
+
+NOT_BUY,Donde se fabrica el iPhone
+NOT_BUY,Quien creo el iPhone
+NOT_BUY,Historia del iPhone
+NOT_BUY,Cuando salio el iPhone
+
+NOT_BUY,De donde es Xiaomi
+NOT_BUY,Origen de Xiaomi
+NOT_BUY,Quien creo Xiaomi
+NOT_BUY,Historia de Xiaomi
+
+NOT_BUY,De donde es Huawei
+NOT_BUY,Origen de Huawei
+NOT_BUY,Quien creo Huawei
+NOT_BUY,Historia de Huawei
+
+NOT_BUY,De donde es Lenovo
+NOT_BUY,Origen de Lenovo
+NOT_BUY,Quien creo Lenovo
+
+NOT_BUY,De donde es Dell
+NOT_BUY,Origen de Dell
+NOT_BUY,Quien creo Dell
+NOT_BUY,De donde es HP
+NOT_BUY,Origen de HP
+NOT_BUY,Historia de HP
+NOT_BUY,De donde es Asus
+NOT_BUY,Origen de Asus
+NOT_BUY,Historia de Asus
+NOT_BUY,De donde es Acer
+NOT_BUY,Origen de Acer
+NOT_BUY,Historia de Acer
+NOT_BUY,De donde es Intel
+NOT_BUY,Origen de Intel
+NOT_BUY,Quien creo Intel
+NOT_BUY,De donde es AMD
+NOT_BUY,Origen de AMD
+NOT_BUY,Historia de AMD
+NOT_BUY,De donde es Samsung
+NOT_BUY,Quien creo Samsung
+NOT_BUY,Historia de Samsung
+NOT_BUY,mi iphone 11 se calienta mucho
+NOT_BUY,mi iphone 12 pro max se sobrecalienta
+NOT_BUY,mi iphone no carga
+NOT_BUY,mi iphone se descarga rapido
+
+NOT_BUY,mi samsung s21 se calienta mucho
+NOT_BUY,mi samsung s22 no carga
+NOT_BUY,mi samsung se descarga rapido
+NOT_BUY,mi samsung se congela
+
+NOT_BUY,mi celular redmi note 13 se calienta mucho
+NOT_BUY,mi redmi no carga
+NOT_BUY,mi redmi se reinicia solo
+
+NOT_BUY,mi infinix note 30 se calienta mucho
+NOT_BUY,mi infinix no prende
+NOT_BUY,mi infinix se descarga rapido
+
+NOT_BUY,mi laptop se calienta mucho
+NOT_BUY,mi laptop va lenta
+NOT_BUY,mi computador no enciende
+NOT_BUY,mi pc se reinicia solo
+
+NOT_BUY,mi tablet no carga
+NOT_BUY,mi tablet esta lenta
+NOT_BUY,mi tablet se congela
+
+NOT_BUY,mi audifonos no funcionan
+NOT_BUY,mis audifonos no se conectan
+NOT_BUY,mis audifonos no cargan
+NOT_BUY,mi laptop va muy lenta que hago
+NOT_BUY,mi laptop esta lenta solucion
+NOT_BUY,laptop lenta windows 10
+NOT_BUY,mi pc va muy lento ayuda
+
+NOT_BUY,mi mac esta muy lenta
+NOT_BUY,macbook lenta despues de actualizar
+NOT_BUY,mac va lento solucion
+
+NOT_BUY,mi celular esta muy lento
+NOT_BUY,celular lento solucion
+NOT_BUY,telefono se traba mucho
+
+NOT_BUY,mi redmi esta lento
+NOT_BUY,mi samsung esta lento
+NOT_BUY,mi iphone esta lento
+
+NOT_BUY,porque mi laptop esta lenta
+NOT_BUY,porque mi pc va lento
+NOT_BUY,porque mi celular esta lento
+
+NOT_BUY,laptop se pone lenta de la nada
+NOT_BUY,pc muy lento al encender
+NOT_BUY,celular lento despues de actualizar
+NOT_BUY,mi macbook air va muy lenta
+NOT_BUY,mi macbook pro esta lenta
+NOT_BUY,macbook lenta despues de actualizar
+NOT_BUY,mi mac esta muy lenta
+
+NOT_BUY,mi iphone 11 esta lento
+NOT_BUY,mi iphone 12 pro max esta lento
+NOT_BUY,iphone lento despues de actualizar
+NOT_BUY,mi iphone se traba mucho
+
+NOT_BUY,mi samsung galaxy s23 esta lento
+NOT_BUY,mi samsung a14 va lento
+NOT_BUY,mi samsung galaxy a54 esta lento
+NOT_BUY,samsung lento despues de actualizar
+
+NOT_BUY,mi redmi note 13 esta lento
+NOT_BUY,mi redmi note 12 pro va lento
+NOT_BUY,redmi lento despues de actualizar
+NOT_BUY,telefono redmi se traba mucho
+
+NOT_BUY,mi infinix note 30 esta lento
+NOT_BUY,mi infinix hot 30 va lento
+NOT_BUY,infinix lento despues de actualizar
+NOT_BUY,celular infinix se congela
+
+NOT_BUY,mi xiaomi pad 6 esta lenta
+NOT_BUY,mi tablet samsung tab a esta lenta
+NOT_BUY,tablet lenovo tab m10 va lenta
+
+NOT_BUY,mi pc intel i5 va lento
+NOT_BUY,mi computador con intel i7 esta lento
+NOT_BUY,pc con intel se pone lento
+NOT_BUY,iphone 10 pro max no recibe señal
+NOT_BUY,iphone 11 sin señal
+NOT_BUY,iphone 12 pro max sin servicio
+NOT_BUY,iphone 13 no tiene señal
+
+NOT_BUY,samsung galaxy s23 no recibe señal
+NOT_BUY,samsung galaxy a14 sin señal
+NOT_BUY,samsung galaxy a54 sin servicio
+NOT_BUY,samsung s22 no tiene señal
+
+NOT_BUY,redmi note 13 no recibe señal
+NOT_BUY,redmi note 12 pro sin señal
+NOT_BUY,xiaomi redmi sin servicio
+NOT_BUY,redmi no tiene señal
+
+NOT_BUY,infinix note 30 no recibe señal
+NOT_BUY,infinix hot 30 sin señal
+NOT_BUY,infinix no tiene señal
+NOT_BUY,celular infinix sin servicio
+
+NOT_BUY,google pixel 8 no recibe señal
+NOT_BUY,pixel 7 sin señal
+NOT_BUY,google pixel sin servicio
+
+NOT_BUY,motorola g54 no recibe señal
+NOT_BUY,motorola edge 40 sin señal
+NOT_BUY,motorola sin servicio
+
+NOT_BUY,huawei matepad sin señal
+NOT_BUY,huawei p40 no recibe señal
+NOT_BUY,huawei sin servicio
+
+NOT_BUY,oppo reno 10 no recibe señal
+NOT_BUY,realme 11 sin señal
+NOT_BUY,vivo y36 sin señal
+NOT_BUY,iphone 10 pro max luz roja parpadea
+NOT_BUY,iphone 11 pantalla negra
+NOT_BUY,iphone 12 pro max no enciende
+NOT_BUY,iphone 13 se reinicia solo
+
+NOT_BUY,samsung galaxy s23 luz azul parpadea
+NOT_BUY,samsung galaxy a14 pantalla en negro
+NOT_BUY,samsung s22 no responde tactil
+NOT_BUY,samsung a54 se apaga solo
+
+NOT_BUY,redmi note 13 luz blanca parpadea
+NOT_BUY,redmi note 12 pro pantalla congelada
+NOT_BUY,redmi no responde pantalla
+NOT_BUY,redmi se reinicia solo
+
+NOT_BUY,infinix note 30 luz roja parpadea
+NOT_BUY,infinix hot 30 pantalla negra
+NOT_BUY,infinix no responde tactil
+NOT_BUY,infinix se apaga solo
+
+NOT_BUY,google pixel 8 pantalla negra
+NOT_BUY,pixel 7 luz parpadea
+NOT_BUY,google pixel no enciende
+
+NOT_BUY,motorola g54 pantalla en negro
+NOT_BUY,motorola edge 40 no responde
+NOT_BUY,motorola se reinicia solo
+
+NOT_BUY,huawei p40 pantalla negra
+NOT_BUY,huawei matepad no enciende
+NOT_BUY,huawei no responde tactil
+
+NOT_BUY,oppo reno 10 pantalla congelada
+NOT_BUY,realme 11 no enciende
+NOT_BUY,vivo y36 se reinicia solo
+NOT_BUY,iphone 11 no enciende
+NOT_BUY,iphone 12 pro max pantalla negra
+NOT_BUY,iphone 13 se reinicia solo
+NOT_BUY,iphone 14 no carga
+NOT_BUY,iphone 15 pro max sin señal
+
+NOT_BUY,samsung galaxy s21 no enciende
+NOT_BUY,samsung galaxy s22 pantalla negra
+NOT_BUY,samsung galaxy s23 se apaga solo
+NOT_BUY,samsung galaxy s24 no carga
+NOT_BUY,samsung galaxy s23 ultra sin señal
+
+NOT_BUY,samsung galaxy a14 va lento
+NOT_BUY,samsung galaxy a24 se congela
+NOT_BUY,samsung galaxy a34 no responde tactil
+NOT_BUY,samsung galaxy a54 pantalla negra
+NOT_BUY,samsung galaxy a55 se reinicia solo
+
+NOT_BUY,redmi note 11 no enciende
+NOT_BUY,redmi note 12 pro pantalla negra
+NOT_BUY,redmi note 13 se apaga solo
+NOT_BUY,redmi note 13 pro no carga
+NOT_BUY,redmi note 12 sin señal
+
+NOT_BUY,infinix note 30 no enciende
+NOT_BUY,infinix note 30 pro pantalla negra
+NOT_BUY,infinix hot 30 se apaga solo
+NOT_BUY,infinix hot 30i no carga
+NOT_BUY,infinix smart 7 sin señal
+
+NOT_BUY,google pixel 7 no enciende
+NOT_BUY,google pixel 8 pantalla negra
+NOT_BUY,pixel 7 pro se reinicia solo
+NOT_BUY,pixel 8 pro no carga
+NOT_BUY,google pixel 6 sin señal
+
+NOT_BUY,motorola g54 no enciende
+NOT_BUY,motorola g84 pantalla negra
+NOT_BUY,motorola edge 40 se apaga solo
+NOT_BUY,motorola edge 50 no carga
+NOT_BUY,motorola g34 sin señal
+
+NOT_BUY,huawei p40 no enciende
+NOT_BUY,huawei p50 pantalla negra
+NOT_BUY,huawei mate 40 se reinicia solo
+NOT_BUY,huawei matepad no carga
+NOT_BUY,huawei nova 9 sin señal
+
+NOT_BUY,oppo reno 10 no enciende
+NOT_BUY,oppo reno 11 pantalla negra
+NOT_BUY,oppo a78 se apaga solo
+NOT_BUY,oppo find x5 no carga
+NOT_BUY,oppo a57 sin señal
+
+NOT_BUY,realme 11 no enciende
+NOT_BUY,realme c55 pantalla negra
+NOT_BUY,realme gt 2 se reinicia solo
+NOT_BUY,realme 10 no carga
+NOT_BUY,realme narzo 50 sin señal
+
+
+NOT_BUY,ayuda realme 11 no enciende
+NOT_BUY,ayuda realme c55 pantalla negra
+NOT_BUY,ayuda realme gt 2 se reinicia solo
+NOT_BUY,ayuda realme 10 no carga
+NOT_BUY,ayuda realme narzo 50 sin señal
+
+NOT_BUY,Documentacion realme 11
+NOT_BUY,Documentacion Note c55 
+NOT_BUY,Documentacion gt 2 se reinicia solo
+NOT_BUY,Documentacion Pro 10
+NOT_BUY,Documentacion narzo 50 
+
