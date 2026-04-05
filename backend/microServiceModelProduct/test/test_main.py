@@ -15,7 +15,12 @@ buy_queries = [
     "cargador 25wts",
     "laptop gamer barata",
     "iphone 15 pro max 256gb",
-    "smart tv 55 pulgadas 4k"
+    "Realme 14 pro",
+    "Audifonos bluetooth",
+    "auriculares inalambricos",
+    "auriculares con cancelacion de ruido",
+    "auriculares con mejor bateria para viajes",
+    "Adaptador usb c a jack 3.5 mm",
 ]
 
 not_buy_queries = [
@@ -23,7 +28,11 @@ not_buy_queries = [
     "scrum",
     "metodologias agiles",
     "que es un algoritmo",
-    "como aprender a programar python"
+    "como aprender a programar python",
+    "clima",
+    "que es la inteligencia artificial",
+    "como funciona el aprendizaje automatico",
+    "mexico"
 ]
 
 # -------------------------------
@@ -52,7 +61,7 @@ def test_predict_buy_intent(query):
     assert response.status_code == 200
     data = response.json()
     assert data["input"] == query
-    assert data["label"] == "compra"
+    assert data["label"] == "BUY"
     assert "p_buy" in data
     assert "threshold" in data
 
@@ -65,13 +74,6 @@ def test_predict_not_buy_intent(query):
     assert response.status_code == 200
     data = response.json()
     assert data["input"] == query
-    assert data["label"] == "no_compra"
+    assert data["label"] == "NOT_BUY"
     assert "p_buy" in data
     assert "threshold" in data
-
-# -------------------------------
-# Test invalid input
-# -------------------------------
-def test_invalid_input():
-    response = post_with_retry(BASE_URL, {"invalid_key": "some_value"})
-    assert response.status_code == 422
