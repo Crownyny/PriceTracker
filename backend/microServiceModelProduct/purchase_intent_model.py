@@ -2,36 +2,39 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from math import exp, log
-from typing import Dict, Iterable, List, Set
+from typing import Dict, Iterable, List, Set, Tuple
 
 
 Label = str  # expected: "BUY" or "NOT_BUY"
 
 
 def _tokenize(text: str) -> List[str]:
-    """Basic tokenizer: lowercase + split by whitespace."""
     if text is None:
         return []
     text = text.strip().lower()
     return [t for t in text.split() if t]
 
 
+def _extract_ngrams(tokens: List[str], ngram_range: Tuple[int, int]) -> List[str]:
+    """Generate n-grams from tokens."""
+    min_n, max_n = ngram_range
+    ngrams = []
+
+    for n in range(min_n, max_n + 1):
+        for i in range(len(tokens) - n + 1):
+            ngram = " ".join(tokens[i:i + n])
+            ngrams.append(ngram)
+
+    return ngrams
+
+
 @dataclass
 class PurchaseIntentModel:
-    """Binary Multinomial Naive Bayes implemented from scratch.
-
-    Goal: return P(BUY | query).
-
-    Implementation details:
-    - Tokenization: lowercase + split by whitespace
-    - Multinomial Naive Bayes
-    - Laplace smoothing
-    - Log-probabilities
-    - Binary softmax -> probability
-    """
+    """Binary Multinomial Naive Bayes with n-grams."""
 
     alpha: float = 1.0
     decision_threshold: float = 0.7
+    ngram_range: Tuple[int, int] = (1, 2)  # 👈 nuevo
 
     # Learned state
     _vocabulary: Set[str] = field(default_factory=set, init=False)
@@ -41,10 +44,6 @@ class PurchaseIntentModel:
     _trained: bool = field(default=False, init=False)
 
     def train(self, training_data: Dict[str, List[str]]) -> None:
-        """Train from in-memory dataset.
-
-        training_data must contain two keys: "BUY" and "NOT_BUY" (case-insensitive).
-        """
         if not training_data:
             raise ValueError("training_data is required")
         if self.alpha <= 0:
@@ -74,18 +73,15 @@ class PurchaseIntentModel:
         self._trained = True
 
     def predict_purchase_probability(self, query: str) -> float:
-        """Return P(BUY | query) in [0, 1]."""
         self._ensure_trained()
 
         buy_score = self._log_posterior_score("BUY", query)
         not_buy_score = self._log_posterior_score("NOT_BUY", query)
 
-        # Binary softmax (stable): 1 / (1 + exp(not_buy - buy))
         diff = not_buy_score - buy_score
         return 1.0 / (1.0 + exp(diff))
 
     def predict_label(self, query: str) -> Label:
-        """Return BUY/NOT_BUY using decision_threshold."""
         return "BUY" if self.predict_purchase_probability(query) >= self.decision_threshold else "NOT_BUY"
 
     # ---------------- internal ----------------
@@ -96,9 +92,12 @@ class PurchaseIntentModel:
 
     def _ingest(self, label: Label, samples: Iterable[str]) -> None:
         for s in samples:
-            for tok in _tokenize(s):
-                self._vocabulary.add(tok)
-                self._token_counts[label][tok] = self._token_counts[label].get(tok, 0) + 1
+            tokens = _tokenize(s)
+            ngrams = _extract_ngrams(tokens, self.ngram_range)
+
+            for ng in ngrams:
+                self._vocabulary.add(ng)
+                self._token_counts[label][ng] = self._token_counts[label].get(ng, 0) + 1
                 self._total_tokens[label] += 1
 
     def _log_posterior_score(self, label: Label, query: str) -> float:
@@ -106,14 +105,18 @@ class PurchaseIntentModel:
         v = len(self._vocabulary)
         denom = self._total_tokens[label] + self.alpha * v
 
-        # If vocab is empty (shouldn't happen with a sane dataset), avoid division by zero
         if denom <= 0:
             return float("-inf")
 
         counts = self._token_counts[label]
-        for tok in _tokenize(query):
-            c = counts.get(tok, 0)
+
+        tokens = _tokenize(query)
+        ngrams = _extract_ngrams(tokens, self.ngram_range)
+
+        for ng in ngrams:
+            c = counts.get(ng, 0)
             score += log(c + self.alpha) - log(denom)
+
         return score
 
 
