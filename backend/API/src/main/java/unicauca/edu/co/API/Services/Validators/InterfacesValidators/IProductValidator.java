@@ -15,7 +15,9 @@ public interface IProductValidator {
     void setNext(IProductValidator next);
     /**
      * Valida el producto normalizado. Si la validación es exitosa, se llama al siguiente validador en la cadena.
+     *
      * @param request El producto normalizado a validar.
+     * @return {@code true} si el producto pasa todas las validaciones de la cadena; {@code false} si se descarta.
      */
-    void validate(NormalizedProductDTO request);
+    boolean validate(NormalizedProductDTO request);
 }

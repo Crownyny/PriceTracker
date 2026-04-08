@@ -1,9 +1,7 @@
 package unicauca.edu.co.API.Config;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -16,6 +14,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final Map<String, String> productSessions = new ConcurrentHashMap<>();
+    private final Map<String, String> productQueries = new ConcurrentHashMap<>();
 
     /**
      * Agrega una sesión WebSocket para un producto específico.
@@ -27,12 +26,34 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     /**
+     * Agrega una sesión WebSocket y su consulta asociada para un producto.
+     * @param productRef Referencia del producto para asociar la sesión
+     * @param sessionId Identificador de la sesión WebSocket del usuario
+     * @param searchQuery Consulta original del usuario
+     */
+    public void addSession(String productRef, String sessionId, String searchQuery) {
+        productSessions.put(productRef, sessionId);
+        if (searchQuery != null) {
+            productQueries.put(productRef, searchQuery);
+        }
+    }
+
+    /**
      * Obtiene la sesion WebSocket asociadas a un producto específico.
      * @param productRef Referencia del producto para obtener las sesiones asociadas
      * @return Lista de identificadores de sesiones WebSocket asociadas al producto
      */
     public String getSession(String productRef) {
         return productSessions.get(productRef);
+    }
+
+    /**
+     * Obtiene la consulta asociada a una referencia de producto.
+     * @param productRef Referencia del producto
+     * @return Consulta original del usuario o null si no existe
+     */
+    public String getSearchQuery(String productRef) {
+        return productQueries.get(productRef);
     }
     /**
      * Elimina una sesión WebSocket de un producto específico.
@@ -41,6 +62,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     public void removeSession(String productRef, String sessionId) {
         productSessions.remove(productRef, sessionId);
+        productQueries.remove(productRef);
     }
 
     /**

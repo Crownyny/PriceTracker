@@ -4,6 +4,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import unicauca.edu.co.API.Presentation.DTO.Enum.ProcessStatus;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormlaizedProductEventDTO;
@@ -12,21 +16,51 @@ import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Events.NormlaizedProductFinalizedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.INormalizerProductService;
+import unicauca.edu.co.API.Services.Validators.InterfacesValidators.IProductValidator;
 
+/**
+ * Servicio que maneja la lógica de negocio relacionada con productos normalizados.
+ * Escucha 
+ * EVENTOS
+ *  - productos normalizados recibidos y
+ *  - Servicio de normalizacion finalizado  
+ * FUNCIONES:
+ *  - valida los productos por medio de una cadena de validadores
+ *  - Envía  los productos a través del WebSocket si pasan la validación.
+ */
 @Service
 public class NormalizerProductService implements INormalizerProductService {
     private final String WEBSOCKET_PRODUCTS = "/queue/products";
     private final IMessengerService messengerService;
+    private final IProductValidator productValidationChain;
+    private static final Logger logger = LoggerFactory.getLogger(MessengerService.class);
 
-    public NormalizerProductService(IMessengerService messengerService) {
+
+    public NormalizerProductService(IMessengerService messengerService, IProductValidator productValidationChain) {
         this.messengerService = messengerService;
+        this.productValidationChain = productValidationChain;
     }
 
     @Async
     @EventListener
     public void handleNormalizedProduct(NormalizedProductReceivedEvent event) {
         NormalizedProductDTO product = event.getProduct();
-        sendNormalizedProductToWebSocket(product);
+        logger.info(
+            "Recibido producto normalizado para validar/enviar: productRef={}, canonicalName={}, price={}, currency={}",
+            product != null ? product.getProductRef() : null,
+            product != null ? product.getCanonicalName() : null,
+            product != null ? product.getPrice() : null,
+            product != null ? product.getCurrency() : null
+        );
+        if (product == null) {
+            return;
+        }
+        if (productValidationChain.validate(product)) {
+            logger.info("Producto pasó validadores; enviando al WebSocket: productRef={} canonicalName={}",
+                product.getProductRef(), product.getCanonicalName());
+            sendNormalizedProductToWebSocket(product);
+        }
+        
     }
 
     @Async
