@@ -12,9 +12,13 @@ public abstract class AbstractProductValidator implements IProductValidator {
     public void setNext(IProductValidator next) {
         this.next = next;
     }
-    protected void next(NormalizedProductDTO request) {
-        if(next != null) {
-            next.validate(request);
+    /**
+     * Continúa la cadena. Si no hay siguiente validador, el producto pasó toda la cadena.
+     */
+    protected boolean next(NormalizedProductDTO request) {
+        if (next == null) {
+            return true;
         }
+        return next.validate(request);
     }
 }
