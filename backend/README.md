@@ -188,8 +188,22 @@ Definida en `docker-compose.yml` en la raíz del proyecto.
 | `postgres` | postgres:16 | 5432 | Productos normalizados e historial de precios |
 | `scrapper` | Dockerfile propio | **8001** | Scraper Service |
 | `normalizer` | Dockerfile propio | **8002** | Normalizer Service |
+| `api` | Dockerfile propio (Spring Boot) | **8080** | API REST + WebSocket/STOMP |
+| `caddy` | caddy:2.8 | **8443** | Proxy HTTPS local para la extension |
 
 > RabbitMQ Management UI: `http://localhost:15672` (usuario: `guest`, contraseña: `guest`)
+
+### Caddy (HTTPS local para la extension)
+
+El navegador bloquea WebSocket inseguro desde Google (`https://`) hacia backend local (`http://`).
+Por eso se incluye **Caddy** en Docker Compose para exponer el backend en:
+
+- `https://localhost:8443`
+
+Caddy usa `tls internal`, por lo que cada desarrollador debe confiar la CA local en su maquina.
+Archivo de configuracion usado por Docker:
+
+- `Caddyfile.docker` (proxy a `api:8080`)
 
 ---
 
@@ -202,12 +216,56 @@ Definida en `docker-compose.yml` en la raíz del proyecto.
 docker compose up --build
 ```
 
+Verificar API y WebSocket por HTTPS:
+
+```bash
+curl -k https://localhost:8443/ws/info
+curl -k -X POST https://localhost:8443/api/products/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"iphone 16","product_ref":"iphone16"}'
+```
+
 Verificar que los servicios están activos:
 
 ```bash
 curl http://localhost:8001/health   # {"status": "ok", "service": "scraper"}
 curl http://localhost:8002/health   # {"status": "ok", "service": "normalizer"}
 ```
+
+#### Certificado local (una sola vez por equipo)
+
+- **Linux (Debian/Ubuntu):**
+
+```bash
+# Desde la raiz del repo (una sola vez)
+chmod +x ./scripts/trust-caddy-cert.sh
+./scripts/trust-caddy-cert.sh
+```
+
+Alternativa manual (si no quieres usar script):
+
+```bash
+docker compose up -d caddy
+docker cp pricetracker-caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-local-root.crt
+sudo cp ./caddy-local-root.crt /usr/local/share/ca-certificates/caddy-local-root.crt
+sudo update-ca-certificates
+curl -I https://localhost:8443/ws/info
+```
+
+- **Windows (PowerShell, recomendado):**
+
+```powershell
+# Desde la raiz del repo
+./scripts/trust-caddy-cert.ps1
+```
+
+Si PowerShell bloquea scripts locales por politica de ejecucion:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\trust-caddy-cert.ps1
+```
+
+- **macOS:** confiar el certificado raiz generado por Caddy en Keychain Access (login + System Roots segun permisos).
 
 ### Opción B — Desarrollo local de un servicio
 
