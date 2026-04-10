@@ -12,6 +12,10 @@
       OPEN_DASHBOARD: 'OPEN_DASHBOARD',
       SHOW_PRICE_OVERLAY: 'SHOW_PRICE_OVERLAY',
     },
+    GOOGLE_SEARCH: {
+      // Tipos de búsqueda no permitidos (solo "Todo"/All está permitido)
+      RESTRICTED_TYPES: ['isch', 'vid', 'nws', 'lcl', 'shop', 'bks', 'flm'], // Imágenes, Videos, Noticias, Locales, Compras, Libros, Películas
+    },
     REFRESH: {
       CACHE_TTL_MS: 60 * 1000,
       POLL_INTERVAL_MS: 45 * 1000,
