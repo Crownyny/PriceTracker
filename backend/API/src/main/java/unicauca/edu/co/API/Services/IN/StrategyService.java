@@ -57,10 +57,21 @@ public class StrategyService implements IStrategyServices{
 
     @Override
     public void resolveStrategyAPI(QueryDTOIN query, String var_productRef) {
-        NormalizedProductEntity entity = productRepository.findByProductRefStartingWith(var_productRef).get(0);
+        var matches = productRepository.findByProductRefStartingWith(var_productRef);
+        if (matches == null || matches.isEmpty()) {
+            logger.warn(
+                "No se encontraron productos para productRef={} en ruta de cache. Reintentando scraping.",
+                var_productRef
+            );
+            resolveStrategyWebScraping(query, var_productRef);
+            return;
+        }
+
+        NormalizedProductEntity entity = matches.get(0);
+
         System.out.println("Producto encontrado en base de datos: " + entity.getProductRef());
         ExceptionDTO error= messengerService.createExceptionDTO(query, "PRODUCT_IN_BD", entity.getUpdatedAt());
-        messengerService.disconnectWebSocket(query.getSessionId(), entity.getProductRef(), error);
+        messengerService.sendToWebSocket(query.getProduct_ref(), "/queue/errors", error);
     }
 
     

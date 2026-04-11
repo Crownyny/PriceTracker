@@ -68,7 +68,7 @@ def _make_worker() -> tuple[NormalizerWorker, MagicMock, MagicMock]:
     Devuelve (worker, mock_repo, mock_publisher).
     """
     mock_repo = MagicMock()
-    mock_repo.upsert_product = AsyncMock(return_value=None)
+    mock_repo.upsert_product = AsyncMock(return_value="test-product-id")
     mock_repo.append_price_history = AsyncMock(return_value=None)
     mock_repo.increment_completed_jobs = AsyncMock(return_value=(1, None))
     mock_repo.record_expected_jobs = AsyncMock(return_value=(0, None))

@@ -41,11 +41,8 @@ public class PriceHistoryEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     
-    @Column(nullable = false)
-    private String productRef;
-    
-    @Column(nullable = false)
-    private String sourceName;
+    @Column(name = "product_id", nullable = false, length = 36)
+    private String productId;
     
     @Column(nullable = false)
     private Double price;

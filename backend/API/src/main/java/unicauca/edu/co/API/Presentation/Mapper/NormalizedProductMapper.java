@@ -13,7 +13,6 @@ import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 @Mapper(componentModel = "spring")
 public interface NormalizedProductMapper extends GenericMapper<NormalizedProductEntity, NormalizedProductDTO> {
     @Mapping(target = "scrapedAt", ignore = true)
-    @Mapping(target = "sourceUrl", ignore = true)
     @Mapping(target = "confidence", ignore = true)
     NormalizedProductDTO toDTO(NormalizedProductEntity entity);
 }

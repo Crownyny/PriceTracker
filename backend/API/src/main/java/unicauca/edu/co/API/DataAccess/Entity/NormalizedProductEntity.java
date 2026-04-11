@@ -1,12 +1,9 @@
 package unicauca.edu.co.API.DataAccess.Entity;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -14,8 +11,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * 
@@ -45,14 +40,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @AllArgsConstructor
 public class NormalizedProductEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @Column(length = 36)
+    private String id;
     
     @Column(name = "product_ref")
     private String productRef;
     
     @Column(name = "source_name")
     private String sourceName;
+
+    @Column(name = "source_url", nullable = false, unique = true)
+    private String sourceUrl;
     
     @Column(name = "canonical_name")
     private String canonicalName;
@@ -71,7 +69,7 @@ public class NormalizedProductEntity {
     private String description;
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
-    private Map<String, String> extra;
+    private Map<String, Object> extra;
 
     // Constructor sin argumentos para JPA
     public NormalizedProductEntity() {

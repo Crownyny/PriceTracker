@@ -21,10 +21,9 @@ def make_save_node(product_repo):
         product = NormalizedProduct.model_validate(state["final_product"])
         job_id = state["job_id"]
         try:
-            await product_repo.upsert_product(product)
+            product_id = await product_repo.upsert_product(product)
             await product_repo.append_price_history(
-                product_ref=product.product_ref,
-                source_name=product.source_name,
+                product_id=product_id,
                 price=product.price,
                 currency=product.currency,
                 job_id=job_id,

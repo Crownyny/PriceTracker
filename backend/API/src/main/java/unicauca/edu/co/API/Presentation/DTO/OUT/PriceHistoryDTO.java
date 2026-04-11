@@ -30,8 +30,7 @@ import lombok.Setter;
 public class PriceHistoryDTO {
     
     private Integer id;
-    private String productRef;
-    private String sourceName;
+    private String productId;
     private Double price;
     private String currency;
     private LocalDateTime recordedAt;
