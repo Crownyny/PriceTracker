@@ -11,29 +11,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
-import unicauca.edu.co.API.Services.IN.IntentProductService;
-import unicauca.edu.co.API.Services.IN.ProductService;
-import unicauca.edu.co.API.Services.IN.StrategyService;
-import org.springframework.web.bind.annotation.RequestParam;
+import unicauca.edu.co.API.Services.Interfaces.IN.IStrategyServices;
+
+
 
 
 @Controller
 public class ProductWebSocketController {
 
-    private final  ProductService productService;
+    
     private static final Logger logger = LoggerFactory.getLogger(ProductWebSocketController.class);
     private final SimpMessagingTemplate messagingTemplate;
-    private final StrategyService strategyService;
+    private final IStrategyServices strategyService;
 
     public ProductWebSocketController(
-        ProductService productService,
         SimpMessagingTemplate messagingTemplate,
-        StrategyService strategyService
+        IStrategyServices strategyService
     ) {
 
         this.messagingTemplate = messagingTemplate;
         this.strategyService = strategyService;
-        this.productService = productService;
     }
 
     /**

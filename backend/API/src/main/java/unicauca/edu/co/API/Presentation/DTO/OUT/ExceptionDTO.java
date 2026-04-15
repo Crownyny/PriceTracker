@@ -1,5 +1,7 @@
 package unicauca.edu.co.API.Presentation.DTO.OUT;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,6 +20,6 @@ import lombok.Setter;
 public class ExceptionDTO {
     private String message;
     private String product_ref;
-    private String update_at;
+    private LocalDateTime update_at;
     public ExceptionDTO(){}
 }

@@ -2,7 +2,7 @@ package unicauca.edu.co.API.Services.IN;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,14 +51,16 @@ public class ProductService implements IProductService {
 
     @Override
     public List<NormalizedProductDTO> getProductByProductRef(QueryDTOIN query) {
-        List<NormalizedProductDTO> products = null;
-        List<NormalizedProductEntity> entities = productRepository.findByProductRef(query.getProduct_ref());
-        if(entities != null && !entities.isEmpty()) {
-            products = entities.stream()
-                .map(entity -> mapperProduct.toDTO(entity))
-                .collect(Collectors.toList());
-        }
-        return products;
+        LocalDateTime twentyMinutesAgo = LocalDateTime.now().minusMinutes(20);
+        List<NormalizedProductEntity> entities =
+            productRepository.findRecentProducts(
+                query.getProduct_ref(),
+                twentyMinutesAgo
+            );
+
+        return entities.stream()
+            .map(mapperProduct::toDTO)
+            .collect(Collectors.toList());
     }
 
     @Override

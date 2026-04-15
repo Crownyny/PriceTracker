@@ -61,7 +61,7 @@ public class NormalizedProductEntity {
     private Boolean availability;
     
     @Column(name = "updated_at")
-    private String updatedAt;
+    private LocalDateTime updatedAt;
     
     @Column(name = "image_url")
     private String imageUrl;
