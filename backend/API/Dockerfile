@@ -6,6 +6,7 @@ COPY pom.xml .
 RUN mvn dependency:go-offline
 
 COPY src ./src
+COPY config/ ./config/
 
 RUN mvn clean package -DskipTests
 
@@ -13,7 +14,15 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
+# Copiar el JAR
 COPY --from=builder /app/target/*.jar app.jar
+
+# Copiar la carpeta config completa
+COPY --from=builder /app/config ./config
+
+# Definir la ruta absoluta como variable de entorno
+ENV FIREBASE_CONFIG_PATH=/app/config/firebase-service-account.json
+ENV GOOGLE_APPLICATION_CREDENTIALS=/app/config/firebase-service-account.json
 
 EXPOSE 8080
 
