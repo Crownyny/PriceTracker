@@ -14,6 +14,8 @@ import org.springframework.scheduling.annotation.Async;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.LocalDateTime;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,7 +158,7 @@ public class MessengerService implements IMessengerService {
     }
 
     @Override
-    public ExceptionDTO createExceptionDTO(QueryDTOIN query, String errorMessage, String update_at) {
+    public ExceptionDTO createExceptionDTO(QueryDTOIN query, String errorMessage, LocalDateTime update_at) {
         ExceptionDTO exceptionDTO = new ExceptionDTO();
         exceptionDTO.setProduct_ref(query.getProduct_ref());
         exceptionDTO.setMessage(errorMessage);

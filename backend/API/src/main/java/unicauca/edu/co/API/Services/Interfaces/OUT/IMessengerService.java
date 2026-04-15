@@ -1,5 +1,8 @@
 package unicauca.edu.co.API.Services.Interfaces.OUT;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
@@ -34,7 +37,7 @@ public interface IMessengerService {
      * @param update_at La fecha y hora en que ocurrió el error, lo que puede ser útil para el seguimiento y la depuración de problemas.
      * @return Un objeto ExceptionDTO que encapsula la información del error, incluyendo detalles relevantes de la consulta y el mensaje de error proporcionado. Este DTO puede ser utilizado para comunicar errores de manera efectiva a través de la aplicación, facilitando la identificación y resolución de problemas.
      */
-    ExceptionDTO createExceptionDTO(QueryDTOIN query, String errorMessage, String update_at);
+    ExceptionDTO createExceptionDTO(QueryDTOIN query, String errorMessage, LocalDateTime update_at);
 
     /**
      * Envía el estado del proceso a través del WebSocket al cliente correspondiente. 
