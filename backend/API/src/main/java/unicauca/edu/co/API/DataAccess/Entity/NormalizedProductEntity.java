@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.DataAccess.Entity;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import jakarta.persistence.Column;
