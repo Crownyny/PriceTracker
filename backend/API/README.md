@@ -1,7 +1,7 @@
 # API PriceTracker
 
 ## Overview
-API PriceTracker is a backend service built with Spring Boot that manages product price tracking, integration with scrapers, and real-time updates for price normalization processes. It uses a message-driven architecture with RabbitMQ and provides both REST and WebSocket endpoints for client interaction.
+API PriceTracker is a backend service built with Spring Boot that manages product price tracking, integration with scrapers, and real-time updates for price normalization processes. It uses a message-driven architecture with RabbitMQ and provides REST, WebSocket, and email notifications for client interaction.
 
 ## Technologies
 - **Java 17**
@@ -10,6 +10,7 @@ API PriceTracker is a backend service built with Spring Boot that manages produc
   - Spring Data JPA
   - Spring AMQP (RabbitMQ)
   - Spring WebSocket (STOMP)
+   - Spring Mail
   - Spring Boot Actuator
 - **PostgreSQL**: Primary database for product and price history storage.
 - **RabbitMQ**: Message broker for asynchronous scraping jobs and event processing.
@@ -34,6 +35,14 @@ Para el correcto funcionamiento de la autenticación, se requiere un archivo JSO
 1.  Crea un directorio llamado `config/` en el raíz del proyecto.
 2.  Coloca el archivo JSON descargado de Firebase Console dentro de `config/` con el nombre `firebase-service-account.json`.
 3.  Alternativamente, puedes configurar la ruta en `src/main/resources/application.properties` o usar la variable de entorno `GOOGLE_APPLICATION_CREDENTIALS`.
+
+### Mail Configuration
+El modulo de correos usa un archivo externo para evitar exponer credenciales en el repositorio.
+
+1.  Copia `config/mail.properties.example` como `config/mail.properties`.
+2.  Ajusta host, usuario y password SMTP reales.
+3.  Define `mail.notifications.enabled=true` para activar el daemon.
+4.  El archivo `config/mail.properties` esta en `.gitignore` y no se versiona.
 
 ### Local Development
 1. **Clone the repository**:
@@ -70,6 +79,14 @@ The application requires the following environment variables or properties:
 | `SPRING_RABBITMQ_PORT` | RabbitMQ port | `5672` |
 | `FIREBASE_CONFIG_PATH` | Ruta al archivo JSON de Firebase | `config/firebase-service-account.json` |
 | `MODEL_PRODUCT_URL` | URL for the external product model service | *(Required)* |
+| `SPRING_MAIL_HOST` | SMTP host | `smtp.example.com` |
+| `SPRING_MAIL_PORT` | SMTP port | `587` |
+| `SPRING_MAIL_USERNAME` | SMTP username | *(Required para envio real)* |
+| `SPRING_MAIL_PASSWORD` | SMTP password | *(Required para envio real)* |
+| `MAIL_SENDER_ADDRESS` | Address used in From header | `no-reply@pricetracker.local` |
+| `MAIL_NOTIFICATIONS_ENABLED` | Enable scheduled email daemon | `false` |
+| `MAIL_NOTIFICATIONS_TIMEZONE` | Timezone for 9:00 AM checks | `America/Bogota` |
+| `MAIL_NOTIFICATIONS_CRON` | Scheduler cron expression | `0 * * * * *` |
 
 ## Scripts and Maven Commands
 - `mvn clean compile`: Compiles the project.
@@ -91,15 +108,46 @@ The application requires the following environment variables or properties:
 │   ├── Services/
 │   │   ├── Events/          # Application events for internal decoupled logic
 │   │   ├── IN/              # Inbound business logic services
+│   │   │   └── Email/       # Email daemon, templates (Strategy), DTOs, orchestration
 │   │   ├── OUT/             # Outbound infrastructure services (RabbitMQ, External APIs)
 │   │   ├── Interfaces/      # Service definitions
 │   │   └── Validators/      # Validation logic for products
 │   └── ApiPriceTrackerApplication.java  # Main entry point
 ├── src/main/resources/      # Configuration files (application.properties)
 ├── src/test/                # Unit and integration tests
+├── docs/                    # Technical guides and architecture notes
 ├── Dockerfile               # Docker image definition
 └── pom.xml                  # Maven project configuration
 ```
+
+## Email Notification Module
+
+The email notification module was added to support alert-based communication per user frequency settings.
+
+- **Instant alerts (`instant`)**:
+   daemon checks every minute and sends email when latest product price differs from previous recorded price.
+- **Daily alerts (`daily`)**:
+   at 9:00 AM, daemon sends a summary if there was a price change during the last 24 hours.
+- **Weekly alerts (`weekly`)**:
+   every Monday at 9:00 AM, daemon sends a summary if there was a price change during the last week.
+
+### Internal Flow
+
+1. `EmailNotificationDaemon` reads active alerts from repository.
+2. It evaluates price changes using `PriceHistoryRepository` and applies alert condition (`below`, `above`, `any_change`).
+3. It builds an `EmailNotificationRequestDTO` with one or more `ProductChangeEmailItemDTO`.
+4. `EmailNotificationService` delegates HTML generation to `EmailTemplateService`.
+5. `EmailTemplateService` resolves template using Strategy (`INSTANT`, `DAILY`, `WEEKLY`).
+6. `EmailSenderService` sends the final HTML email through Spring Mail.
+7. Daemon persists records in `NotificationRepository` to avoid duplicated sends.
+
+### Key Classes
+
+- `Services/IN/Email/EmailNotificationDaemon`
+- `Services/IN/Email/EmailNotificationService`
+- `Services/IN/Email/EmailTemplateService`
+- `Services/IN/Email/Template/*EmailTemplateStrategy`
+- `Services/OUT/EmailSenderService`
 
 ## API & WebSocket Endpoints
 
@@ -124,11 +172,16 @@ mvn test
 ```
 The project uses **Testcontainers** to spin up PostgreSQL and RabbitMQ instances during integration testing, ensuring a realistic testing environment.
 
+## Technical Documentation
+
+- Detailed email module documentation: `docs/email-notifications.md`
+
 ## TODOs
 - [ ] Add license information (currently empty in `pom.xml`).
 - [ ] Document specific scraping strategies in `StrategyService`.
 - [ ] Add more detailed documentation for WebSocket message formats.
 - [ ] Include API documentation (e.g., Swagger/OpenAPI) if available.
+- [ ] Add automated tests for email daemon windows (`instant`, `daily`, `weekly`).
 
 ## License
 TODO: Add License (MIT, Apache 2.0, etc.)

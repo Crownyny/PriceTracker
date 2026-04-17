@@ -34,3 +34,6 @@ build/
 
 ### Firebase Configuration ###
 config/firebase-service-account.json
+
+### Mail Configuration ###
+config/mail.properties
