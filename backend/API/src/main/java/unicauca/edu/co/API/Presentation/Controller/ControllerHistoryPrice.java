@@ -1,6 +1,7 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.HistoryPriceDTO;
 import unicauca.edu.co.API.Services.Interfaces.IN.IHistoryPriceService;
@@ -23,6 +24,7 @@ public class ControllerHistoryPrice {
     public ControllerHistoryPrice( IHistoryPriceService historyPriceService) {this.historyPriceService = historyPriceService;}
 
     @GetMapping("{productId}/priceHistory")
+    @PreAuthorize("isAuthenticated()")
     public HistoryPriceDTO[] getHistoryPrice(@PathVariable String productId, @RequestParam String range) {
         return historyPriceService.getHistoryPrice(productId, range);
     }

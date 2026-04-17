@@ -1,24 +1,25 @@
-package unicauca.edu.co.API.Presentation.DTO.IN;
+package unicauca.edu.co.API.Domain.Model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import unicauca.edu.co.API.Domain.Model.UserRole;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
-public class UserUpdateDTOIN {
+@Builder
+public class User {
     private UUID id;
-    private String uid;
+    private String firebaseUid;
     private String email;
     private String imageProfile;
     private UserRole role;
-    private LocalDateTime deleteAt;
-
-    public UserUpdateDTOIN() {
-    }
+    private LocalDateTime createdAt;
+    private LocalDateTime deletedAt;
 }

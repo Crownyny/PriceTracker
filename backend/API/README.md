@@ -8,6 +8,7 @@ API PriceTracker is a backend service built with Spring Boot that manages produc
 - **Spring Boot 4.0.3**
   - Spring Web (MVC & WebFlux)
   - Spring Data JPA
+   - Spring Security
   - Spring AMQP (RabbitMQ)
   - Spring WebSocket (STOMP)
    - Spring Mail
@@ -158,6 +159,22 @@ The email notification module was added to support alert-based communication per
 - **POST `/api/auth/invalidate`**: Invalidate the cache for a specific JWT.
 - **GET `/actuator/health`**: Health check endpoint.
 
+## Authentication and Authorization
+
+Security is implemented with Spring Security, JWT token validation and method-level authorization.
+
+- Global filter: `JwtAuthenticationFilter` runs on every HTTP request.
+- Token source: `Authorization: Bearer <token>`.
+- Validation: token is validated by `IAuthService` (Firebase), then extra claims checks are applied (`exp`, `iss`, `aud`).
+- User provisioning: authenticated user is resolved or auto-created through `IUserService`.
+- Security context: a `UsernamePasswordAuthenticationToken` is created and stored in `SecurityContext`.
+- Invalid token behavior: request is not blocked by the filter, but protected endpoints return `401`.
+- Endpoint protection strategy:
+   - Global `permitAll` at HTTP layer.
+   - `@PreAuthorize` at method level for protected resources.
+
+See full guide in `docs/security-authz.md`.
+
 ### WebSocket Endpoints
 - **Endpoint**: `/ws` (Configured in `WebSocketConfig.java`)
 - **Topic for Search**: `/app/search` (Inbound message mapping)
@@ -175,6 +192,16 @@ The project uses **Testcontainers** to spin up PostgreSQL and RabbitMQ instances
 ## Technical Documentation
 
 - Detailed email module documentation: `docs/email-notifications.md`
+- Domain boundary and business model rules: `docs/domain-model.md`
+- Security and authorization guide: `docs/security-authz.md`
+- Handoff playbook for contributors/agents: `docs/agent-handoff.md`
+- Services layer map and responsibilities: `src/main/java/unicauca/edu/co/API/Services/README.md`
+- Services use-cases (`IN`) details: `src/main/java/unicauca/edu/co/API/Services/IN/README.md`
+- Inbound contracts (`Interfaces/IN`) details: `src/main/java/unicauca/edu/co/API/Services/Interfaces/IN/README.md`
+- Outbound ports (`Interfaces/OUT`) details: `src/main/java/unicauca/edu/co/API/Services/Interfaces/OUT/README.md`
+- Security package details: `src/main/java/unicauca/edu/co/API/Config/Security/README.md`
+- Data adapters details: `src/main/java/unicauca/edu/co/API/DataAccess/Adapter/README.md`
+- Domain model details: `src/main/java/unicauca/edu/co/API/Domain/Model/README.md`
 
 ## TODOs
 - [ ] Add license information (currently empty in `pom.xml`).

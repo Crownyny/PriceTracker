@@ -1,12 +1,14 @@
 package unicauca.edu.co.API.Services.Interfaces.IN;
 
-import unicauca.edu.co.API.DataAccess.Entity.UserEntity;
+import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
 
 public interface IUserService {
 
-    UserEntity createUser(UserCreateDTOIN createRequest);
+    User createUser(UserCreateDTOIN createRequest);
 
-    UserEntity updateUser(UserUpdateDTOIN updateRequest);
+    User updateUser(UserUpdateDTOIN updateRequest);
+
+    User findOrCreateUserFromToken(String uid, String email, String picture);
 }
