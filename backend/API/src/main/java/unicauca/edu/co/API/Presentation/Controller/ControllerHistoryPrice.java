@@ -1,9 +1,14 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
+
+import java.util.UUID;
+
 import org.springframework.stereotype.Controller;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.HistoryPriceDTO;
 import unicauca.edu.co.API.Services.Interfaces.IN.IHistoryPriceService;
+import unicauca.edu.co.API.Services.enums.Range;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +28,7 @@ public class ControllerHistoryPrice {
     public ControllerHistoryPrice( IHistoryPriceService historyPriceService) {this.historyPriceService = historyPriceService;}
 
     @GetMapping("{productId}/priceHistory")
-    public HistoryPriceDTO[] getHistoryPrice(@PathVariable String productId, @RequestParam String range) {
+    public HistoryPriceDTO getHistoryPrice(@PathVariable UUID productId, @RequestParam Range range) {
         return historyPriceService.getHistoryPrice(productId, range);
     }
 }

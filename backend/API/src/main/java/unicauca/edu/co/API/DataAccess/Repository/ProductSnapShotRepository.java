@@ -10,7 +10,7 @@ import unicauca.edu.co.API.DataAccess.Entity.ProductSnapShotEntity;
 
 
 @Repository
-public interface HistoryPriceRepository extends JpaRepository<ProductSnapShotEntity, UUID>{
+public interface ProductSnapShotRepository extends JpaRepository<ProductSnapShotEntity, UUID>{
     /**
      * Listar HistoryEntity por productId
      *  y listar por fecha segun el rango de tiempo de range especificos
@@ -18,9 +18,7 @@ public interface HistoryPriceRepository extends JpaRepository<ProductSnapShotEnt
      *  3 semanas
      *  3 meses
      */
-    List<ProductSnapShotEntity> findByProductIdAndUpdatedAtAfter(
-    UUID productId,
-    LocalDateTime date);   
+    List<ProductSnapShotEntity> findByProductIdAndUpdatedAtAfter(UUID productId, LocalDateTime date);   
 
     /**
      * Listar HistoryEntity por productId sin importar la fecha

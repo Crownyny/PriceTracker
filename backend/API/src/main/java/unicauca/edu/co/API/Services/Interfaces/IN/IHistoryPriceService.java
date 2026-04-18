@@ -1,6 +1,11 @@
 package unicauca.edu.co.API.Services.Interfaces.IN;
 
+import java.util.UUID;
+
+
 import unicauca.edu.co.API.Presentation.DTO.IN.HistoryPriceDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.ProductSnapShotDTO;
+import unicauca.edu.co.API.Services.enums.Range;
 
 public interface IHistoryPriceService {
     /**
@@ -14,6 +19,6 @@ public interface IHistoryPriceService {
      *  (all) todo el tiempo
      * @return Un arreglo de HistoryPriceDTO que contiene el historial de precios del producto.
      */
-    HistoryPriceDTO[] getHistoryPrice(String productId, String range );
+    HistoryPriceDTO getHistoryPrice(UUID productId, Range range );
 
 }
