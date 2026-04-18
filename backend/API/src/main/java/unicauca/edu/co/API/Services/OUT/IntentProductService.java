@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Services.IN;
+package unicauca.edu.co.API.Services.OUT;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +12,8 @@ import unicauca.edu.co.API.Presentation.DTO.IN.IntentResponseDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.ModelProductRequestDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
-import unicauca.edu.co.API.Services.Interfaces.IN.IIntentProductService;
-import unicauca.edu.co.API.Services.OUT.MessengerService;
+import unicauca.edu.co.API.Services.IN.StrategyService;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IIntentProductService;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
