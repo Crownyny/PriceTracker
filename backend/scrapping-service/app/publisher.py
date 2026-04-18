@@ -35,7 +35,8 @@ class ScrapingResultPublisher(BasePublisher):
         product_ref: str | None = None,
         source_name: str | None = None,
         state: str | None = None,
-        error_message: str | None = None
+        error_message: str | None = None,
+        is_update: bool | None = None
     ) -> None:
         """
         Publica un ScrapingMessage.
@@ -50,6 +51,7 @@ class ScrapingResultPublisher(BasePublisher):
             source_name: Nombre de la fuente (requerido si result es None)
             state: Estado del scraping (requerido si result es None)
             error_message: Mensaje de error (opcional)
+            is_update: True=actualización, False/None=búsqueda nueva (opcional)
         """
         if result is not None:
             # Caso normal: tenemos un RawScrapingResult
@@ -63,6 +65,7 @@ class ScrapingResultPublisher(BasePublisher):
                 state=final_state,
                 query=query,
                 store_url=store_url,
+                is_update=is_update,
                 raw_fields=result.raw_fields,
                 error_message=result.error_message,
             )
@@ -79,6 +82,7 @@ class ScrapingResultPublisher(BasePublisher):
                 state=final_state,
                 query=query,
                 store_url=store_url,
+                is_update=is_update,
                 raw_fields={},
                 error_message=error_message,
             )
@@ -91,7 +95,7 @@ class ScrapingResultPublisher(BasePublisher):
         )
 
     async def publish_search_completed(
-        self, search_id: str, product_ref: str, total_jobs: int
+        self, search_id: str, product_ref: str, total_jobs: int, is_update: bool | None = None
     ) -> None:
         """
         Publica el sentinel SearchCompletedMessage en la misma cola.
@@ -102,6 +106,7 @@ class ScrapingResultPublisher(BasePublisher):
             search_id=search_id,
             product_ref=product_ref,
             total_jobs=total_jobs,
+            is_update=is_update,
             dispatched_at=datetime.datetime.now(tz=datetime.timezone.utc),
         )
         await self.publish(QUEUE_SCRAPING_RESULTS, message.model_dump(mode="json"))

@@ -148,7 +148,7 @@ class ScraperWorker(BaseConsumer):
                         )
                         continue
 
-                await self._publisher.publish_result(result, query=request.query)
+                await self._publisher.publish_result(result, query=request.query, is_update=request.is_update)
                 products_published += 1
         except Exception as exc:
             logger.error("[%s] Excepción no capturada en fuente '%s': %s",
@@ -195,6 +195,7 @@ class ScraperWorker(BaseConsumer):
                 source_name=source.source_name,
                 product_ref=request.product_ref,
                 priority=request.priority,
+                is_update=request.is_update,
                 metadata={**request.metadata, "query": request.query},
             )
             for source in sources
@@ -219,6 +220,7 @@ class ScraperWorker(BaseConsumer):
             search_id=request.search_id,
             product_ref=request.product_ref,
             total_jobs=total_messages,
+            is_update=request.is_update,
         )
 
         logger.info(
@@ -259,7 +261,8 @@ class ScraperWorker(BaseConsumer):
                 source_name=source_name,
                 state="failed",
                 error_message=f"No scraper available for store: {source_name}",
-                store_url=request.product_url
+                store_url=request.product_url,
+                is_update=request.is_update
             )
             return
         
@@ -270,6 +273,7 @@ class ScraperWorker(BaseConsumer):
             source_name=source_name,
             product_ref=request.product_ref,
             priority=request.priority,
+            is_update=request.is_update,
             metadata={**request.metadata, "product_url": request.product_url},
         )
         
@@ -286,6 +290,7 @@ class ScraperWorker(BaseConsumer):
             search_id=request.search_id,
             product_ref=request.product_ref,
             total_jobs=products_published,
+            is_update=request.is_update,
         )
         
         logger.info(
@@ -323,7 +328,8 @@ class ScraperWorker(BaseConsumer):
                 await self._publisher.publish_result(
                     result=result,
                     query=None,  # No hay query en scraping documentado
-                    store_url=request.product_url  # Pasar la URL de la tienda
+                    store_url=request.product_url,  # Pasar la URL de la tienda
+                    is_update=request.is_update
                 )
                 products_published += 1
         except Exception as exc:

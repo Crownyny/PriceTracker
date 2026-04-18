@@ -26,7 +26,8 @@ async def send_documented_scraping_request(
     publisher: BasePublisher,
     product_url: str,
     product_ref: str = "test-product-ref",
-    priority: int = 5
+    priority: int = 5,
+    is_update: bool | None = None
 ) -> None:
     """Envía un DocumentedScrapingRequest a la cola."""
     
@@ -35,6 +36,7 @@ async def send_documented_scraping_request(
         product_url=product_url,
         product_ref=product_ref,
         priority=priority,
+        is_update=is_update,
         metadata={"test": True, "source": "test_script"}
     )
     
@@ -51,6 +53,7 @@ async def send_documented_scraping_request(
     logger.info(f"  product_url: {request.product_url}")
     logger.info(f"  product_ref: {request.product_ref}")
     logger.info(f"  priority: {request.priority}")
+    logger.info(f"  is_update: {request.is_update}")
 
 
 async def main():
@@ -78,11 +81,16 @@ async def main():
         
         # Enviar mensajes de prueba
         for i, url in enumerate(test_urls, 1):
+            # Alternar entre actualización y búsqueda nueva
+            is_update = True if i % 2 == 0 else False
+            
             logger.info(f"\n--- Enviando mensaje {i}/{len(test_urls)} ---")
+            logger.info(f"Tipo: {'Actualización' if is_update else 'Búsqueda nueva'}")
             await send_documented_scraping_request(
                 publisher=publisher,
                 product_url=url,
-                product_ref=f"test-product-{i}"
+                product_ref=f"test-product-{i}",
+                is_update=is_update
             )
             
             # Pequeña pausa entre mensajes
