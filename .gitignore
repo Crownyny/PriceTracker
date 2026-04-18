@@ -91,3 +91,6 @@ dmypy.json
 *.tmp
 *.pid
 .cache/
+
+# ── Certificados locales de desarrollo ───────────────────────────────────────
+caddy-local-root.crt

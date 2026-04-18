@@ -34,7 +34,7 @@ import lombok.Setter;
  */
 
 public class NormalizedProductDTO {
-    private Integer id;
+    private String id;
     @JsonProperty("product_ref")
     private String productRef;
     @JsonProperty("source_name")
@@ -61,7 +61,7 @@ public class NormalizedProductDTO {
     private String imageUrl;
 
     private String description;
-    private Map<String, String> extra;
+    private Map<String, Object> extra;
 
     public NormalizedProductDTO() {
     }   

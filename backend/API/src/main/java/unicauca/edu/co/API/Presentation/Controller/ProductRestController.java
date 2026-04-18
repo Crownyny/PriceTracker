@@ -7,9 +7,9 @@ import unicauca.edu.co.API.Services.IN.ProductService;
 
 import java.util.List;
 
-
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 
@@ -17,15 +17,16 @@ import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 @RequestMapping("/api/products")
 public class ProductRestController {
 
-    private final ProductService productService;
+	private final ProductService productService;
 
-    public ProductRestController(
-        ProductService productService
-    ) {
-        this.productService = productService;
-    }
-    @PostMapping("/search")
-    public List<NormalizedProductDTO> searchProductQuery(@RequestBody QueryDTOIN query) {
-        return productService.getProductByProductRef(query);
-    }
+	public ProductRestController(
+		ProductService productService
+	) {
+		this.productService = productService;
+	}
+
+	@PostMapping("/search")
+	public List<NormalizedProductDTO> searchProductQuery(@RequestBody QueryDTOIN query) {
+		return productService.getProductByProductRef(query);
+	}
 }

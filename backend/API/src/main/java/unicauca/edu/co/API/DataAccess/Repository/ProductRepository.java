@@ -16,7 +16,7 @@ import java.util.Optional;
  * Proporciona operaciones CRUD y consultas personalizadas para productos normalizados.
  */
 @Repository
-public interface ProductRepository extends JpaRepository<NormalizedProductEntity, Integer> {
+public interface ProductRepository extends JpaRepository<NormalizedProductEntity, String> {
 
     /**
      * Encuentra productos por referencia.
@@ -42,11 +42,16 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
      * Encuentra productos disponibles.
      */
     List<NormalizedProductEntity> findByAvailability(Boolean availability);
-    
+
     /**
      * Encuentra un producto por referencia y fuente.
      */
     Optional<NormalizedProductEntity> findByProductRefAndSourceName(String productRef, String sourceName);
+
+    /**
+     * Encuentra un producto por URL de fuente (clave única del nuevo esquema).
+     */
+    Optional<NormalizedProductEntity> findBySourceUrl(String sourceUrl);
 
     /**
      * Encuentra el último producto normalizado por referencia.

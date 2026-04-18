@@ -35,6 +35,20 @@ class SearchRequest(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+# ── Solicitud de scraping documentado (URL específica) ────────────────────────
+class DocumentedScrapingRequest(BaseModel):
+    """
+    Solicitud de scraping para una URL de producto específica.
+    A diferencia de SearchRequest, este modelo recibe directamente la URL
+    del producto en lugar de un query de búsqueda.
+    """
+    search_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    product_url: str                        # URL específica del producto
+    product_ref: str                        # identificador interno del producto
+    priority: int = 5
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 # ── Job de scraping (entrada al Scraper Service) ──────────────────────────────
 class ScrapingJob(BaseModel):
     """Solicitud de scraping para una URL/fuente concreta."""
@@ -74,6 +88,7 @@ class ScrapingMessage(BaseModel):
     captured_at: datetime.datetime
     state: ScrapingState
     query: Optional[str] = None
+    store_url: Optional[str] = None          # URL de la tienda proporcionada
     raw_fields: dict[str, Any] = Field(default_factory=dict)
     error_message: Optional[str] = None
 

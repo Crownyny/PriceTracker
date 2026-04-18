@@ -29,7 +29,7 @@ from app.graph.pipeline import build_pipeline
 def _mock_repo() -> MagicMock:
     """Repositorio falso que acepta llamadas async sin efectos secundarios."""
     repo = MagicMock()
-    repo.upsert_product = AsyncMock(return_value=None)
+    repo.upsert_product = AsyncMock(return_value="test-product-id")
     repo.append_price_history = AsyncMock(return_value=None)
     return repo
 
