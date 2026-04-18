@@ -25,23 +25,69 @@ class ScrapingResultPublisher(BasePublisher):
     def __init__(self, connection: RabbitMQConnection) -> None:
         super().__init__(connection)
 
-    async def publish_result(self, result: RawScrapingResult, query: str | None = None) -> None:
-        state = ScrapingState.SCRAPED if result.status == "success" else ScrapingState.FAILED
-        message = ScrapingMessage(
-            job_id=result.job_id,
-            search_id=result.search_id,
-            product_ref=result.product_ref,
-            source_name=result.source_name,
-            captured_at=result.scraped_at,
-            state=state,
-            query=query,
-            raw_fields=result.raw_fields,
-            error_message=result.error_message,
-        )
+    async def publish_result(
+        self, 
+        result: RawScrapingResult | None, 
+        query: str | None = None, 
+        store_url: str | None = None,
+        job_id: str | None = None,
+        search_id: str | None = None,
+        product_ref: str | None = None,
+        source_name: str | None = None,
+        state: str | None = None,
+        error_message: str | None = None
+    ) -> None:
+        """
+        Publica un ScrapingMessage.
+        
+        Args:
+            result: RawScrapingResult con datos del scraping (opcional para fallos)
+            query: Query de búsqueda (opcional para scraping documentado)
+            store_url: URL de la tienda proporcionada (opcional)
+            job_id: ID del job (requerido si result es None)
+            search_id: ID de búsqueda (requerido si result es None)
+            product_ref: Referencia del producto (requerido si result es None)
+            source_name: Nombre de la fuente (requerido si result es None)
+            state: Estado del scraping (requerido si result es None)
+            error_message: Mensaje de error (opcional)
+        """
+        if result is not None:
+            # Caso normal: tenemos un RawScrapingResult
+            final_state = ScrapingState.SCRAPED if result.status == "success" else ScrapingState.FAILED
+            message = ScrapingMessage(
+                job_id=result.job_id,
+                search_id=result.search_id,
+                product_ref=result.product_ref,
+                source_name=result.source_name,
+                captured_at=result.scraped_at,
+                state=final_state,
+                query=query,
+                store_url=store_url,
+                raw_fields=result.raw_fields,
+                error_message=result.error_message,
+            )
+            fields_count = len(result.raw_fields)
+        else:
+            # Caso de fallo: construimos mensaje manualmente
+            final_state = ScrapingState.FAILED if state == "failed" else ScrapingState.SCRAPED
+            message = ScrapingMessage(
+                job_id=job_id or "unknown",
+                search_id=search_id,
+                product_ref=product_ref,
+                source_name=source_name or "unknown",
+                captured_at=datetime.datetime.now(tz=datetime.timezone.utc),
+                state=final_state,
+                query=query,
+                store_url=store_url,
+                raw_fields={},
+                error_message=error_message,
+            )
+            fields_count = 0
+        
         await self.publish(QUEUE_SCRAPING_RESULTS, message.model_dump(mode="json"))
         logger.info(
-            "[%s] ScrapingMessage publicado en '%s' (state=%s, fields=%d)",
-            result.job_id, QUEUE_SCRAPING_RESULTS, state, len(result.raw_fields),
+            "[%s] ScrapingMessage publicado en '%s' (state=%s, fields=%d, store_url=%s)",
+            message.job_id, QUEUE_SCRAPING_RESULTS, final_state, fields_count, store_url or "None",
         )
 
     async def publish_search_completed(
