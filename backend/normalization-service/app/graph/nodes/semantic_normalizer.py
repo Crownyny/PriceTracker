@@ -62,6 +62,11 @@ async def _semantic_normalize_with_llm(llm, merged: dict, job_id: Optional[str])
             text = text.strip()
 
         result = json.loads(text)
+        # qwen2 a veces devuelve una lista en lugar de un objeto
+        if isinstance(result, list):
+            result = result[0] if result else {}
+        if not isinstance(result, dict):
+            result = {}
         # Garantizar canonical_name si el LLM no lo devolvió
         if not result.get("canonical_name"):
             result["canonical_name"] = _build_canonical_name(result)

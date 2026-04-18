@@ -15,6 +15,15 @@ dependencies = [
     "langgraph>=0.2.0",
     "langchain-core>=0.2.0",
     "langchain-openai>=0.1.0",
+    "numpy>=1.26.0",
+    "sentence-transformers>=3.0.0",
+    "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
 ]
 
 [build-system]
@@ -23,3 +32,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["app*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

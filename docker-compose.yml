@@ -36,44 +36,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # ── Ollama — modelo LLM local ───────────────────────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    container_name: pricetracker-ollama
-    ports:
-      - "11434:11434"
-    environment:
-      OLLAMA_NUM_PARALLEL: "4"        # Solicitudes concurrentes al modelo
-      OLLAMA_MAX_LOADED_MODELS: "1"   # Mantiene 1 modelo en memoria
-      OLLAMA_KEEP_ALIVE: "-1"         # Nunca descarga el modelo por inactividad
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags | grep -q phi3 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 60
-      start_period: 20s
-    # GPU NVIDIA — descomentar si tienes GPU:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
-  # ── Descarga del modelo (one-shot) ──────────────────────────────────────────
-  ollama-init:
-    image: curlimages/curl:latest
-    container_name: pricetracker-ollama-init
-    depends_on:
-      ollama:
-        condition: service_started
-    entrypoint: ["sh", "-c", "sleep 10 && curl -sf http://ollama:11434/api/pull -d '{\"name\": \"phi3:mini\"}' && echo 'Model ready'"]
-    restart: "no"
-
-  # ── Scraper Service ─────────────────────────────────────────────────────────
   scrapper:
     build:
       context: ./backend
@@ -103,25 +65,109 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      ollama:
-        condition: service_started
     environment:
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
       DATABASE_URL: "postgresql+asyncpg://postgres:postgres@postgres:5432/pricetracker"
       API_HOST: "0.0.0.0"
       API_PORT: "8002"
-      # LLM local vía Ollama
-      ENABLE_ENRICHER: "true"
+      # LLM local vía Ollama — desactivado temporalmente
+      ENABLE_ENRICHER: "false"
       OPENAI_API_KEY: "ollama"
-      OPENAI_MODEL: "phi3:mini"
+      OPENAI_MODEL: "qwen2:0.5b"
       OPENAI_BASE_URL: "http://ollama:11434/v1"
+      ENABLE_SEMANTIC_VALIDATOR: "true"
+      SEMANTIC_EMBEDDINGS_MODEL: "/models/all-MiniLM-L6-v2"
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      SENTENCE_TRANSFORMERS_HOME: "/models"
       # Concurrencia del worker
-      NORMALIZER_PREFETCH_COUNT: "4"
+      NORMALIZER_PREFETCH_COUNT: "1"
     ports:
-      - "8002:8002"   # Health check: GET http://localhost:8002/health
+      - "8002:8002"
     restart: unless-stopped
+
+  # ── microServiceModelProduct ─────────────────────────────────────────────────
+  model-product:
+    build:
+      context: ./backend
+      dockerfile: microServiceModelProduct/Dockerfile
+    container_name: pricetracker-model-product
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+      API_HOST: "0.0.0.0"
+      API_PORT: "8015"
+    ports:
+      - "8015:8015"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8015/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── API Service ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend/API
+      dockerfile: Dockerfile
+    container_name: pricetracker-api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      model-product:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pricetracker
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      # RabbitMQ Configuration
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # Server Configuration
+      SERVER_PORT: 8080
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+      # Model Product Configuration
+      MODEL_PRODUCT_URL: http://model-product:8015
+    ports:
+      - "8080:8080"   # API REST
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # ── Caddy (HTTPS local para extension Chrome) ─────────────────────────────
+  caddy:
+    image: caddy:2.8
+    container_name: pricetracker-caddy
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile.docker:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
 
 volumes:
   rabbitmq_data:
   postgres_data:
-  ollama_data:
+  caddy_data:
+  caddy_config:
+#  ollama_data:

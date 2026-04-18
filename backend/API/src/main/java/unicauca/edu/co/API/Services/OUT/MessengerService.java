@@ -1,0 +1,177 @@
+package unicauca.edu.co.API.Services.OUT;
+
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.time.LocalDateTime;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import unicauca.edu.co.API.Config.WebSocketConfig;
+import unicauca.edu.co.API.Presentation.DTO.IN.NormalizedEventDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
+import unicauca.edu.co.API.Presentation.DTO.OUT.ExceptionDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.NormlaizedProductEventDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.ProcessStatusDTO;
+import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
+import unicauca.edu.co.API.Services.Events.NormlaizedProductFinalizedEvent;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
+
+
+/**
+** Servicio de mensajería que escucha la cola de resultados de RabbitMQ y notifica a los usuarios por WebSocket.
+** Se encarga de recibir los eventos normalizados desde la cola, procesarlos y enviar notificaciones a los usuarios correspondientes a través de WebSocket.
+* Caso de uso 1: 
+* 1. El servicio escucha la cola "normalized.events" de RabbitMQ.
+* 2. Cuando recibe un mensaje, usa servicio de normalizacion para convertir el mensaje JSON en un objeto NormalizedProductDTO.
+* 3. usa repositorio de producto para guardar el producto normalizado en la base de datos
+* 4. Consulta el sessionID del usuario correspondiente al productRef del producto normalizado
+* 5. Envía el producto normalizado al WebSocket privado del usuario utilizando el session
+* Caso 2:
+* 1. Logica de negocio alojada en el servicio productService ejecutada exitosamente
+* 2. Servicio de product llama a sendToWebSocket para enviar el producto normalizado al usuario por WebSocket
+*/
+
+@Service
+public class MessengerService implements IMessengerService {
+
+    private static final Logger logger = LoggerFactory.getLogger(MessengerService.class);
+    private final ApplicationEventPublisher eventPublisher;
+
+    private final SimpMessagingTemplate messagingTemplate;
+    private final WebSocketConfig webSocket;
+    private final ObjectMapper objectMapper;
+
+    private final String RABBITMQ_QUEUE = "normalized.events";
+    private final String RABBITMQ_QUEUE_SEARCH_NORMALIZED = "search.normalized";
+    private final String WEBSOCKET_ERRORS = "/queue/errors";
+    private final String WEBSOCKET_STATUS = "/queue/status";
+
+    public MessengerService(
+        SimpMessagingTemplate messagingTemplate,
+        WebSocketConfig webSocket,
+        ObjectMapper objectMapper,
+        ApplicationEventPublisher eventPublisher
+    ) {
+        this.messagingTemplate = messagingTemplate;
+        this.webSocket = webSocket;
+        this.objectMapper = objectMapper;
+        this.eventPublisher = eventPublisher;
+    }
+
+    /**
+     * Escucha la cola de resultados de RabbitMQ y procesa los mensajes.
+     * Cuando se recibe un mensaje, se convierte de JSON a un objeto NormalizedEventDTO
+     * Si el evento contiene un producto normalizado, se publica un evento NormalizedProductReceivedEvent 
+     * @param message el mensaje recibido de la cola como String JSON
+     */
+    @Override
+    @RabbitListener(queues = RABBITMQ_QUEUE, concurrency = "3-5")
+    public void listenToResults(@Payload String message) {
+        try {
+            NormalizedEventDTO eventDTO = objectMapper.readValue(message, NormalizedEventDTO.class);
+            if (eventDTO.getNormalizedProduct() != null) {
+                eventPublisher.publishEvent(
+                    new NormalizedProductReceivedEvent(
+                        eventDTO.getNormalizedProduct()
+                    )
+                );
+            }
+        } catch (Exception e) {
+            logger.error("Error al procesar el mensaje de la cola normalized.events", e);
+        }
+    }
+
+    /**
+     * Escucha la cola de finalización de búsqueda normalizada.
+     * Cuando se recibe un mensaje, se convierte de JSON a un objeto NormlaizedProductEventDTO
+     * Se publica un evento NormlaizedProductFinalizedEvent
+     * @param message el mensaje recibido de la cola como String JSON
+     */
+    @RabbitListener(queues = RABBITMQ_QUEUE_SEARCH_NORMALIZED, concurrency = "1-2")
+    public void listenToSearchNormalized(@Payload String message) {
+        try {
+            NormlaizedProductEventDTO eventDTO = objectMapper.readValue(message, NormlaizedProductEventDTO.class);
+            logger.info("Evento de finalización de búsqueda normalizada recibido: {}", eventDTO.getSearchId());
+            eventPublisher.publishEvent(
+                new NormlaizedProductFinalizedEvent(eventDTO)
+            );
+        } catch (Exception e) {
+            logger.error("Error al procesar el mensaje de la cola search.normalized", e);
+        }
+    }
+
+    /**
+     * Envía el producto normalizado al WebSocket privado del usuario.
+     * Consulta en memoria el sessionID por medio de webSocketConfig 
+     * @param productDTO Producto a enviar 
+     */
+     @Override
+    public <T> void sendToWebSocket(String productRef, String destination, T payload) {
+        try {
+            String sessionID = webSocket.getSession(productRef);
+            if (sessionID == null) {
+                logger.warn("No se encontró sessionID para productRef: {}", productRef);
+                return;
+            }
+            SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+            headerAccessor.setSessionId(sessionID);
+            headerAccessor.setLeaveMutable(true);
+            messagingTemplate.convertAndSendToUser(
+                sessionID,
+                destination,
+                payload,    
+                headerAccessor.getMessageHeaders()
+            );
+
+        } catch (Exception e) {
+            logger.error("Error al enviar producto al WebSocket", e);
+        }
+    }
+
+
+    @Override
+    public void disconnectWebSocket(String productRef, String sessionId, ExceptionDTO errorMessage) {
+        try {
+            messagingTemplate.convertAndSendToUser(
+                sessionId,
+                WEBSOCKET_ERRORS,
+                errorMessage
+            );
+            webSocket.removeSession(productRef, sessionId);
+            logger.info("WebSocket desconectado para sessionId: {}", sessionId);
+        } catch (Exception e) {
+            logger.error("Error al desconectar WebSocket", e);
+        }
+    }
+
+    @Override
+    public ExceptionDTO createExceptionDTO(QueryDTOIN query, String errorMessage, LocalDateTime update_at) {
+        ExceptionDTO exceptionDTO = new ExceptionDTO();
+        exceptionDTO.setProduct_ref(query.getProduct_ref());
+        exceptionDTO.setMessage(errorMessage);
+        exceptionDTO.setUpdate_at(update_at);
+        return exceptionDTO;
+    }
+
+    
+    @Async
+    @Override
+    public void sendProcessStatus(ProcessStatusDTO status, String productRef) {
+        sendToWebSocket(productRef, WEBSOCKET_STATUS, status);
+    }
+
+
+}

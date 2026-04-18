@@ -1,0 +1,1445 @@
+{
+  "tech_seeds": [
+    "iphone",
+    "samsung galaxy",
+    "xiaomi redmi",
+    "motorola moto",
+    "huawei",
+    "google pixel",
+    "oppo reno",
+    "realme",
+    "oneplus",
+    "vivo",
+    "smartphone",
+    "celular",
+    "telefono movil",
+    "android",
+    "telefono inteligente",
+    "laptop",
+    "macbook",
+    "notebook",
+    "portatil",
+    "computador portatil",
+    "dell xps",
+    "lenovo thinkpad",
+    "hp spectre",
+    "asus zenbook",
+    "acer aspire",
+    "msi gaming laptop",
+    "razer blade",
+    "surface pro",
+    "chromebook",
+    "pc gamer",
+    "computador de escritorio",
+    "imac",
+    "all in one pc",
+    "case para celular",
+    "funda para laptop",
+    "cargador iphone",
+    "protector pantalla celular",
+    "mica para celular",
+    "vidrio templado celular",
+    "cable usb tipo c",
+    "cargador rapido android",
+    "powerbank celular",
+    "bateria externa portatil",
+    "power bank celular",
+    "teclado mecanico",
+    "mouse gamer",
+    "audifonos bluetooth",
+    "auriculares inalambricos",
+    "hub usb laptop",
+    "adaptador hdmi",
+    "soporte celular auto",
+    "limpiador pantalla electronico",
+    "memoria ram ddr4",
+    "disco duro ssd",
+    "tarjeta de video",
+    "procesador intel",
+    "procesador amd ryzen",
+    "fuente de poder pc",
+    "gabinete pc gaming",
+    "placa madre",
+    "cooler cpu",
+    "ventilador pc",
+    "pasta termica",
+    "memoria usb",
+    "disco duro externo",
+    "lector de tarjetas sd",
+    "tarjeta sd microsd",
+    "switch hdmi",
+    "cable hdmi 4k",
+    "webcam hd",
+    "microfono usb podcast",
+    "ring light streaming",
+    "tablet android",
+    "ipad",
+    "kindle",
+    "smartwatch",
+    "band fitness",
+    "impresora laser",
+    "cartucho de tinta",
+    "router wifi",
+    "extensor wifi",
+    "ups regulador voltaje",
+    "regleta electrica",
+    "cargador inalambrico qi",
+    "soporte monitor escritorio",
+    "pad mousepad gamer",
+    "silla gamer",
+    "base refrigerante laptop",
+    "mochila para laptop"
+  ],
+  "non_tech_seeds": [
+    "camiseta algodon",
+    "zapatos deportivos",
+    "vestido de noche",
+    "pantalon jean",
+    "ropa interior",
+    "chaqueta impermeable",
+    "silla de comedor",
+    "colchon ortopedico",
+    "set de ollas",
+    "licuadora",
+    "cafetera hogar",
+    "juego de sabanas",
+    "lampara de pie",
+    "proteina whey",
+    "aceite de cocina",
+    "arroz integral",
+    "suplemento vitaminas",
+    "cafe molido",
+    "snack saludable",
+    "balon de futbol",
+    "raqueta de tenis",
+    "mancuernas",
+    "bicicleta estatica",
+    "libro de cocina",
+    "cuaderno universitario",
+    "crema hidratante",
+    "perfume hombre",
+    "shampoo cabello",
+    "maquillaje base",
+    "comida para perro",
+    "juguete para gato",
+    "juguete didactico",
+    "muneca barbie",
+    "lego bloques",
+    "collar de plata",
+    "anillo de oro",
+    "reloj de moda fashion",
+    "tapete yoga",
+    "guantes boxeo",
+    "pesas ajustables"
+  ],
+  "accessory_priority": [
+    "samsungs23",
+    "samsungs23u",
+    "samsung s23",
+    "samsung s23u",
+    "audifonos lenovo",
+    "auriculares lenovo",
+    "protector pantalla",
+    "vidrio templado",
+    "cable lightning",
+    "cable tipo c",
+    "cable usb",
+    "hub usb",
+    "paño microfibra",
+    "case",
+    "funda",
+    "mica",
+    "cargador",
+    "powerbank",
+    "bateria externa",
+    "soporte",
+    "limpiador",
+    "adaptador",
+    "cover",
+    "forro",
+    "tempered",
+    "audifonos",
+    "auriculares",
+    "teclado",
+    "mouse",
+    "monitor",
+    "memoria ram",
+    "disco ssd",
+    "tarjeta video",
+    "pasta termica",
+    "cooler cpu",
+    "ventilador pc",
+    "fuente poder",
+    "gabinete",
+    "memoria usb",
+    "microsd",
+    "webcam",
+    "microfono usb",
+    "base refrigerante",
+    "mochila laptop",
+    "mousepad",
+    "pad gamer",
+    "switch hdmi",
+    "extensor wifi",
+    "ups regulador",
+    "cargador inalambrico",
+    "cable hdmi",
+    "ring light"
+  ],
+  "thresholds": {
+    "domain_threshold": 0.02,
+    "valid_threshold": 0.04,
+    "invalid_threshold": -0.04
+  },
+  "query_kb": {
+    "iphone": {
+      "valid": [
+        "Apple iPhone 15 Pro 256GB Titanio Natural",
+        "Apple iPhone 15 Pro Max 512GB Negro",
+        "iPhone 14 Plus 128GB reacondicionado",
+        "Apple iPhone 13 64GB liberado",
+        "iPhone 15 128GB Rosa",
+        "Apple iPhone SE tercera generacion 64GB",
+        "iPhone 12 64GB reacondicionado certificado",
+        "Apple iPhone 14 Pro 256GB Morado",
+        "iPhone 11 64GB reacondicionado",
+        "Apple iPhone 15 256GB Azul"
+      ],
+      "invalid": [
+        "Funda silicona transparente para iPhone 15",
+        "Cargador USB-C 20W compatible con iPhone",
+        "Mica vidrio templado 9H para iPhone",
+        "Cable Lightning a USB-C para iPhone",
+        "Spigen case iPhone 15 Pro transparente",
+        "Protector pantalla privacidad iPhone 15",
+        "Samsung Galaxy S24 Ultra 512GB",
+        "Xiaomi 14 Ultra 512GB",
+        "Soporte auto MagSafe para iPhone",
+        "Bateria externa MagSafe 5000mAh para iPhone"
+      ]
+    },
+    "samsung galaxy": {
+      "valid": [
+        "Samsung Galaxy S24 Ultra 512GB Titanio",
+        "Samsung Galaxy S24 FE 256GB",
+        "Samsung Galaxy A55 5G 128GB",
+        "Samsung Galaxy Z Fold 5 512GB",
+        "Samsung Galaxy A35 5G 128GB",
+        "Samsung Galaxy S23 Ultra 512GB",
+        "Samsung Galaxy A15 128GB Negro",
+        "Samsung Galaxy A25 5G 256GB",
+        "Samsung Galaxy Z Flip 5 256GB",
+        "Samsung Galaxy S24+ 256GB"
+      ],
+      "invalid": [
+        "Funda oficial Samsung Galaxy S24 silicona",
+        "Funda cuero Samsung Galaxy S24",
+        "Protector pantalla Samsung Galaxy S24",
+        "Cargador Samsung 45W SuperFast",
+        "Cable USB-C Samsung original",
+        "Apple iPhone 15 Pro",
+        "Xiaomi Redmi Note 13",
+        "Audifonos Samsung Galaxy Buds2 Pro",
+        "Smartwatch Samsung Galaxy Watch 6",
+        "Monitor Samsung 27 pulgadas FHD 75Hz HDMI",
+        "Monitor Samsung Odyssey 32 WQHD gaming",
+        "Samsung Galaxy Tab S9 Ultra 256GB tablet",
+        "Smart TV Samsung 55 QLED 4K Neo",
+        "Smartwatch Samsung Galaxy Watch 6 Classic 47mm",
+        "Samsung Galaxy Buds2 Pro audifonos TWS",
+        "Conector FPC antena WiFi Samsung Galaxy S24",
+        "Pantalla AMOLED repuesto Samsung Galaxy S23 Ultra",
+        "Pantalla LCD digitalizadora reemplazo Samsung S23"
+      ]
+    },
+    "xiaomi": {
+      "valid": [
+        "Xiaomi 14 Ultra 512GB",
+        "Xiaomi Redmi Note 13 Pro 256GB",
+        "Xiaomi 13T Pro 256GB",
+        "Redmi 13 128GB",
+        "Xiaomi POCO X6 Pro 256GB",
+        "Xiaomi Redmi 12 128GB",
+        "Xiaomi Note 13 4G 128GB",
+        "Xiaomi POCO M6 Pro 4G 256GB",
+        "Redmi A3 128GB",
+        "Xiaomi 12 Lite 128GB"
+      ],
+      "invalid": [
+        "Funda Xiaomi Redmi Note 13 silicona",
+        "Cargador Turbo 67W Xiaomi original",
+        "Protector pantalla Xiaomi 13T vidrio",
+        "Cable USB-C Xiaomi carga rapida",
+        "Apple iPhone 15",
+        "Samsung Galaxy S24",
+        "Powerbank Xiaomi 20000mAh",
+        "Audifonos Xiaomi Redmi Buds 4"
+      ]
+    },
+    "motorola": {
+      "valid": [
+        "Motorola Edge 50 Pro 256GB",
+        "Motorola Moto G85 128GB",
+        "Motorola Edge 40 Neo 256GB",
+        "Motorola Razr 50 Ultra plegable",
+        "Motorola Moto G54 5G 128GB",
+        "Motorola Moto G34 5G 128GB",
+        "Motorola Moto E22 64GB",
+        "Motorola Moto G14 128GB",
+        "Motorola Edge 30 Fusion 256GB",
+        "Motorola Moto G73 5G 256GB"
+      ],
+      "invalid": [
+        "Funda Motorola Edge 50 silicona",
+        "Cargador TurboPower 33W Motorola",
+        "Protector pantalla Motorola Moto G vidrio",
+        "Apple iPhone 15",
+        "Samsung Galaxy A55",
+        "Cable USB-C Motorola original"
+      ]
+    },
+    "huawei": {
+      "valid": [
+        "Huawei P60 Pro 256GB",
+        "Huawei Nova 11 Pro 256GB",
+        "Huawei Mate 60 Pro 512GB",
+        "Honor 90 256GB",
+        "Huawei Nova 12 Pro 5G 256GB",
+        "Honor Magic 6 Pro 512GB",
+        "Huawei P50 Pro 256GB"
+      ],
+      "invalid": [
+        "Funda Huawei P60 cuero",
+        "Cargador SuperCharge 66W Huawei original",
+        "Protector pantalla Huawei Nova vidrio",
+        "Apple iPhone 15",
+        "Samsung Galaxy S24"
+      ]
+    },
+    "pixel": {
+      "valid": [
+        "Google Pixel 8 Pro 128GB",
+        "Google Pixel 8a 256GB",
+        "Google Pixel 7 Pro 128GB",
+        "Google Pixel 9 256GB",
+        "Google Pixel 9 Pro XL 256GB",
+        "Google Pixel 7a 128GB"
+      ],
+      "invalid": [
+        "Funda Google Pixel 8 antigolpes",
+        "Protector pantalla Google Pixel 8 vidrio",
+        "Cargador USB-C 30W para Google Pixel",
+        "Apple iPhone 15 Pro",
+        "Samsung Galaxy S24"
+      ]
+    },
+    "celular": {
+      "valid": [
+        "Asus ROG Phone 8 Pro 512GB",
+        "OnePlus 12 256GB",
+        "Realme 12 Pro+ 256GB",
+        "Nothing Phone 2 256GB",
+        "Oppo Reno 11 Pro 256GB",
+        "Vivo V30 Pro 256GB",
+        "Tecno Camon 30 Pro 5G",
+        "Infinix Note 40 Pro 256GB",
+        "ZTE Blade V50 Design 256GB"
+      ],
+      "invalid": [
+        "Funda para celular antigolpes universal",
+        "Holder de auto para celular magnetico",
+        "Protector de pantalla para celular universal",
+        "Powerbank 10000mAh para celular",
+        "Audifonos bluetooth para celular",
+        "Limpiador de pantalla para celular",
+        "Cable USB-C para celular 1m"
+      ]
+    },
+    "macbook": {
+      "valid": [
+        "MacBook Air M2 8GB 256GB Medianoche",
+        "MacBook Pro 14 M3 Pro 18GB 512GB",
+        "MacBook Pro 16 M3 Max 36GB 1TB",
+        "MacBook Air M3 15 pulgadas 8GB 256GB",
+        "MacBook Air M1 8GB 512GB reacondicionado",
+        "MacBook Pro 13 M2 8GB 256GB"
+      ],
+      "invalid": [
+        "Hub USB-C 7 en 1 compatible MacBook",
+        "Funda neopreno MacBook Air 13 pulgadas",
+        "Adaptador HDMI para MacBook Pro",
+        "Cargador MagSafe 140W MacBook Pro",
+        "Limpiador pantalla MacBook spray",
+        "Teclado externo para MacBook"
+      ]
+    },
+    "laptop": {
+      "valid": [
+        "Dell XPS 15 Intel Core i7 16GB RAM",
+        "HP Spectre x360 14 pulgadas i7",
+        "Lenovo ThinkPad X1 Carbon Gen 11",
+        "Asus ZenBook 14 OLED AMD Ryzen 7",
+        "Acer Swift 5 Intel Core Ultra 7",
+        "MSI Modern 15 AMD Ryzen 5",
+        "Lenovo IdeaPad 5 Pro Ryzen 7 16GB",
+        "HP Victus 15 RTX 3050 Ryzen 5",
+        "Acer Nitro 5 RTX 4060 Core i7",
+        "Samsung Galaxy Book3 360 Core i7"
+      ],
+      "invalid": [
+        "Mochila para laptop 15 pulgadas impermeable",
+        "Soporte ajustable de escritorio para laptop",
+        "Hub USB-C 7 en 1 para laptop",
+        "Mouse inalambrico ergonomico para laptop",
+        "Enfriador ventilador base para laptop gaming",
+        "Maletín ejecutivo para laptop 15.6",
+        "Limpiador de pantalla kit laptop",
+        "Candado de seguridad para laptop"
+      ]
+    },
+    "dell": {
+      "valid": [
+        "Dell XPS 15 9530 Core i9 32GB",
+        "Dell Inspiron 15 3000 AMD Ryzen 5",
+        "Dell Latitude 5540 Core i7 16GB",
+        "Dell Alienware m18 R2 RTX 4090",
+        "Dell XPS 13 Plus Core i7",
+        "Dell Vostro 3520 Core i5 8GB",
+        "Dell Inspiron 16 Core i7 16GB"
+      ],
+      "invalid": [
+        "Mochila Dell Pro Slim 15 pulgadas",
+        "Monitor Dell 27 UltraSharp 4K",
+        "Teclado Dell KB216 USB",
+        "Mouse Dell MS116 optico",
+        "Maletin Dell Professional 15.6"
+      ]
+    },
+    "lenovo": {
+      "valid": [
+        "Lenovo ThinkPad X1 Carbon Gen 11",
+        "Lenovo IdeaPad 5 Pro AMD Ryzen 7",
+        "Lenovo Legion 5 Pro RTX 4070",
+        "Lenovo Yoga 9i Core Ultra 7",
+        "Lenovo ThinkBook 16 G6 AMD",
+        "Lenovo IdeaPad 3 Core i5 8GB",
+        "Lenovo V15 G4 Core i5 16GB"
+      ],
+      "invalid": [
+        "Mochila Lenovo Casual 15.6 pulgadas",
+        "Monitor Lenovo Q27h-10 QHD",
+        "Teclado Lenovo Professional Wireless",
+        "Mouse Lenovo 400 USB",
+        "Dock Lenovo ThinkPad USB-C"
+      ]
+    },
+    "hp": {
+      "valid": [
+        "HP Spectre x360 14 Intel Core Ultra 7",
+        "HP Envy 16 Core i7 16GB",
+        "HP Pavilion 15 AMD Ryzen 5 8GB",
+        "HP Omen 16 RTX 4070 Core i9",
+        "HP EliteBook 840 G10 Core i7",
+        "HP 14 Core i3 8GB 256GB SSD",
+        "HP Victus 15 RTX 3050 Core i5"
+      ],
+      "invalid": [
+        "Mochila HP Active 15.6 pulgadas",
+        "Impresora HP DeskJet 2700e",
+        "Teclado HP 230 Wireless",
+        "Mouse HP X1000 USB",
+        "Monitor HP 24mh FHD",
+        "Cartuchos tinta HP 664"
+      ]
+    },
+    "asus": {
+      "valid": [
+        "Asus ZenBook 14 OLED AMD Ryzen 9",
+        "Asus ROG Strix G18 RTX 4080",
+        "Asus VivoBook 15 Core i5 8GB",
+        "Asus ProArt Studiobook 16 OLED",
+        "Asus TUF Gaming A15 RTX 4060",
+        "Asus Laptop 15 Core i3 8GB"
+      ],
+      "invalid": [
+        "Monitor Asus ROG Swift 27 OLED 240Hz",
+        "Monitor Asus ProArt 32 4K HDR",
+        "Teclado Asus ROG Strix Scope mecanico",
+        "Mouse Asus ROG Gladius III gaming",
+        "Maletin Asus Nereus 16 pulgadas"
+      ]
+    },
+    "acer": {
+      "valid": [
+        "Acer Nitro 5 RTX 4060 Core i7 16GB",
+        "Acer Swift 5 Intel Core Ultra 7",
+        "Acer Aspire 5 Core i5 8GB 512GB",
+        "Acer Predator Helios 16 RTX 4080",
+        "Acer Chromebook Spin 514 Ryzen 3"
+      ],
+      "invalid": [
+        "Monitor Acer 27 pulgadas IPS FHD",
+        "Mouse Acer Wireless",
+        "Mochila Acer 15.6 pulgadas",
+        "Teclado Acer USB"
+      ]
+    },
+    "msi": {
+      "valid": [
+        "MSI Titan GT77 Core i9 RTX 4090",
+        "MSI Raider GE78 RTX 4080",
+        "MSI Stealth 16 Studio RTX 4070",
+        "MSI Modern 15 Ryzen 5 16GB",
+        "MSI Creator Z17 Core i7"
+      ],
+      "invalid": [
+        "Monitor MSI 27 pulgadas IPS 165Hz",
+        "Teclado MSI Vigor GK30 mecanico",
+        "Mouse MSI Clutch GM41 gaming",
+        "Auriculares MSI Immerse GH61 gaming"
+      ]
+    },
+    "computador": {
+      "valid": [
+        "PC Gamer Ryzen 7 7700X RTX 4070 32GB",
+        "Computador de escritorio Intel Core i9 64GB",
+        "iMac 24 pulgadas M3 8GB 256GB",
+        "Mini PC Intel NUC 13 Pro 16GB 512GB",
+        "PC workstation Xeon RTX 4090",
+        "All in one HP 24 Core i5 16GB",
+        "PC Gamer Core i5 13400F GTX 1660 16GB",
+        "Computador Ensamblado Ryzen 5 5600 RTX 3060"
+      ],
+      "invalid": [
+        "Monitor 27 pulgadas 4K para computador",
+        "Teclado mecanico gaming RGB para PC",
+        "Mouse gamer inalambrico 26000 DPI",
+        "Silla gamer ergonomica reclinable",
+        "Escritorio gamer con led RGB"
+      ]
+    },
+    "case": {
+      "valid": [
+        "Spigen case iPhone 15 Pro transparente antigolpes",
+        "Case antigolpes para Samsung Galaxy S24",
+        "Cover transparente rigido para smartphone",
+        "Case Ringke Fusion para Google Pixel 8",
+        "Carcasa OtterBox Commuter para iPhone 15",
+        "Case magnetico MagSafe para iPhone 15",
+        "Case militar antigolpes para celular universal",
+        "Case billetera cuero para Samsung Galaxy",
+        "Case transparente Motorola Edge 50",
+        "Cover antigolpe Xiaomi Redmi Note 13"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24 Ultra 512GB",
+        "Cargador USB-C 20W para celular",
+        "Cable Lightning USB-C 1m",
+        "Mica vidrio templado para celular"
+      ]
+    },
+    "funda": {
+      "valid": [
+        "Funda silicona Samsung Galaxy S24 negro",
+        "Funda cuero flip para iPhone 15",
+        "Funda neopreno para laptop 15 pulgadas",
+        "Estuche protector rigido para tablet",
+        "Funda antigolpes para Xiaomi Redmi Note",
+        "Funda billetera cuero para Samsung Galaxy",
+        "Funda transparente para iPhone 15 Pro",
+        "Funda impermeable para celular universal",
+        "Funda tela tejida para iPhone 14",
+        "Funda Moto G85 silicona liquida"
+      ],
+      "invalid": [
+        "Samsung Galaxy S24 Ultra 512GB",
+        "Apple iPhone 15 Pro",
+        "MacBook Air M2 256GB",
+        "Cargador USB-C 65W GaN",
+        "Cable USB-C 2m 100W"
+      ]
+    },
+    "protector pantalla": {
+      "valid": [
+        "Mica vidrio templado 9H para iPhone 15",
+        "Protector pantalla Samsung Galaxy S24 antihuellas",
+        "Cristal templado curvo para Samsung Galaxy S24",
+        "Lamina protectora mate para celular universal",
+        "Screen protector privacidad para iPhone 15",
+        "Vidrio templado Google Pixel 8 bordes negros",
+        "Mica hidrogel para Xiaomi Redmi Note 13",
+        "Protector pantalla anti rayones para laptop",
+        "Cristal templado Motorola Edge 50 Pro",
+        "Mica cerámica flexible para celular 6.7"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24 Ultra 512GB",
+        "Funda silicona para celular",
+        "Cargador USB-C 20W",
+        "MacBook Air M2 8GB"
+      ]
+    },
+    "mica": {
+      "valid": [
+        "Mica vidrio templado 9H iPhone 15 Pro",
+        "Mica protectora Samsung Galaxy S24 antireflejo",
+        "Mica hidrogel flexible para celular universal",
+        "Mica de privacidad para iPhone 14 Plus",
+        "Mica ceramica para Xiaomi Redmi Note 13",
+        "Mica full cover para Motorola Moto G84"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24 Ultra",
+        "Funda silicona para celular",
+        "Cargador USB-C 20W"
+      ]
+    },
+    "vidrio templado": {
+      "valid": [
+        "Vidrio templado 9H para iPhone 15 bordes curvos",
+        "Vidrio templado Samsung Galaxy S24 ultra claro",
+        "Cristal templado para celular universal 6.5",
+        "Vidrio templado anti espia para smartphone",
+        "Vidrio templado Motorola Edge 50 Pro completo",
+        "Cristal templado para Xiaomi Redmi Note 13"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24 512GB",
+        "Funda antigolpes para celular",
+        "Cargador rapido USB-C 33W"
+      ]
+    },
+    "cargador": {
+      "valid": [
+        "Cargador USB-C 20W certificado MFi para iPhone",
+        "Cargador inalambrico MagSafe 15W para iPhone",
+        "Cargador GaN 65W multipuerto USB-C",
+        "Cargador Samsung 45W SuperFast original",
+        "Cargador Anker 100W USB-C PD3.0",
+        "Cargador de auto USB-C 30W doble puerto",
+        "Cargador TurboPower 33W Motorola original",
+        "Cargador rapido 33W Xiaomi original",
+        "Cargador multipuerto 120W 4 puertos USB",
+        "Cargador inalambrico 3 en 1 iPhone Watch AirPods"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24 Ultra",
+        "MacBook Air M2 8GB",
+        "Funda silicona para celular",
+        "Cable USB-C 2m trenzado"
+      ]
+    },
+    "cargador inalambrico": {
+      "valid": [
+        "Cargador inalambrico MagSafe 15W Apple original",
+        "Cargador Qi 15W para Samsung Galaxy",
+        "Pad de carga inalambrica 3 en 1 iPhone Watch AirPods",
+        "Cargador inalambrico rapido 15W Anker",
+        "Cargador inalambrico de escritorio 10W universal"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24",
+        "Cargador USB-C enchufable 65W",
+        "Funda para celular"
+      ]
+    },
+    "powerbank": {
+      "valid": [
+        "Powerbank Anker 20000mAh carga rapida 65W",
+        "Bateria externa 10000mAh USB-C PD",
+        "Powerbank MagSafe 5000mAh para iPhone",
+        "Power bank solar 20000mAh panel solar portatil",
+        "Powerbank Xiaomi 33W 20000mAh",
+        "Bateria portatil slim 5000mAh USB-C",
+        "Cargador portatil 20000mAh carga rapida 22.5W",
+        "Power bank universal 10000mAh dos entradas USB",
+        "Bateria externa magnetica 5000mAh MagSafe",
+        "Powerbank Xiaomi Redmi 18W 20000mAh negro",
+        "Bateria externa Adata P20000QCD 20000mAh",
+        "Powerbank solar Bateria Portatil 12000mAh LED"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24 Ultra",
+        "Cargador de pared USB-C 65W enchufable",
+        "Funda para celular antigolpes"
+      ]
+    },
+    "bateria externa": {
+      "valid": [
+        "Bateria externa Anker 20000mAh carga rapida",
+        "Power bank portatil 10000mAh USB-C",
+        "Bateria portatil magnetica MagSafe 5000mAh",
+        "Cargador portatil solar 20000mAh 2 USB",
+        "Bateria externa slim 5000mAh carga rapida",
+        "Power bank 30000mAh para laptop y celular"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24",
+        "Cargador de pared GaN 65W",
+        "Funda antigolpes celular"
+      ]
+    },
+    "cable usb": {
+      "valid": [
+        "Cable USB-C a USB-C 2m carga rapida 100W",
+        "Cable Lightning a USB-C 1m Apple original MFi",
+        "Cable USB-C trenzado nylon 3m 65W",
+        "Cable micro USB 2m carga rapida",
+        "Cable USB-C 240W para laptop",
+        "Cable USB-C a HDMI 4K 1.8m",
+        "Cable USB-A a USB-C 1m carga rapida"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro",
+        "Cargador inalambrico Qi 15W",
+        "Samsung Galaxy S24",
+        "Funda para celular"
+      ]
+    },
+    "cable lightning": {
+      "valid": [
+        "Cable Lightning a USB-C 1m Apple certificado MFi",
+        "Cable Lightning a USB-A 2m trenzado nylon",
+        "Cable Lightning rapido para iPhone iPad",
+        "Cable Lightning a USB-C carga rapida 3m"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "iPad Pro 12.9 M2 256GB",
+        "Cargador USB-C 20W para iPhone",
+        "Funda iPhone 15"
+      ]
+    },
+    "cable hdmi": {
+      "valid": [
+        "Cable HDMI 4K 60Hz 2m trenzado",
+        "Cable HDMI 2.1 8K 1m para PS5",
+        "Cable HDMI a micro HDMI 1.5m 4K",
+        "Cable HDMI ultra delgado 3m flat",
+        "Cable HDMI certificado 48Gbps 2m"
+      ],
+      "invalid": [
+        "Monitor 27 pulgadas 4K HDMI",
+        "Laptop Dell XPS 15",
+        "Adaptador USB-C a HDMI",
+        "TV Samsung 55 QLED"
+      ]
+    },
+    "audifonos": {
+      "valid": [
+        "Audifonos Sony WH-1000XM5 cancelacion ruido",
+        "Audifonos Sony WH-1000XM4 bluetooth",
+        "AirPods Pro segunda generacion MagSafe",
+        "Audifonos Bose QuietComfort 45 inalambrico",
+        "Samsung Galaxy Buds2 Pro",
+        "Audifonos JBL Live 660NC bluetooth",
+        "Audifonos Sennheiser Momentum 4 Wireless",
+        "Audifonos Jabra Evolve2 85 ANC",
+        "AirPods Max over ear cancelacion ruido",
+        "Audifonos Marshall Major IV bluetooth",
+        "Audifonos Lenovo LP40 Pro TWS bluetooth negro",
+        "Lenovo XT88 ThinkPlus bluetooth 5.3",
+        "Audifonos Lenovo GM2 Pro gamer inalámbricos"
+      ],
+      "invalid": [
+        "Estuche rigido para audifonos Sony WH-1000XM5",
+        "Almohadillas repuesto Sony WH-1000XM5",
+        "Cable auxiliar 3.5mm para audifonos",
+        "Soporte escritorio para audifonos",
+        "Apple iPhone 15 Pro",
+        "Samsung Galaxy S24"
+      ]
+    },
+    "auriculares": {
+      "valid": [
+        "Auriculares in-ear con cable 3.5mm",
+        "Auriculares TWS true wireless cancelacion ruido",
+        "Auriculares gaming con microfono RGB USB",
+        "Auriculares Beats Studio Pro inalambricos",
+        "Auriculares over ear plegables bluetooth",
+        "Auriculares HyperX Cloud II gaming",
+        "Auriculares Lenovo XT53 ThinkPlus bluetooth blancos",
+        "Lenovo LP40 Pro TWS inalámbricos rosa",
+        "Auriculares Lenovo TA410 bluetooth 5.4 violeta"
+      ],
+      "invalid": [
+        "Almohadillas repuesto para auriculares",
+        "Estuche para auriculares TWS",
+        "Cable para auriculares con microfono 3.5mm",
+        "Apple iPhone 15",
+        "Samsung Galaxy S24"
+      ]
+    },
+    "teclado": {
+      "valid": [
+        "Teclado mecanico Keychron Q1 Pro QMK",
+        "Teclado Logitech MX Keys inalambrico",
+        "Teclado gaming Corsair K70 RGB Cherry MX",
+        "Teclado Apple Magic Keyboard Touch ID",
+        "Teclado inalambrico Microsoft Designer Bluetooth",
+        "Teclado mecanico HyperX Alloy Origins Core",
+        "Teclado gamer Redragon Kumara K552 mecanico",
+        "Teclado inalambrico Logitech K780 multi-device"
+      ],
+      "invalid": [
+        "Reposamuñecas para teclado ergonomico",
+        "Cubierta silicona para teclado MacBook Pro",
+        "Laptop Lenovo ThinkPad X1",
+        "Mouse Logitech MX Master 3"
+      ]
+    },
+    "mouse": {
+      "valid": [
+        "Mouse Logitech MX Master 3S inalambrico",
+        "Mouse gaming Razer DeathAdder V3 Pro",
+        "Mouse Apple Magic Mouse recargable",
+        "Mouse inalambrico Microsoft Arc",
+        "Mouse vertical ergonomico Logitech MX Vertical",
+        "Mouse gamer SteelSeries Aerox 9 Wireless",
+        "Mouse gaming Redragon M711 Cobra 10000DPI",
+        "Mouse inalambrico Logitech M650 silencioso"
+      ],
+      "invalid": [
+        "Mousepad RGB XL para gaming",
+        "Reposamuñecas gel para mouse",
+        "Laptop HP Spectre x360",
+        "Teclado Keychron K2 mecanico"
+      ]
+    },
+    "monitor": {
+      "valid": [
+        "Monitor LG 27 pulgadas 4K UHD IPS",
+        "Monitor Samsung Odyssey G7 32 WQHD",
+        "Monitor Dell UltraSharp 27 QHD USB-C",
+        "Monitor Asus ROG Swift 27 OLED 240Hz",
+        "Monitor BenQ 32 4K HDR para diseno",
+        "Monitor Samsung 24 FHD IPS 75Hz",
+        "Monitor LG UltraWide 34 WQHD IPS",
+        "Monitor AOC 27 FHD 165Hz gaming"
+      ],
+      "invalid": [
+        "Soporte articulado para monitor doble brazo",
+        "Cable HDMI 4K 2m para monitor",
+        "Filtro privacidad pantalla monitor 27",
+        "Laptop Dell XPS 15 Core i7",
+        "MacBook Pro 14 M3"
+      ]
+    },
+    "hub usb": {
+      "valid": [
+        "Hub USB-C 7 en 1 con HDMI 4K para laptop",
+        "Hub USB 3.0 de 4 puertos para PC",
+        "Docking station USB-C para MacBook",
+        "Hub USB-C con lector de tarjetas SD",
+        "Hub multipuerto USB-C 10 en 1 Ethernet",
+        "Dock USB-C doble monitor 12 en 1"
+      ],
+      "invalid": [
+        "MacBook Air M2 8GB 256GB",
+        "Dell XPS 15 Core i7",
+        "Cargador USB-C 65W GaN",
+        "Teclado Logitech MX Keys"
+      ]
+    },
+    "adaptador": {
+      "valid": [
+        "Adaptador USB-C a HDMI 4K para MacBook",
+        "Adaptador Lightning a Jack 3.5mm para iPhone",
+        "Adaptador USB-C a USB-A hembra",
+        "Adaptador HDMI a DisplayPort 4K",
+        "Adaptador de corriente universal para laptop",
+        "Adaptador Bluetooth para laptop con audio",
+        "Adaptador USB-C a VGA para laptop",
+        "Adaptador MicroSD a USB 3.0"
+      ],
+      "invalid": [
+        "MacBook Air M2 8GB",
+        "Apple iPhone 15 Pro",
+        "Cable USB-C 2m 100W",
+        "Samsung Galaxy S24"
+      ]
+    },
+    "soporte": {
+      "valid": [
+        "Soporte de auto magnetico para celular",
+        "Soporte ajustable escritorio para laptop",
+        "Soporte de escritorio para telefono celular",
+        "Holder para celular en bicicleta",
+        "Soporte articulado doble brazo para monitor",
+        "Soporte plegable para tablet escritorio",
+        "Soporte de cama para tablet cuello de ganso",
+        "Soporte vertical para laptop aluminio"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "MacBook Air M2",
+        "Samsung Galaxy S24",
+        "Mouse Logitech MX Master"
+      ]
+    },
+    "limpiador": {
+      "valid": [
+        "Kit limpiador pantalla celular spray y paño",
+        "Spray limpiador para pantallas LCD LED",
+        "Paño microfibra para limpiar pantalla celular",
+        "Limpiador electronico para teclado laptop",
+        "Gel limpiador de polvo para teclado PC",
+        "Kit limpieza para laptop pantalla teclado",
+        "Spray limpiador antibacterias para smartphone",
+        "Kit limpieza para lentes y pantallas opticas"
+      ],
+      "invalid": [
+        "Apple iPhone 15 Pro 256GB",
+        "Samsung Galaxy S24 Ultra",
+        "MacBook Air M2",
+        "Funda silicona para celular",
+        "Limpiador multiusos para pisos madera",
+        "Detergente ropa liquido concentrado"
+      ]
+    },
+    "memoria ram": {
+      "valid": [
+        "Memoria RAM DDR4 16GB 3200MHz Kingston",
+        "Memoria RAM DDR5 32GB 5600MHz Corsair",
+        "Memoria RAM DDR4 8GB 2666MHz Samsung",
+        "Kit Memoria RAM DDR4 32GB 3600MHz G.Skill",
+        "Memoria RAM Laptop DDR4 16GB 3200MHz",
+        "Memoria RAM DDR5 16GB 4800MHz Crucial"
+      ],
+      "invalid": [
+        "Disco SSD 1TB NVMe M.2",
+        "Procesador Intel Core i9",
+        "Laptop Dell XPS 15",
+        "Tarjeta de video RTX 4070"
+      ]
+    },
+    "disco ssd": {
+      "valid": [
+        "Disco SSD NVMe M.2 1TB Samsung 980 Pro",
+        "SSD 2.5 SATA 500GB Kingston A400",
+        "Disco SSD M.2 PCIe 2TB WD Black",
+        "SSD NVMe 512GB Crucial P3",
+        "Disco SSD externo 1TB Samsung T7",
+        "SSD M.2 NVMe 4TB Seagate FireCuda"
+      ],
+      "invalid": [
+        "Laptop Asus ZenBook 14",
+        "Memoria RAM DDR4 16GB",
+        "Disco duro externo 2TB USB",
+        "Procesador AMD Ryzen 7"
+      ]
+    },
+    "disco duro externo": {
+      "valid": [
+        "Disco duro externo 2TB USB 3.0 Seagate",
+        "Disco externo portatil 1TB WD My Passport",
+        "Disco duro externo 4TB Toshiba Canvio",
+        "Disco externo SSD 500GB Samsung T7",
+        "Disco duro externo 5TB Western Digital",
+        "Disco portatil 2TB Seagate Expansion"
+      ],
+      "invalid": [
+        "Laptop HP Pavilion 15",
+        "SSD M.2 NVMe 1TB interno",
+        "Memoria USB 64GB",
+        "Memoria RAM 16GB"
+      ]
+    },
+    "memoria usb": {
+      "valid": [
+        "Memoria USB 64GB 3.0 Kingston DataTraveler",
+        "Pendrive 128GB USB 3.1 Samsung",
+        "Memoria USB 32GB SanDisk Cruzer",
+        "USB 256GB Kingston IronKey alta seguridad",
+        "Pendrive 16GB USB 2.0 Toshiba",
+        "Memoria Flash USB-C doble conector 128GB"
+      ],
+      "invalid": [
+        "Disco duro externo 2TB USB",
+        "Laptop Lenovo IdeaPad",
+        "Tarjeta MicroSD 128GB",
+        "Lector de tarjetas USB"
+      ]
+    },
+    "tarjeta microsd": {
+      "valid": [
+        "Tarjeta MicroSD 128GB Samsung EVO Plus",
+        "MicroSDXC 256GB SanDisk Extreme",
+        "Tarjeta MicroSD 64GB Clase 10 Kingston",
+        "MicroSD 512GB Lexar High Performance",
+        "Tarjeta de memoria MicroSD 32GB para celular",
+        "MicroSDXC 1TB SanDisk Ultra"
+      ],
+      "invalid": [
+        "Memoria USB 128GB Kingston",
+        "Celular Samsung Galaxy A55",
+        "Camara GoPro Hero 12",
+        "Lector de tarjetas USB 3.0"
+      ]
+    },
+    "tarjeta video": {
+      "valid": [
+        "Tarjeta de video RTX 4070 Ti Super 16GB",
+        "GPU RTX 4060 8GB Asus ROG",
+        "Tarjeta grafica RX 7700 XT 12GB AMD",
+        "Grafica RTX 3060 12GB Gigabyte Gaming",
+        "Tarjeta de video GTX 1660 Super 6GB",
+        "GPU RX 6700 XT 12GB Sapphire Pulse"
+      ],
+      "invalid": [
+        "Monitor 27 4K para gaming",
+        "Procesador Intel Core i9 13900K",
+        "Memoria RAM DDR5 32GB",
+        "Laptop Asus ROG Strix"
+      ]
+    },
+    "procesador": {
+      "valid": [
+        "Procesador Intel Core i9 13900K 3.0GHz",
+        "CPU AMD Ryzen 9 7950X 4.5GHz",
+        "Procesador Intel Core i7 14700K",
+        "AMD Ryzen 5 7600X Box",
+        "Procesador Intel Core i5 13600K",
+        "CPU AMD Ryzen 7 7700X 4.5GHz"
+      ],
+      "invalid": [
+        "Laptop Dell XPS 15 Core i9",
+        "Memoria RAM DDR5 32GB",
+        "Tarjeta de video RTX 4080",
+        "Placa madre Z790 ATX"
+      ]
+    },
+    "placa madre": {
+      "valid": [
+        "Placa madre Asus ROG Strix Z790-E ATX",
+        "Motherboard MSI MAG B760 Tomahawk WiFi",
+        "Placa base Gigabyte B650 Aorus Elite AX",
+        "Tarjeta madre ASRock B450M-HDV AMD",
+        "Placa madre Asus Prime X670-P WiFi"
+      ],
+      "invalid": [
+        "Procesador Intel Core i9",
+        "Memoria RAM DDR5 32GB",
+        "Gabinete PC gaming vidrio templado",
+        "Tarjeta de video RTX 4070"
+      ]
+    },
+    "fuente poder": {
+      "valid": [
+        "Fuente de poder 850W 80 Plus Gold Corsair",
+        "PSU 650W modular Seasonic Focus",
+        "Fuente poder 750W Thermaltake Toughpower",
+        "Fuente ATX 600W 80 Plus Bronze EVGA",
+        "Fuente de poder 1000W Platinum modular ROG"
+      ],
+      "invalid": [
+        "Cargador laptop 65W USB-C",
+        "Bateria externa 20000mAh",
+        "Placa madre ATX Z790",
+        "UPS regulador voltaje 1200VA"
+      ]
+    },
+    "gabinete": {
+      "valid": [
+        "Gabinete PC gaming vidrio templado RGB",
+        "Case ATX mid tower Corsair 4000D Airflow",
+        "Gabinete mini ITX Fractal Design Node 304",
+        "Torre gaming NZXT H510 Flow vidrio",
+        "Chasis PC ATX Be Quiet Pure Base 500DX"
+      ],
+      "invalid": [
+        "Laptop Asus ROG Strix G18",
+        "Mochila para laptop 15 pulgadas",
+        "Placa madre ATX ROG",
+        "Fuente poder 750W modular"
+      ]
+    },
+    "cooler cpu": {
+      "valid": [
+        "Cooler CPU Noctua NH-D15 120mm",
+        "Refrigeracion liquida AIO 240mm Corsair H100i",
+        "Disipador CPU DeepCool AK620 doble torre",
+        "Cooler liquido 360mm NZXT Kraken Elite",
+        "Ventilador CPU Be Quiet Dark Rock 4"
+      ],
+      "invalid": [
+        "Procesador Intel Core i9",
+        "Pasta termica Thermal Grizzly",
+        "Ventilador case 120mm RGB",
+        "Placa madre Z790"
+      ]
+    },
+    "pasta termica": {
+      "valid": [
+        "Pasta termica Thermal Grizzly Kryonaut 1g",
+        "Compuesto termico Noctua NT-H1 3.5g",
+        "Pasta termica Arctic MX-4 4g",
+        "Compound termico Cooler Master MasterGel Elite",
+        "Pasta conductora termica para CPU GPU"
+      ],
+      "invalid": [
+        "Cooler CPU Noctua NH-D15",
+        "Procesador AMD Ryzen 9",
+        "Laptop Dell XPS 15",
+        "Ventilador case 120mm"
+      ]
+    },
+    "tablet": {
+      "valid": [
+        "iPad Pro 12.9 M2 256GB WiFi",
+        "Samsung Galaxy Tab S9 Ultra 256GB",
+        "Tablet Lenovo Tab P12 Pro 256GB",
+        "iPad Air 5ta generacion 64GB",
+        "Samsung Galaxy Tab A9+ 5G 128GB",
+        "Xiaomi Pad 6 Pro 256GB",
+        "iPad mini 6ta generacion 256GB"
+      ],
+      "invalid": [
+        "Funda para Samsung Galaxy Tab S9",
+        "Teclado para iPad Pro 12.9",
+        "Lapiz Apple Pencil segunda generacion",
+        "Protector pantalla iPad Air 5"
+      ]
+    },
+    "ipad": {
+      "valid": [
+        "iPad Pro 12.9 M2 WiFi 256GB Plata",
+        "iPad Air 5ta generacion 64GB",
+        "iPad 10ma generacion 64GB WiFi",
+        "iPad mini 6 256GB WiFi Morado",
+        "iPad Pro 11 M4 512GB"
+      ],
+      "invalid": [
+        "Apple Pencil segunda generacion para iPad",
+        "Funda teclado Magic Keyboard para iPad Pro",
+        "Protector pantalla iPad Pro vidrio",
+        "Hub USB-C para iPad Pro",
+        "Apple iPhone 15 Pro"
+      ]
+    },
+    "smartwatch": {
+      "valid": [
+        "Apple Watch Series 9 GPS 45mm",
+        "Samsung Galaxy Watch 6 Classic 47mm",
+        "Garmin Forerunner 965 GPS running",
+        "Amazfit GTR 4 GPS smartwatch",
+        "Huawei Watch GT 4 46mm",
+        "Apple Watch Ultra 2 titanio 49mm"
+      ],
+      "invalid": [
+        "Correa para Apple Watch 45mm silicona",
+        "Cargador magnetico Apple Watch",
+        "Protector pantalla Apple Watch Series 9",
+        "Apple iPhone 15 Pro",
+        "Samsung Galaxy S24"
+      ]
+    },
+    "banda fitness": {
+      "valid": [
+        "Xiaomi Smart Band 8 Pro AMOLED",
+        "Samsung Galaxy Fit3",
+        "Fitbit Charge 6 GPS",
+        "Huawei Band 8 AMOLED",
+        "Amazfit Band 7 120 modos deporte"
+      ],
+      "invalid": [
+        "Apple Watch Series 9",
+        "Correa de repuesto para Xiaomi Band 8",
+        "Samsung Galaxy S24",
+        "Cargador para Fitbit Charge 6"
+      ]
+    },
+    "impresora": {
+      "valid": [
+        "Impresora HP DeskJet 2700e multifuncional",
+        "Impresora laser Samsung Xpress M2020W",
+        "Impresora Epson EcoTank L3250 inyeccion",
+        "Multifuncional Canon PIXMA G3160",
+        "Impresora laser HP LaserJet M111w",
+        "Impresora Epson L4260 multifuncional WiFi"
+      ],
+      "invalid": [
+        "Cartucho tinta HP 664 negro original",
+        "Cable USB impresora tipo B",
+        "Papel para impresora A4 500 hojas",
+        "Laptop HP 15 Core i3"
+      ]
+    },
+    "router wifi": {
+      "valid": [
+        "Router WiFi 6 TP-Link Archer AX73",
+        "Router ASUS RT-AX82U WiFi 6 gaming",
+        "Modem router Huawei B535 4G LTE",
+        "Router mesh TP-Link Deco XE75 WiFi 6E",
+        "Router WiFi 6 Netgear Nighthawk AX12"
+      ],
+      "invalid": [
+        "Extensor de señal WiFi TP-Link RE605X",
+        "Cable de red Cat6 10m UTP",
+        "Switch ethernet 8 puertos TP-Link",
+        "Laptop Lenovo IdeaPad"
+      ]
+    },
+    "webcam": {
+      "valid": [
+        "Webcam Logitech C920 HD Pro 1080p",
+        "Camara web Razer Kiyo Pro Ultra 4K",
+        "Webcam Logitech Brio 4K Ultra HD",
+        "Camara para streaming StreamCam Plus 1080p",
+        "Webcam Microsoft LifeCam Studio 1080p"
+      ],
+      "invalid": [
+        "Tripode para camara y telefono",
+        "Aro de luz ring light 18 pulgadas",
+        "Laptop con camara integrada",
+        "Telefono Samsung Galaxy S24"
+      ]
+    },
+    "microfono usb": {
+      "valid": [
+        "Microfono USB Blue Yeti X condensador",
+        "Microfono de escritorio HyperX QuadCast S",
+        "Microfono USB Rode NT-USB podcast",
+        "Micro condensador FIFINE K669B USB",
+        "Microfono streaming Elgato Wave 3"
+      ],
+      "invalid": [
+        "Audifonos con microfono bluetooth",
+        "Cable XLR para microfono",
+        "Interfaz de audio USB Focusrite",
+        "Laptop con microfono integrado"
+      ]
+    },
+    "ring light": {
+      "valid": [
+        "Aro de luz ring light 18 pulgadas para streaming",
+        "Ring light 26 pulgadas con soporte trípode",
+        "Luz LED circular 12 pulgadas para video",
+        "Ring light portatil USB para celular",
+        "Aro de luz regulable 3200K-5600K streaming"
+      ],
+      "invalid": [
+        "Lampara de escritorio led regulable",
+        "Lampara para sala de estar",
+        "Laptop Dell para trabajo",
+        "Camara web Logitech"
+      ]
+    },
+    "mousepad": {
+      "valid": [
+        "Mousepad gamer XL 900x400mm RGB",
+        "Pad de escritorio extendido con cargador inalambrico",
+        "Mousepad Logitech G640 gaming tela",
+        "Pad gamer Steelseries QcK large",
+        "Alfombrilla para mouse control 45x40cm"
+      ],
+      "invalid": [
+        "Mouse Logitech MX Master 3S",
+        "Teclado mecanico Keychron",
+        "Laptop HP Victus gaming",
+        "Monitor AOC gaming 27"
+      ]
+    },
+    "base refrigerante": {
+      "valid": [
+        "Base refrigerante para laptop 15.6 con 5 ventiladores",
+        "Cooler pad laptop gaming RGB USB",
+        "Base ventiladora para portatil 17 pulgadas",
+        "Stand enfriador laptop con hub USB 4 puertos",
+        "Base de refrigeracion notebook silenciosa"
+      ],
+      "invalid": [
+        "Laptop Asus TUF Gaming",
+        "Mochila para laptop 15 pulgadas",
+        "Ventilador case PC 120mm",
+        "Cooler CPU para torre desktop"
+      ]
+    },
+    "ups regulador": {
+      "valid": [
+        "UPS APC Back-UPS 1500VA 865W",
+        "Regulador de voltaje 1200VA CDP R-AVR1208I",
+        "UPS interactivo 1000VA CyberPower CP1000AVRLCD",
+        "Regulador automatico voltaje 8 tomas 1800VA",
+        "UPS Forza FT-1002UPS 1000VA torre"
+      ],
+      "invalid": [
+        "Cargador portatil 65W GaN",
+        "Regleta electrica 6 tomas",
+        "Laptop HP Pavilion 15",
+        "Fuente poder PC 750W"
+      ]
+    },
+    "mochila laptop": {
+      "valid": [
+        "Mochila para laptop 15.6 pulgadas impermeable",
+        "Backpack ejecutivo para portatil 17 pulgadas",
+        "Mochila gamer RGB con puerto USB",
+        "Morral para computador antirrobo 15.6",
+        "Mochila Targus 15 pulgadas acolchada"
+      ],
+      "invalid": [
+        "Laptop Dell XPS 15 Core i7",
+        "Maletín ejecutivo rigido para laptop",
+        "Bolso de mano cuero para mujer",
+        "Mochila escolar basica"
+      ]
+    },
+    "auriculares lenovo": {
+      "valid": [
+        "Lenovo LP40 Pro TWS auriculares bluetooth inalámbricos negro",
+        "Auriculares Lenovo XT62 ThinkPlus bluetooth gamer violeta",
+        "Lenovo HE05 Pro auriculares deportivos cuello bluetooth",
+        "Lenovo LivePods XT92 gamer inalámbricos TWS",
+        "Auriculares Lenovo E310 True Wireless Stereo negro",
+        "Lenovo LP75 bluetooth deportivos in-ear",
+        "Lenovo XT88 ThinkPlus Live Pods bluetooth 5.3",
+        "Auriculares Lenovo TA410 bluetooth 5.4 inalámbricos",
+        "Lenovo GM2 Pro auricular gamer TWS luz LED",
+        "Lenovo XT53 ThinkPlus auriculares inalámbricos blancos",
+        "Auriculares Lenovo Le302 bluetooth dorado",
+        "Lenovo LP40 auriculares inalámbricos TWS color rosa",
+        "Lenovo X7 conducción ósea bluetooth negro"
+      ],
+      "invalid": [
+        "Lenovo ThinkPad X1 Carbon laptop Core i7",
+        "Lenovo Legion 5 Pro RTX 4070 gaming",
+        "Mochila Lenovo Casual 15.6 pulgadas",
+        "Lenovo Legion Go AMD Ryzen Z1 consola gaming",
+        "Lenovo IdeaPad 5 Pro Ryzen 7 portatil",
+        "Dock Lenovo ThinkPad USB-C",
+        "Monitor Lenovo Q27h QHD"
+      ]
+    },
+    "audifonos lenovo": {
+      "valid": [
+        "Lenovo LP40 Pro TWS audifonos bluetooth inalámbricos",
+        "Audifonos Lenovo XT88 ThinkPlus Negro bluetooth 5.3",
+        "Lenovo LivePods XT92 gamer inalámbricos TWS",
+        "Audifonos Lenovo GM2 Pro gamer TWS LED azul",
+        "Lenovo LP75 bluetooth deportivos in-ear",
+        "Lenovo XT62 ThinkPlus audifono gamer violeta",
+        "Audifonos Lenovo LE208 in-ear LED negro",
+        "Lenovo HE05 Pro cuello deportivos bluetooth",
+        "Audifonos Lenovo Le302 bluetooth dorado",
+        "Lenovo conduccion osea X7 bluetooth negro"
+      ],
+      "invalid": [
+        "Lenovo ThinkPad X1 Carbon laptop",
+        "Lenovo Legion 5 Pro RTX 4070",
+        "Lenovo IdeaPad 5 Pro portatil Ryzen 7",
+        "Lenovo Legion Go consola gaming",
+        "Mochila Lenovo 15.6 pulgadas",
+        "Monitor Lenovo 27 QHD"
+      ]
+    },
+    "samsung s23": {
+      "valid": [
+        "Samsung Galaxy S23 Ultra 5G 512GB S918B",
+        "Samsung Galaxy S23 5G 256GB 8GB RAM negro",
+        "Samsung Galaxy S23+ Plus 256GB reacondicionado",
+        "Samsung Galaxy S23 FE 5G 128GB 8GB RAM",
+        "Samsung Galaxy S23 5G 128GB negro reacondicionado",
+        "Samsung S23 Ultra S918U original desbloqueado 256GB",
+        "Samsung Galaxy S23 Ultra 1TB Snapdragon NFC"
+      ],
+      "invalid": [
+        "Funda Case Para Samsung Galaxy S23 Ultra transparente",
+        "Vidrio templado protector pantalla Samsung Galaxy S23",
+        "Cable USB-C cargador rapido para Samsung S23",
+        "Case forro de carga magnetica para Samsung S23 Ultra",
+        "Funda cuero billetera Samsung Galaxy S23 Ultra",
+        "Cargador Samsung 45W SuperFast para Galaxy S23",
+        "Monitor Samsung 27 FHD 75Hz HDMI plano negro",
+        "Monitor Samsung 24 S33GF FHD HDMI 100Hz",
+        "Pantalla AMOLED repuesto digitalizador Samsung S23 Ultra",
+        "Pantalla LCD reemplazo tactil Samsung S23 S911",
+        "Conector FPC antena WiFi Samsung Galaxy S23",
+        "Samsung Galaxy Tab S9 tablet Android",
+        "Smart TV Samsung 55 pulgadas QLED"
+      ]
+    },
+    "samsung s23u": {
+      "valid": [
+        "Samsung Galaxy S23 Ultra 5G 512GB Titanio S918B",
+        "Samsung Galaxy S23 Ultra S918U 256GB desbloqueado",
+        "Samsung S23 Ultra 12GB 512GB Snapdragon NFC Android",
+        "Samsung Galaxy S23 Ultra 1TB original liberado",
+        "Samsung Galaxy S23 Ultra 5G negro reacondicionado certificado"
+      ],
+      "invalid": [
+        "Funda Case Para Samsung Galaxy S23 Ultra antigolpes",
+        "Funda magnetica magsafe Samsung Galaxy S23 Ultra transparente",
+        "Vidrio templado 3D curvo Samsung Galaxy S23 Ultra",
+        "Protector pantalla TPU Samsung S23 Plus 5G",
+        "Cable USB tipo C carga rapida Samsung S23 S24",
+        "Cargador super rapido 45W Samsung Galaxy S23",
+        "Monitor Samsung 22 FHD 75Hz HDMI plano negro",
+        "Monitor Samsung 24 Essential FHD 100Hz",
+        "Pantalla AMOLED repuesto Samsung Galaxy S23 Ultra S918",
+        "Pantalla LCD digitalizadora tactil reemplazo S23 Ultra",
+        "Samsung Galaxy Tab S9 Ultra 256GB WiFi",
+        "Smart TV Samsung 55 pulgadas 4K Neo QLED",
+        "Paquete cargadores 45W USB-C telefono Android Samsung"
+      ]
+    },
+    "samsungs23u": {
+      "valid": [
+        "Samsung Galaxy S23 Ultra 5G 512GB Titanio S918B",
+        "Samsung Galaxy S23 Ultra S918U 256GB desbloqueado",
+        "Samsung S23 Ultra 12GB 512GB Snapdragon NFC Android",
+        "Samsung Galaxy S23 Ultra 1TB original liberado",
+        "Samsung Galaxy S23 Ultra 5G negro reacondicionado certificado"
+      ],
+      "invalid": [
+        "Funda Case Para Samsung Galaxy S23 Ultra antigolpes",
+        "Funda magnetica magsafe Samsung Galaxy S23 Ultra transparente",
+        "Vidrio templado 3D curvo Samsung Galaxy S23 Ultra",
+        "Protector pantalla TPU Samsung S23 Plus 5G",
+        "Cable USB tipo C carga rapida Samsung S23 S24",
+        "Cargador super rapido 45W Samsung Galaxy S23",
+        "Monitor Samsung 22 FHD 75Hz HDMI plano negro",
+        "Monitor Samsung 24 Essential FHD 100Hz",
+        "Pantalla AMOLED repuesto Samsung Galaxy S23 Ultra S918",
+        "Pantalla LCD digitalizadora tactil reemplazo S23 Ultra",
+        "Samsung Galaxy Tab S9 Ultra 256GB WiFi",
+        "Smart TV Samsung 55 pulgadas 4K Neo QLED",
+        "Paquete cargadores 45W USB-C telefono Android Samsung"
+      ]
+    },
+    "samsungs23": {
+      "valid": [
+        "Samsung Galaxy S23 Ultra 5G 512GB S918B",
+        "Samsung Galaxy S23 5G 256GB 8GB RAM negro",
+        "Samsung Galaxy S23+ Plus 256GB reacondicionado",
+        "Samsung Galaxy S23 FE 5G 128GB 8GB RAM",
+        "Samsung Galaxy S23 5G 128GB negro reacondicionado",
+        "Samsung S23 Ultra S918U original desbloqueado 256GB",
+        "Samsung Galaxy S23 Ultra 1TB Snapdragon NFC"
+      ],
+      "invalid": [
+        "Funda Case Para Samsung Galaxy S23 Ultra transparente",
+        "Vidrio templado protector pantalla Samsung Galaxy S23",
+        "Cable USB-C cargador rapido para Samsung S23",
+        "Case forro de carga magnetica para Samsung S23 Ultra",
+        "Funda cuero billetera Samsung Galaxy S23 Ultra",
+        "Cargador Samsung 45W SuperFast para Galaxy S23",
+        "Monitor Samsung 27 FHD 75Hz HDMI plano negro",
+        "Monitor Samsung 24 S33GF FHD HDMI 100Hz",
+        "Pantalla AMOLED repuesto digitalizador Samsung S23 Ultra",
+        "Pantalla LCD reemplazo tactil Samsung S23 S911",
+        "Conector FPC antena WiFi Samsung Galaxy S23",
+        "Samsung Galaxy Tab S9 tablet Android",
+        "Smart TV Samsung 55 pulgadas QLED"
+      ]
+    }
+  }
+}
