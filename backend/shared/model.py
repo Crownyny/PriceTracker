@@ -32,6 +32,7 @@ class SearchRequest(BaseModel):
     product_ref: str                        # identificador interno del producto
     sources: Optional[list[str]] = None     # None = auto-discovery via SearXNG
     priority: int = 5
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -46,6 +47,7 @@ class DocumentedScrapingRequest(BaseModel):
     product_url: str                        # URL específica del producto
     product_ref: str                        # identificador interno del producto
     priority: int = 5
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -58,6 +60,7 @@ class ScrapingJob(BaseModel):
     source_name: str                        # "amazon", "mercadolibre", "unknown", …
     product_ref: str
     priority: int = 5
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -89,6 +92,7 @@ class ScrapingMessage(BaseModel):
     state: ScrapingState
     query: Optional[str] = None
     store_url: Optional[str] = None          # URL de la tienda proporcionada
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     raw_fields: dict[str, Any] = Field(default_factory=dict)
     error_message: Optional[str] = None
 
@@ -101,6 +105,7 @@ class SearchCompletedMessage(BaseModel):
     search_id: str
     product_ref: str
     total_jobs: int
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     dispatched_at: datetime.datetime
 # ── Producto normalizado (salida del Normalizer Service) ──────────────────────
 class NormalizedProduct(BaseModel):
@@ -135,6 +140,7 @@ class NormalizedEventMessage(BaseModel):
     schema_version: str = "2.0"
     error_message: Optional[str] = None
     search_id: Optional[str] = None
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     normalized_product: Optional[NormalizedProduct] = None
 
 
@@ -147,6 +153,7 @@ class SearchNormalizedMessage(BaseModel):
     search_id: str
     product_ref: str
     total_normalized: int
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     completed_at: datetime.datetime
 
 
