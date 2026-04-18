@@ -1,11 +1,14 @@
 package unicauca.edu.co.API.DataAccess.Entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -71,6 +74,12 @@ public class NormalizedProductEntity {
     @Column(columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> extra;
+
+    @OneToMany(mappedBy = "product")
+    private List<AlertEntity> alerts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "listing")
+    private List<NotificationEntity> notifications = new ArrayList<>();
 
     // Constructor sin argumentos para JPA
     public NormalizedProductEntity() {

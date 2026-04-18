@@ -2,6 +2,7 @@ package unicauca.edu.co.API.Presentation.Controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import unicauca.edu.co.API.Services.IN.ProductService;
 
@@ -26,6 +27,7 @@ public class ProductRestController {
 	}
 
 	@PostMapping("/search")
+	@PreAuthorize("isAuthenticated()")
 	public List<NormalizedProductDTO> searchProductQuery(@RequestBody QueryDTOIN query) {
 		return productService.getProductByProductRef(query);
 	}

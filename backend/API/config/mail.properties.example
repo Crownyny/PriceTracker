@@ -1,0 +1,24 @@
+# Copy this file to config/mail.properties and set real credentials.
+# config/mail.properties is ignored by git.
+
+# SMTP transport
+spring.mail.host=smtp.example.com
+spring.mail.port=587
+spring.mail.username=replace_with_username
+spring.mail.password=replace_with_password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+# Application mail sender
+mail.sender.address=no-reply@pricetracker.local
+
+# Scheduler controls
+# false: do not send emails
+# true: daemon sends notifications based on alert frequency
+mail.notifications.enabled=false
+
+# Timezone used to evaluate daily/weekly windows
+mail.notifications.timezone=America/Bogota
+
+# Runs every minute. Default expression: second minute hour day month day-of-week
+mail.notifications.cron=0 * * * * *

@@ -2,6 +2,7 @@ package unicauca.edu.co.API.Presentation.Controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import unicauca.edu.co.API.Presentation.DTO.ModelQueryDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.IntentResponseDTOIN;
@@ -23,6 +24,7 @@ public class IntentProductController {
     }
 
     @PostMapping("intent")
+    @PreAuthorize("isAuthenticated()")
     public IntentResponseDTOIN getIntentPredict(@RequestBody ModelQueryDTO param) {
         return intentProductService.getIntentResponse(param).block();
     }

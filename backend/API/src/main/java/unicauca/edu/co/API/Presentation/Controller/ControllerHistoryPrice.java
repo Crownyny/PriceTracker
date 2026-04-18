@@ -4,6 +4,7 @@ package unicauca.edu.co.API.Presentation.Controller;
 import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.HistoryPriceDTO;
 import unicauca.edu.co.API.Services.Interfaces.IN.IHistoryPriceService;
