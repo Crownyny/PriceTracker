@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import unicauca.edu.co.API.Presentation.DTO.OUT.FirebaseTokenDTO;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAuthService;
@@ -17,7 +18,7 @@ public class FirebaseAuthService implements IAuthService {
     private final FirebaseAuth firebaseAuth;
     private final Cache<String, FirebaseTokenDTO> tokenCache;
 
-    public FirebaseAuthService(FirebaseAuth firebaseAuth) {
+    public FirebaseAuthService(@Lazy FirebaseAuth firebaseAuth) {
         this.firebaseAuth = firebaseAuth;
         // Inicializamos el caché con Caffeine. 
         // Se puede configurar el tiempo de expiración según se requiera.
