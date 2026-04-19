@@ -2,11 +2,11 @@ package unicauca.edu.co.API.Presentation.Mapper;
 
 import org.mapstruct.Mapper;
 
-import unicauca.edu.co.API.DataAccess.Entity.ProductSnapShotEntity;
-import unicauca.edu.co.API.Presentation.DTO.IN.ProductSnapShotDTO;
+import unicauca.edu.co.API.DataAccess.Entity.PriceHistoryEntity;
+import unicauca.edu.co.API.Presentation.DTO.IN.ProductPriceHistoryDTO;
 
 @Mapper(componentModel = "spring")
 public interface ProductSnapShotMapper {
-    ProductSnapShotDTO toDTO(ProductSnapShotEntity entity);
-    ProductSnapShotEntity toEntity(ProductSnapShotDTO dto);
+    ProductPriceHistoryDTO toDTO(PriceHistoryEntity entity);
+    PriceHistoryEntity toEntity(ProductPriceHistoryDTO dto);
 }

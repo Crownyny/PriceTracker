@@ -5,11 +5,11 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import unicauca.edu.co.API.DataAccess.Entity.ProductSnapShotEntity;
-import unicauca.edu.co.API.DataAccess.Repository.ProductSnapShotRepository;
-import unicauca.edu.co.API.Presentation.DTO.IN.HistoryPriceDTO;
+import unicauca.edu.co.API.DataAccess.Entity.PriceHistoryEntity;
+import unicauca.edu.co.API.DataAccess.Repository.PriceHistoryRepository;
+import unicauca.edu.co.API.Presentation.DTO.IN.ProductPriceHistoryDTO;
 import unicauca.edu.co.API.Presentation.Mapper.HistoryPriceMapper;
-import unicauca.edu.co.API.Services.Interfaces.IN.IHistoryPriceService;
+import unicauca.edu.co.API.Services.Interfaces.IN.IPriceHistoryService;
 import unicauca.edu.co.API.Services.enums.Range;
 
 /**
@@ -20,26 +20,28 @@ import unicauca.edu.co.API.Services.enums.Range;
  */
 
 @Service
-public class HistoryPriceService implements IHistoryPriceService {
+public class HistoryPriceService implements IPriceHistoryService {
 
-    private final ProductSnapShotRepository ProductSanpShotRepository;
+    private final PriceHistoryRepository priceHistoryRepository;
     private final HistoryPriceMapper historyPriceMapper;
 
     public HistoryPriceService(
-        ProductSnapShotRepository ProductSanpShotRepository,
+        PriceHistoryRepository priceHistoryRepository,
         HistoryPriceMapper historyPriceMapper
     ) {
-        this.ProductSanpShotRepository = ProductSanpShotRepository;
+        this.priceHistoryRepository = priceHistoryRepository;
         this.historyPriceMapper = historyPriceMapper;
     }
 
     @Override
-    public HistoryPriceDTO getHistoryPrice(UUID productId, Range range) {
+    public ProductPriceHistoryDTO getHistoryPrice(String productId, Range range) {
         if(range.isAll()) {
-            List<ProductSnapShotEntity> history = ProductSanpShotRepository.findByProductId(productId);
+            List<PriceHistoryEntity> history = priceHistoryRepository.findByProductId(productId);
             return historyPriceMapper.toDTO(history, range);
         }
-        List<ProductSnapShotEntity> history = ProductSanpShotRepository.findByProductIdAndUpdatedAtAfter(productId, range.toDate());
+        List<PriceHistoryEntity> history = priceHistoryRepository.findByProductIdAndRecordedAtAfter(productId, range.toDate());
         return historyPriceMapper.toDTO(history, range);
     }
+
+    
 }

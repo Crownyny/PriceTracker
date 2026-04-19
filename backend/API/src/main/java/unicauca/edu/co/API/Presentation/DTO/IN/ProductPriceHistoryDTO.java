@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -13,10 +14,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class HistoryPriceDTO {
+@NoArgsConstructor
+public class ProductPriceHistoryDTO {
     private String productRef;
-    private UUID productId;
+    private String productId;
     private String category;
-    private ProductSnapShotDTO[] history;
-    public HistoryPriceDTO() {}
+    private PriceHistoryDTO[] history;
 }

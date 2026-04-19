@@ -2,6 +2,8 @@ package unicauca.edu.co.API.DataAccess.Entity;
 
 import java.time.LocalDateTime;
 
+import org.checkerframework.checker.units.qual.C;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -43,12 +45,18 @@ public class PriceHistoryEntity {
     
     @Column(name = "product_id", nullable = false, length = 36)
     private String productId;
-    
+
+    @Column(name = "product_ref", nullable = false, length = 100)
+    private String productRef;
+
     @Column(nullable = false)
     private Double price;
     
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false)
     private String currency;
+
+    @Column(nullable = false)
+    private Boolean availability;
     
     @Column(nullable = false)
     private LocalDateTime recordedAt;

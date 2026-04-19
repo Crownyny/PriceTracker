@@ -25,4 +25,20 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistoryEntity
         LocalDateTime start,
         LocalDateTime end
     );
+
+        /**
+     * Listar HistoryEntity por productId
+     *  y listar por fecha segun el rango de tiempo de range especificos
+     *  1 semana
+     *  3 semanas
+     *  3 meses
+     */
+    List<PriceHistoryEntity> findByProductIdAndRecordedAtAfter(String productId, LocalDateTime date);
+
+    /**
+     * Listar HistoryEntity por productId sin importar la fecha
+     * @param productId El ID del producto para el cual se desea obtener el historial de precios.
+     * @return Un arreglo de ProductSnapShotEntity que contiene el historial de precios del producto.
+     */
+    List<PriceHistoryEntity> findByProductId(String productId);
 }
