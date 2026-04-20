@@ -1,9 +1,16 @@
 package unicauca.edu.co.API.Services.IN;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
-import unicauca.edu.co.API.Presentation.DTO.IN.HistoryPriceDTO;
-import unicauca.edu.co.API.Services.Interfaces.IN.IHistoryPriceService;
+import unicauca.edu.co.API.DataAccess.Entity.PriceHistoryEntity;
+import unicauca.edu.co.API.DataAccess.Repository.PriceHistoryRepository;
+import unicauca.edu.co.API.Presentation.DTO.IN.ProductPriceHistoryDTO;
+import unicauca.edu.co.API.Presentation.Mapper.HistoryPriceMapper;
+import unicauca.edu.co.API.Services.Interfaces.IN.IPriceHistoryService;
+import unicauca.edu.co.API.Services.enums.Range;
 
 /**
  * Implementación de la interfaz IHistoryPriceService para manejar el historial de precios de los productos.
@@ -13,12 +20,28 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IHistoryPriceService;
  */
 
 @Service
-public class HistoryPriceService implements IHistoryPriceService {
+public class HistoryPriceService implements IPriceHistoryService {
 
+    private final PriceHistoryRepository priceHistoryRepository;
+    private final HistoryPriceMapper historyPriceMapper;
 
-    @Override
-    public HistoryPriceDTO[] getHistoryPrice(String productId, String range) {
-        return new HistoryPriceDTO[0];
+    public HistoryPriceService(
+        PriceHistoryRepository priceHistoryRepository,
+        HistoryPriceMapper historyPriceMapper
+    ) {
+        this.priceHistoryRepository = priceHistoryRepository;
+        this.historyPriceMapper = historyPriceMapper;
     }
 
+    @Override
+    public ProductPriceHistoryDTO getHistoryPrice(String productId, Range range) {
+        if(range.isAll()) {
+            List<PriceHistoryEntity> history = priceHistoryRepository.findByProductId(productId);
+            return historyPriceMapper.toDTO(history, range);
+        }
+        List<PriceHistoryEntity> history = priceHistoryRepository.findByProductIdAndRecordedAtAfter(productId, range.toDate());
+        return historyPriceMapper.toDTO(history, range);
+    }
+
+    
 }

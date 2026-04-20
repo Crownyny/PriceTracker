@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Services.Interfaces.IN;
+package unicauca.edu.co.API.Services.Interfaces.OUT;
 
 import reactor.core.publisher.Mono;
 import unicauca.edu.co.API.Presentation.DTO.ModelQueryDTO;

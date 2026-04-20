@@ -11,10 +11,10 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class SnapShotPriceDTO {
+public class PriceHistoryDTO {
     private String price;
     private String currency;
     private String availability;
     private String updateAt; 
-    public SnapShotPriceDTO() {}   
+    public PriceHistoryDTO() {}
 }

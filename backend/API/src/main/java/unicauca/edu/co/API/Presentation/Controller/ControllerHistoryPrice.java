@@ -1,10 +1,16 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
+
+import java.util.UUID;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-import unicauca.edu.co.API.Presentation.DTO.IN.HistoryPriceDTO;
-import unicauca.edu.co.API.Services.Interfaces.IN.IHistoryPriceService;
+import unicauca.edu.co.API.Presentation.DTO.IN.PriceHistoryDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.ProductPriceHistoryDTO;
+import unicauca.edu.co.API.Services.Interfaces.IN.IPriceHistoryService;
+import unicauca.edu.co.API.Services.enums.Range;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,13 +25,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/v1/products/")
 public class ControllerHistoryPrice {
 
-    private final IHistoryPriceService historyPriceService;
+    private final IPriceHistoryService historyPriceService;
 
-    public ControllerHistoryPrice( IHistoryPriceService historyPriceService) {this.historyPriceService = historyPriceService;}
+    public ControllerHistoryPrice( IPriceHistoryService historyPriceService) {this.historyPriceService = historyPriceService;}
 
     @GetMapping("{productId}/priceHistory")
-    @PreAuthorize("isAuthenticated()")
-    public HistoryPriceDTO[] getHistoryPrice(@PathVariable String productId, @RequestParam String range) {
+    public ProductPriceHistoryDTO getHistoryPrice(@PathVariable String productId, @RequestParam Range range) {
         return historyPriceService.getHistoryPrice(productId, range);
     }
 }

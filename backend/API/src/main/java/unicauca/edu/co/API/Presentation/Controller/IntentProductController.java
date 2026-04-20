@@ -6,8 +6,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 import unicauca.edu.co.API.Presentation.DTO.ModelQueryDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.IntentResponseDTOIN;
-import unicauca.edu.co.API.Services.IN.IntentProductService;
-import unicauca.edu.co.API.Services.Interfaces.IN.IIntentProductService;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IIntentProductService;
+import unicauca.edu.co.API.Services.OUT.IntentProductService;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

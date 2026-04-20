@@ -53,7 +53,7 @@ public class NormalizedProductEntity {
     @Column(name = "source_name")
     private String sourceName;
 
-    @Column(name = "source_url", nullable = false, unique = true)
+    @Column(name = "source_url", nullable = false)
     private String sourceUrl;
     
     @Column(name = "canonical_name")
