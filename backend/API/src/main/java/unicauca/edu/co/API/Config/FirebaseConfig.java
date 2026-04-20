@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,6 +22,7 @@ public class FirebaseConfig {
     private String configPath;
 
     @Bean
+    @Lazy
     public FirebaseApp firebaseApp() throws IOException {
         System.out.println("[FIREBASE] Initializing FirebaseApp...");
         
@@ -56,6 +58,7 @@ public class FirebaseConfig {
     }
 
     @Bean
+    @Lazy
     public FirebaseAuth firebaseAuth(FirebaseApp firebaseApp) {
         System.out.println("[FIREBASE] Providing FirebaseAuth bean.");
         return FirebaseAuth.getInstance(firebaseApp);
