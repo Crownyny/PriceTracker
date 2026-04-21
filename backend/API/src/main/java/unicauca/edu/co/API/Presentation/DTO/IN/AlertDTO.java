@@ -19,7 +19,7 @@ import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
 public class AlertDTO {
     private UUID id;
     private UUID userId;
-    private  String productId;
+    private String productId;
     private BigDecimal targetPrice;
     private AlertCondition condition;
     private Boolean isActive;
