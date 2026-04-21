@@ -92,5 +92,8 @@ dmypy.json
 *.pid
 .cache/
 
+# ── Herramientas y proyectos locales ───────────────────────────────────────────
+Price Comparison Tool/
+
 # ── Certificados locales de desarrollo ───────────────────────────────────────
 caddy-local-root.crt
