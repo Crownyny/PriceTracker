@@ -67,9 +67,10 @@
         const apiUrl = `${constants.API?.BASE_URL || 'http://localhost:8080'}/api/intent/intent`;
         console.log(`${constants.LOG_PREFIX} [INTENT] Checking query...`);
         
-        // Short timeout to not block search
+        // Timeout de 6 segundos para dar tiempo a la API
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+        const INTENT_TIMEOUT_MS = 6000; // 6 segundo timeout
+        const timeoutId = setTimeout(() => controller.abort(), INTENT_TIMEOUT_MS);
         
         try {
           const response = await fetch(apiUrl, {
@@ -87,22 +88,23 @@
             console.log(`${constants.LOG_PREFIX} [INTENT] ${isBuyIntent ? '✓ BUY' : '✗ NOT_BUY'}`);
             return isBuyIntent;
           } else {
-            console.log(`${constants.LOG_PREFIX} [INTENT] API ${response.status}, proceeding anyway`);
-            return true;
+            console.log(`${constants.LOG_PREFIX} [INTENT] API error ${response.status} - falling back to NOT_BUY`);
+            return false;
           }
         } catch (err) {
           clearTimeout(timeoutId);
           
           if (err.name === 'AbortError') {
-            console.log(`${constants.LOG_PREFIX} [INTENT] Timeout, proceeding`);
+            console.warn(`${constants.LOG_PREFIX} [INTENT] ⏱️ TIMEOUT (>${INTENT_TIMEOUT_MS}ms) - Intent API no respondió a tiempo - Falling back to NOT_BUY`);
+            return false;
           } else {
-            console.log(`${constants.LOG_PREFIX} [INTENT] ${err.message}, proceeding`);
+            console.warn(`${constants.LOG_PREFIX} [INTENT] Error: ${err.message} - Falling back to NOT_BUY`);
+            return false;
           }
-          return true;
         }
       } catch (error) {
-        console.log(`${constants.LOG_PREFIX} [INTENT] Unexpected error, proceeding:`, error.message);
-        return true;
+        console.warn(`${constants.LOG_PREFIX} [INTENT] Unexpected error - Falling back to NOT_BUY:`, error.message);
+        return false;
       } finally {
         intentCheckPending = false;
       }
@@ -452,14 +454,14 @@
         console.log(`${constants.LOG_PREFIX} [SEARCH] isBuyIntent value:`, isBuyIntent, `| type:`, typeof isBuyIntent);
         
         if (!isBuyIntent) {
-          console.log(`${constants.LOG_PREFIX} [SEARCH] NO PURCHASE INTENT DETECTED - Extension will not be shown`);
+          console.warn(`${constants.LOG_PREFIX} [SEARCH] ❌ NO PURCHASE INTENT DETECTED - Extension will not process this query`);
           console.log(`${constants.LOG_PREFIX} [SEARCH] Query: "${query}"`);
-          console.log(`${constants.LOG_PREFIX} [SEARCH] Stopping search now...`);
+          console.log(`${constants.LOG_PREFIX} [SEARCH] Reason: Query appears to be informational, not a purchase intent`);
           updateStatus('idle');
           emit();
           return;
         }
-        console.log(`${constants.LOG_PREFIX} [SEARCH] Purchase intent confirmed - proceeding with search`);
+        console.log(`${constants.LOG_PREFIX} [SEARCH] ✓ Purchase intent confirmed - proceeding with search`);
       } catch (err) {
         console.error(`${constants.LOG_PREFIX} [SEARCH] Intent check FAILED:`, err.message);
         console.log(`${constants.LOG_PREFIX} [SEARCH] Continuing anyway due to error...`);
