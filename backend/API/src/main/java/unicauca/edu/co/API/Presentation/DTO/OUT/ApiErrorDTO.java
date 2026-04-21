@@ -16,6 +16,7 @@ public class ApiErrorDTO {
     private int status;
     private String error;
     private String message;
+    private String code;
     private String path;
     private long timestamp;
 

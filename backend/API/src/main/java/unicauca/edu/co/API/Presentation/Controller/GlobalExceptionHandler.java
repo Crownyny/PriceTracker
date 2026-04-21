@@ -55,7 +55,21 @@ public class GlobalExceptionHandler {
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorDTO);
     }
+   @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiErrorDTO> handleInvalidAlertState(
+        IllegalStateException e,
+        HttpServletRequest request) {
 
+        ApiErrorDTO errorDTO = ApiErrorDTO.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Alert State Conflict")
+                .message(e.getMessage() != null ? e.getMessage() : "An unexpected error occurred")
+                .path(request.getRequestURI())
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
+    }
     private String mapFirebaseError(FirebaseAuthException e) {
         AuthErrorCode code = e.getAuthErrorCode();
         if (code == null) return "Authentication failed: " + e.getMessage();
@@ -69,4 +83,5 @@ public class GlobalExceptionHandler {
             default -> "Authentication failed: " + e.getMessage();
         };
     }
+ 
 }
