@@ -27,7 +27,6 @@ public class ProductRestController {
 	}
 
 	@PostMapping("/search")
-	@PreAuthorize("isAuthenticated()")
 	public List<NormalizedProductDTO> searchProductQuery(@RequestBody QueryDTOIN query) {
 		return productService.getProductByProductRef(query);
 	}

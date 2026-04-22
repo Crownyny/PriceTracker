@@ -24,7 +24,6 @@ public class IntentProductController {
     }
 
     @PostMapping("intent")
-    @PreAuthorize("isAuthenticated()")
     public IntentResponseDTOIN getIntentPredict(@RequestBody ModelQueryDTO param) {
         return intentProductService.getIntentResponse(param).block();
     }
