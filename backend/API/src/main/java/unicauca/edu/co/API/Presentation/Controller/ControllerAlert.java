@@ -19,8 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Services.IN.AlertService;
+import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
 /**
  * Controlador REST para la gestión de alertas de precios.
@@ -30,9 +32,9 @@ import unicauca.edu.co.API.Services.IN.AlertService;
 @RequestMapping("/api/alerts")
 public class ControllerAlert {
 
-    private final AlertService alertService;
+    private final IAlertService alertService;
 
-    public ControllerAlert(AlertService alertService) {
+    public ControllerAlert(IAlertService alertService) {
         this.alertService = alertService;
     }
 
@@ -63,11 +65,9 @@ public class ControllerAlert {
      */
     @PostMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AlertDTO> createAlert(@RequestBody AlertDTO alertDTO) {
+    public ResponseEntity<AlertDTO> createAlert( @PathVariable String productId, @RequestBody AlertFrequency frequency) {
         UUID userId = getUserIdFromContext();
-        alertDTO.setUserId(userId);
-        
-        AlertDTO createdAlert = alertService.createAlert(alertDTO);
+        AlertDTO createdAlert = alertService.createAlert(frequency, productId, userId);
         return new ResponseEntity<>(createdAlert, HttpStatus.CREATED);
     }
 

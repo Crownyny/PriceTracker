@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Services.Validators.ValidatorImpl;
+package unicauca.edu.co.API.Domain.Validators.ValidatorImpl;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.AbstractProductValidator;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
-import unicauca.edu.co.API.Services.Validators.InterfacesValidators.AbstractProductValidator;
 
 /**
  * Validador HU-3: Relación y descarte de resultados (Variantes).

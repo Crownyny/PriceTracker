@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Services.Validators.InterfacesValidators;
+package unicauca.edu.co.API.Domain.Validators.InterfacesValidators;
 
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 

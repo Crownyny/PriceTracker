@@ -3,15 +3,18 @@ package unicauca.edu.co.API.Services.Interfaces.IN;
 import java.util.List;
 import java.util.UUID;
 
+import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 
 public interface IAlertService {
     /**
      * Crea una nueva alerta para un producto específico. El usuario debe estar autenticado para crear una alerta.
-     * @param alertDTO Un objeto AlertDTO que contiene la información de la alerta a crear
+     * @param frequency La frecuencia con la que se desea recibir notificaciones de la alerta
+     * @param productId El ID del producto para el cual se desea crear la alerta
+      * @param userId El ID del usuario que intenta crear la alerta
      * @return El AlertDTO creado 
      */
-    AlertDTO createAlert(AlertDTO alertDTO);
+    AlertDTO createAlert(AlertFrequency frequency, String productId, UUID userId);
     /**
      * Obtiene una alerta por su ID. El usuario debe estar autenticado para obtener una alerta.
      * @param productId El ID del producto asociado a la alerta a obtener

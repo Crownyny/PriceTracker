@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import unicauca.edu.co.API.Services.Validators.InterfacesValidators.IProductValidator;
-import unicauca.edu.co.API.Services.Validators.ValidatorImpl.AccessoryAndVariantExclusionValidator;
-import unicauca.edu.co.API.Services.Validators.ValidatorImpl.LogicalPriceValidator;
-import unicauca.edu.co.API.Services.Validators.ValidatorImpl.SimilarityThresholdValidator;
+import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.IProductValidator;
+import unicauca.edu.co.API.Domain.Validators.ValidatorImpl.AccessoryAndVariantExclusionValidator;
+import unicauca.edu.co.API.Domain.Validators.ValidatorImpl.LogicalPriceValidator;
+import unicauca.edu.co.API.Domain.Validators.ValidatorImpl.SimilarityThresholdValidator;
 
 /**
  * Configura la cadena de responsabilidad de validadores (HU-1 a HU-7).
