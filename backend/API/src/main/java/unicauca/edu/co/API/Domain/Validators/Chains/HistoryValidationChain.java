@@ -1,10 +1,10 @@
-package unicauca.edu.co.API.Services.Validators.Chains;
+package unicauca.edu.co.API.Domain.Validators.Chains;
 
 import org.springframework.stereotype.Component;
 
+import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.IProductValidator;
+import unicauca.edu.co.API.Domain.Validators.ValidatorImpl.ProductExistsValidator;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
-import unicauca.edu.co.API.Services.Validators.InterfacesValidators.IProductValidator;
-import unicauca.edu.co.API.Services.Validators.ValidatorImpl.ProductExistsValidator;
 
 @Component
 public class HistoryValidationChain {

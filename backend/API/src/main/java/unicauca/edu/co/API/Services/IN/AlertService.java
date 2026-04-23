@@ -11,7 +11,10 @@ import org.springframework.stereotype.Service;
 
 import jakarta.persistence.EntityNotFoundException;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity;
+import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
+import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.DataAccess.Repository.AlertRepository;
+import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.Mapper.AlertMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
@@ -24,15 +27,24 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 public class AlertService implements IAlertService {
     private final AlertRepository alertRepository;
     private final AlertMapper alertMapper;
+    private final ProductRepository productRepository;
 
-    public AlertService(AlertRepository alertRepository, AlertMapper alertMapper) {
+    public AlertService(
+        AlertRepository alertRepository,
+         AlertMapper alertMapper,
+         ProductRepository productRepository    
+        ) {
         this.alertRepository = alertRepository;
         this.alertMapper = alertMapper;
+        this.productRepository = productRepository;
     }
 
     @Override
-    public AlertDTO createAlert(AlertDTO alertDTO) {
-        AlertEntity alertEntity = alertMapper.toEntity(alertDTO);
+    public AlertDTO createAlert(AlertFrequency frequency, String productId, UUID userId) {
+        AlertEntity alertEntity = new AlertEntity();
+        NormalizedProductEntity productEntity = productRepository.findById(productId)
+            .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + productId));
+        alertEntity = buildAlertEntity(productEntity, frequency, productId, userId);
         AlertEntity savedAlert = alertRepository.save(alertEntity);
         return alertMapper.toDTO(savedAlert);
     }
@@ -50,7 +62,6 @@ public class AlertService implements IAlertService {
     public AlertDTO updateAlert(String productId, UUID userId, AlertDTO alertDTO) {
         return alertRepository.findByProductIdAndUserId(productId, userId)
             .map(alertEntity -> {
-                alertEntity.setTargetPrice(alertDTO.getTargetPrice());
                 alertEntity.setCondition(alertDTO.getCondition());
                 alertEntity.setFrequency(alertDTO.getFrequency());
                 AlertEntity updatedAlert = alertRepository.save(alertEntity);
@@ -97,8 +108,25 @@ public class AlertService implements IAlertService {
     }
 
     private void validateStatusChange(Boolean current, Boolean incoming) {
-    if (Objects.equals(current, incoming)) {
-         throw new IllegalStateException("Alert already has this status");
+        if (Objects.equals(current, incoming)) {
+            throw new IllegalStateException("Alert already has this status");
+        }
     }
-}
+    /**
+     * Construye una nueva instancia de AlertEntity con los datos proporcionados.
+     * @param frequency La frecuencia de la alerta
+     * @param productId El ID del producto asociado a la alerta
+     * @param userId El ID del usuario que crea la alerta
+     * @return  Una nueva instancia de AlertEntity con los datos proporcionados y valores predeterminados para los campos restantes
+     */
+    private AlertEntity buildAlertEntity(NormalizedProductEntity product,  AlertFrequency frequency, String productId, UUID userId) {
+        AlertEntity alertEntity = new AlertEntity();
+        alertEntity.setFrequency(frequency);
+        alertEntity.setProductId(productId);
+        alertEntity.setUserId(userId);
+        alertEntity.setIsActive(true);
+        alertEntity.setCreateAt(LocalDateTime.now());
+        alertEntity.setProduct(product);    
+        return alertEntity; 
+    }
 }
