@@ -31,7 +31,7 @@
     let statusUpdateInterval = null;
     let renderTimeout = null;
     let pendingRender = false;
-    const minProductsBeforeShow = 15; // Wait for at least 15 products before showing table
+    const minProductsBeforeFirstShow = 1; // Show immediately once first product arrives
     const RENDER_BATCH_DELAY = 500;
     const CACHE_EXPIRY_MS = 20 * 60 * 1000; // 20 minutos en ms
     
@@ -56,6 +56,7 @@
     
     // Call /api/intent/intent to check if query is a purchase intent
     // NOTE: This is best-effort; failures don't block the search
+    // Token is OPTIONAL - if not authenticated, search still works but intent check is skipped
     async function checkPurchaseIntent(query) {
       if (intentCheckPending) {
         console.log(`${constants.LOG_PREFIX} [INTENT] Already pending, skipping duplicate check`);
@@ -64,8 +65,36 @@
       
       try {
         intentCheckPending = true;
-        const apiUrl = `${constants.API?.BASE_URL || 'http://localhost:8080'}/api/intent/intent`;
+        const endpoint = '/api/intent/intent';
         console.log(`${constants.LOG_PREFIX} [INTENT] Checking query...`);
+        
+        // Obtener token de Firebase (OPCIONAL)
+        let authToken = null;
+        try {
+          const firebaseAuthService = PriceTracker.firebaseAuthService;
+          if (firebaseAuthService) {
+            const isAuthenticated = await firebaseAuthService.isAuthenticated();
+            if (isAuthenticated) {
+              authToken = await firebaseAuthService.getAuthToken();
+              if (authToken) {
+                console.log(`${constants.LOG_PREFIX} [INTENT] Token de Firebase obtenido (usuario autenticado)`);
+              }
+            } else {
+              console.log(`${constants.LOG_PREFIX} [INTENT] Usuario no autenticado - búsqueda gratis sin perfil`);
+            }
+          }
+        } catch (err) {
+          console.warn(`${constants.LOG_PREFIX} [INTENT] Error obteniendo token (no es crítico):`, err.message);
+        }
+        
+        // Construir headers - token es OPCIONAL
+        const headers = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (authToken) {
+          headers.Authorization = `Bearer ${authToken}`;
+        }
         
         // Timeout de 6 segundos para dar tiempo a la API
         const controller = new AbortController();
@@ -73,20 +102,38 @@
         const timeoutId = setTimeout(() => controller.abort(), INTENT_TIMEOUT_MS);
         
         try {
-          const response = await fetch(apiUrl, {
+          // Usar API Relay para bypasear CORS
+          const apiRelay = PriceTracker.apiRelay;
+          if (!apiRelay) {
+            throw new Error('API Relay no disponible');
+          }
+
+          const response = await apiRelay.apiRequest(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query }),
-            signal: controller.signal,
+            headers: headers,
+            body: { query },
           });
           
           clearTimeout(timeoutId);
           
+          console.log(`${constants.LOG_PREFIX} [INTENT] Response OK: ${response.ok}, Status: ${response.status}`);
+          
           if (response.ok) {
-            const result = await response.json();
-            const isBuyIntent = result.label === 'BUY';
-            console.log(`${constants.LOG_PREFIX} [INTENT] ${isBuyIntent ? '✓ BUY' : '✗ NOT_BUY'}`);
-            return isBuyIntent;
+            try {
+              console.log(`${constants.LOG_PREFIX} [INTENT] Parsing JSON response...`);
+              const result = await response.json();
+              console.log(`${constants.LOG_PREFIX} [INTENT] Parsed result:`, result);
+              console.log(`${constants.LOG_PREFIX} [INTENT] Result Label:`, result.Label);
+              console.log(`${constants.LOG_PREFIX} [INTENT] Result label:`, result.label);
+              
+              // Usar Label (con mayúscula) que es lo que devuelve el modelo Python
+              const isBuyIntent = result.Label === 'BUY' || result.label === 'BUY';
+              console.log(`${constants.LOG_PREFIX} [INTENT] ${isBuyIntent ? '✓ BUY' : '✗ NOT_BUY'}`);
+              return isBuyIntent;
+            } catch (parseErr) {
+              console.error(`${constants.LOG_PREFIX} [INTENT] Error parsing JSON:`, parseErr.message);
+              return false;
+            }
           } else {
             console.log(`${constants.LOG_PREFIX} [INTENT] API error ${response.status} - falling back to NOT_BUY`);
             return false;
@@ -95,7 +142,7 @@
           clearTimeout(timeoutId);
           
           if (err.name === 'AbortError') {
-            console.warn(`${constants.LOG_PREFIX} [INTENT] ⏱️ TIMEOUT (>${INTENT_TIMEOUT_MS}ms) - Intent API no respondió a tiempo - Falling back to NOT_BUY`);
+            console.warn(`${constants.LOG_PREFIX} [INTENT] TIMEOUT (>${INTENT_TIMEOUT_MS}ms) - Intent API no respondió a tiempo - Falling back to NOT_BUY`);
             return false;
           } else {
             console.warn(`${constants.LOG_PREFIX} [INTENT] Error: ${err.message} - Falling back to NOT_BUY`);
@@ -134,21 +181,40 @@
     // Definir todas las funciones handlers ANTES de usarlas en client.configure
     function handleProduct(payload) {
       if (!domainContracts.isValidNormalizedProductDto(payload)) {
+        console.warn(`${constants.LOG_PREFIX} [PRODUCT] Invalid product DTO received:`, payload);
         return;
       }
 
       const domainProduct = domainContracts.toDomainProduct(payload);
+      console.log(`${constants.LOG_PREFIX} [PRODUCT] ✓ Received from WebSocket:`, {
+        id: domainProduct.id,
+        name: domainProduct.canonicalName,
+        price: domainProduct.price,
+        source: domainProduct.sourceName,
+      });
+      
       if (domainProduct.productRef && activeSearch) {
         activeSearch.productRef = domainProduct.productRef;
       }
       const dedupeKey = domainContracts.buildDedupeKey(domainProduct);
       if (dedupeSet.has(dedupeKey)) {
+        console.log(`${constants.LOG_PREFIX} [PRODUCT] ✗ Duplicate (already seen), skipping`);
         return;
       }
       dedupeSet.add(dedupeKey);
 
       products.push(domainProduct);
       products = products.sort((a, b) => a.price - b.price);
+      
+      console.log(`${constants.LOG_PREFIX} [PRODUCT] Total collected: ${products.length}`);
+      
+      // Change to 'streaming' status once we start receiving products
+      // This ensures UI renders immediately during the product stream
+      if (status !== 'streaming') {
+        console.log(`${constants.LOG_PREFIX} [PRODUCT] Status change: searching → streaming`);
+        updateStatus('streaming');
+      }
+      
       if (statusTracker && statusTracker.recordProductReceived) {
         statusTracker.recordProductReceived();
       }
@@ -171,13 +237,12 @@
       
       pendingRender = true;
       
-      // Only render if:
-      // 1. We have enough products (>= minProductsBeforeShow) AND we're in a stable state, OR
-      // 2. We're completed (show final results even if < 5 products)
-      const hasEnoughProducts = products.length >= minProductsBeforeShow;
-      const isStableForRender = status === 'completed' || (status === 'streaming' && hasEnoughProducts);
-      
-      const shouldRender = isStableForRender;
+      // Render logic:
+      // 1. If streaming and have at least 1 product → render (show products as they arrive)
+      // 2. If completed → render (show final results)
+      // 3. Otherwise → don't render yet
+      const hasProducts = products.length >= minProductsBeforeFirstShow;
+      const shouldRender = (status === 'streaming' && hasProducts) || status === 'completed';
       
       if (renderTimeout) {
         clearTimeout(renderTimeout);
@@ -256,13 +321,19 @@
 
     async function fetchCachedProducts(productRef) {
       try {
-        const apiUrl = `${constants.API?.BASE_URL || 'http://localhost:8080'}/api/products/search`;
+        const endpoint = '/api/products/search';
         console.log(`${constants.LOG_PREFIX} [CACHE] Fetching cached products for ref: ${productRef}`);
         
-        const response = await fetch(apiUrl, {
+        // Usar API Relay para bypasear CORS
+        const apiRelay = PriceTracker.apiRelay;
+        if (!apiRelay) {
+          throw new Error('API Relay no disponible');
+        }
+
+        const response = await apiRelay.apiRequest(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product_ref: productRef }),
+          body: { product_ref: productRef },
         });
 
         if (!response.ok) {
@@ -301,29 +372,58 @@
     }
 
     function handleStatus(payload) {
-      if (!domainContracts.isValidSearchStatusDto(payload)) {
+      if (!payload || typeof payload !== 'object') {
+        console.warn(`${constants.LOG_PREFIX} [WS-STATUS] Invalid payload type:`, typeof payload);
         return;
       }
 
-      backendStatus = {
-        searchId: payload.search_id,
-        productRef: payload.product_ref,
-        totalNormalized: payload.total_normalized,
-        completedAt: payload.completed_at,
-      };
+      // Handle two types of status messages from backend:
+      // 1. Simple: {status: 'SCRAPING'} or {status: 'NORMALIZING'}
+      // 2. Complete: {search_id, product_ref, total_normalized, completed_at}
+      
+      const isSimpleStatus = payload.status && !payload.search_id;
+      const isCompleteStatus = domainContracts.isValidSearchStatusDto(payload);
+      
+      if (!isSimpleStatus && !isCompleteStatus) {
+        console.warn(`${constants.LOG_PREFIX} [WS-STATUS] Invalid status format:`, payload);
+        return;
+      }
 
-      console.log(`${constants.LOG_PREFIX} [STATUS] total_normalized: ${payload.total_normalized}`);
+      // Process complete status
+      if (isCompleteStatus) {
+        console.log(`${constants.LOG_PREFIX} [WS-STATUS] Complete update:`, {
+          search_id: payload.search_id,
+          product_ref: payload.product_ref,
+          total_normalized: payload.total_normalized,
+        });
 
-      // Map backend status to UI phase based on the data
-      if (statusTracker && statusTracker.setBackendPhase) {
-        if (payload.total_normalized && payload.total_normalized > 0) {
-          // Update with product count for progress display
-          if (statusTracker.setProductCount) {
-            statusTracker.setProductCount(payload.total_normalized);
+        backendStatus = {
+          searchId: payload.search_id,
+          productRef: payload.product_ref,
+          totalNormalized: payload.total_normalized,
+          completedAt: payload.completed_at,
+        };
+
+        if (statusTracker && statusTracker.setBackendPhase) {
+          if (payload.total_normalized && payload.total_normalized > 0) {
+            if (statusTracker.setProductCount) {
+              statusTracker.setProductCount(payload.total_normalized);
+            }
+            statusTracker.setBackendPhase('normalizing');
+          } else if (payload.search_id) {
+            statusTracker.setBackendPhase('scraping');
           }
-          statusTracker.setBackendPhase('normalizing');
-        } else if (payload.search_id) {
-          statusTracker.setBackendPhase('scraping');
+        }
+      } 
+      // Process simple status (just log it, keep going)
+      else if (isSimpleStatus) {
+        console.log(`${constants.LOG_PREFIX} [WS-STATUS] Simple update: ${payload.status}`);
+        if (statusTracker && statusTracker.setBackendPhase) {
+          if (payload.status === 'SCRAPING') {
+            statusTracker.setBackendPhase('scraping');
+          } else if (payload.status === 'NORMALIZING') {
+            statusTracker.setBackendPhase('normalizing');
+          }
         }
       }
 
@@ -335,10 +435,15 @@
     // Configurar el cliente DESPUÉS de definir los handlers
     client.configure({
       onConnect: () => {
+        console.log(`${constants.LOG_PREFIX} [HANDLERS] onConnect ejecutándose...`);
+        console.log(`${constants.LOG_PREFIX} [HANDLERS] activeSearch:`, activeSearch);
         updateStatus('searching');
         if (activeSearch) {
+          console.log(`${constants.LOG_PREFIX} [HANDLERS] ✓ activeSearch existe, enviando búsqueda...`);
+          console.log(`${constants.LOG_PREFIX} [HANDLERS] Payload:`, activeSearch.payload);
           try {
             client.sendSearch(activeSearch.payload);
+            console.log(`${constants.LOG_PREFIX} [HANDLERS] ✓ Búsqueda enviada exitosamente`);
           } catch (error) {
             console.error(`${constants.LOG_PREFIX} Error enviando búsqueda en onConnect:`, error);
             if (restFallbackEnabled) {
@@ -348,6 +453,8 @@
               emit({ error: error.message });
             }
           }
+        } else {
+          console.warn(`${constants.LOG_PREFIX} [HANDLERS] ❌ activeSearch es NULL en onConnect!`);
         }
       },
       onDisconnect: async () => {
@@ -495,52 +602,13 @@
       startStatusUpdateTimer();
       startSearchTimeout();
       
-      // FIRST: Check if product already exists in backend (via background worker)
-      const productRef = activeSearch.query.replaceAll(" ", "");
-      const existsInBackend = await checkIfProductExistsViaBackground(productRef);
+      // IMPORTANT: Always use WebSocket first, regardless of whether product exists
+      // Backend will send PRODUCT_IN_BD if it's cached, which triggers REST
+      // Never short-circuit to REST before attempting WebSocket
       
-      if (existsInBackend) {
-        // Product exists → go directly to REST, skip WebSocket
-        console.log(`${constants.LOG_PREFIX} [SEARCH] ✓ Product exists in backend, using REST directly`);
-        await runFallback('Product cached in backend');
-        return;
-      }
-      
-      // Product doesn't exist → use normal WebSocket flow
+      // Product doesn't exist or not checking → use normal WebSocket flow
       client.connect(buildConnectHeaders());
       emit();
-    }
-
-    function checkIfProductExistsViaBackground(productRef) {
-      return new Promise((resolve) => {
-        console.log(`${constants.LOG_PREFIX} [CHECK] Checking if product exists via background: ${productRef}`);
-        
-        const messageListener = (message) => {
-          if (message.type === 'ws-relay-check-product-response') {
-            chrome.runtime.onMessage.removeListener(messageListener);
-            clearTimeout(timeoutId);
-            const exists = message.data?.exists || false;
-            console.log(`${constants.LOG_PREFIX} [CHECK] Product ${exists ? 'EXISTS' : 'NOT FOUND'} in backend`);
-            resolve(exists);
-            return;
-          }
-        };
-
-        chrome.runtime.onMessage.addListener(messageListener);
-
-        // Send request to background worker
-        chrome.runtime.sendMessage({
-          type: 'ws-relay-check-product',
-          productRef: productRef,
-        });
-
-        // Timeout in case background doesn't respond
-        const timeoutId = setTimeout(() => {
-          chrome.runtime.onMessage.removeListener(messageListener);
-          console.log(`${constants.LOG_PREFIX} [CHECK] Check timeout, proceeding with WebSocket`);
-          resolve(false); // Default to WebSocket on timeout
-        }, 3000);
-      });
     }
 
     function stopSearch() {
@@ -560,9 +628,9 @@
     }
 
     function getState() {
-      // Only show products if we have at least minProductsBeforeShow (15) OR search is completed with fewer
-      // This ensures spinner/loading messages show until we have a meaningful dataset
-      const shouldShowProducts = products.length >= minProductsBeforeShow || status === 'completed';
+      // Only show products if we have at least minProductsBeforeFirstShow (1) OR search is completed
+      // This ensures spinner/loading messages show while we're waiting for results
+      const shouldShowProducts = products.length >= minProductsBeforeFirstShow || status === 'completed';
       const productsToReturn = shouldShowProducts ? [...products] : [];
       
       return {
@@ -624,6 +692,10 @@
         const restoredProducts = await pricingService.restoreByProductRef(fallbackProductRef, activeSearch.query);
         console.log(`${constants.LOG_PREFIX} [FALLBACK] REST returned ${restoredProducts.length} products`);
         
+        // Add products in batches to show them progressively
+        const batchSize = 10;
+        let addedCount = 0;
+        
         for (const product of restoredProducts) {
           const dedupeKey = domainContracts.buildDedupeKey(product);
           if (dedupeSet.has(dedupeKey)) {
@@ -631,34 +703,50 @@
           }
           dedupeSet.add(dedupeKey);
           products.push(product);
+          addedCount++;
+          
+          // Emit after each batch
+          if (addedCount % batchSize === 0) {
+            products = products.sort((a, b) => a.price - b.price);
+            
+            if (statusTracker && statusTracker.setProductCount) {
+              statusTracker.setProductCount(products.length);
+            }
+            
+            if (statusTracker && statusTracker.setBackendPhase) {
+              statusTracker.setBackendPhase('normalizing');
+            }
+            
+            updateStatus('streaming');
+            emit(); // Emit immediately with current batch
+            
+            console.log(`${constants.LOG_PREFIX} [FALLBACK] Added batch: ${addedCount}/${restoredProducts.length} products`);
+            
+            // Small delay between batches so user can see progress
+            await new Promise(resolve => setTimeout(resolve, 150));
+          }
         }
-        products = products.sort((a, b) => a.price - b.price);
         
-        // Show progressive status updates even with REST
-        if (statusTracker && statusTracker.setProductCount) {
-          statusTracker.setProductCount(products.length);
+        // Emit final batch if not already emitted
+        if (addedCount % batchSize !== 0) {
+          products = products.sort((a, b) => a.price - b.price);
+          
+          if (statusTracker && statusTracker.setProductCount) {
+            statusTracker.setProductCount(products.length);
+          }
+          
+          updateStatus('streaming');
+          emit();
+          
+          console.log(`${constants.LOG_PREFIX} [FALLBACK] Final batch: ${addedCount}/${restoredProducts.length} products`);
         }
         
-        if (statusTracker && statusTracker.setBackendPhase) {
-          statusTracker.setBackendPhase('normalizing');
-        }
-        updateStatus('streaming');
-        emitStatusOnly(); // Show "Normalizando..." message, no products yet
-        
-        // Simulate normalization delay (2 seconds)
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
+        // Final state
         if (statusTracker && statusTracker.setBackendPhase) {
           statusTracker.setBackendPhase('comparing');
         }
-        updateStatus('streaming');
-        emitStatusOnly(); // Show "Creando tabla..." message, no products yet
-        
-        // Simulate comparison delay (1 second)
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
         updateStatus('completed');
-        scheduleRender(); // Now render with all products if >= 20
+        emit();
       } catch (error) {
         console.error(`${constants.LOG_PREFIX} [FALLBACK] ❌ Fallback failed:`, error.message);
         updateStatus('error');
@@ -670,6 +758,13 @@
 
     function startSearchTimeout() {
       clearSearchTimeout();
+      
+      // If we already have products, use a long timeout in case products arrive slowly
+      // If we have NO products yet, use a shorter timeout to detect connection issues
+      const timeoutMs = products.length > 0 
+        ? 60 * 1000  // 60 seconds once we start getting products
+        : 30 * 1000; // 30 seconds to get FIRST product (if no products yet)
+      
       searchTimeout = global.setTimeout(async () => {
         if (status === 'completed' || status === 'error') {
           return;
@@ -680,7 +775,7 @@
           return;
         }
         await runFallback('Search timeout');
-      }, constants.SEARCH.TIMEOUT_MS);
+      }, timeoutMs);
     }
 
     function getFallbackProductRef() {

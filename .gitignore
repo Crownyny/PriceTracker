@@ -25,8 +25,9 @@ ENV/
 .env
 .env.local
 .env.*.local
-# Mantener los ejemplos
-!.env.example
+
+# ── Chrome Extension: credenciales de Firebase (NUNCA subir) ──────────────────
+frontend/price-traker/chrome/.env
 
 # ── Dependencias instaladas ───────────────────────────────────────────────────
 node_modules/
@@ -97,3 +98,17 @@ Price Comparison Tool/
 
 # ── Certificados locales de desarrollo ───────────────────────────────────────
 caddy-local-root.crt
+
+# ── Firebase Service Account (SENSIBLE - NUNCA subir) ──────────────────────────
+firebase-service-account.json
+!firebase-service-account.json.example
+
+# ── Variables de entorno ──────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── Properties sensibles ──────────────────────────────────────────────────────
+mail.properties
+!mail.properties.example

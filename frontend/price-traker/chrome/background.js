@@ -1,5 +1,5 @@
 // Background Service Worker para la extensión
-importScripts('vendor/sockjs.min.js', 'vendor/stomp.umd.min.js', 'background/ws-relay.js');
+importScripts('vendor/sockjs.min.js', 'vendor/stomp.umd.min.js', 'setup-dev-config.js', 'background/ws-relay.js', 'background/api-relay-handler.js');
 
 console.log('Price Tracker Background Service Worker iniciado');
 
@@ -14,6 +14,9 @@ async function hydrateExtensionState() {
     const result = await chrome.storage.local.get(['extensionActive']);
     extensionActive = result.extensionActive ?? false;
     console.log(`Estado inicial cargado: ${extensionActive ? 'activada' : 'desactivada'}`);
+    
+    // Cargar configuración de Firebase desde .env (desarrollo)
+    await setupDevConfig();
   } catch (error) {
     console.error('Error cargando estado inicial:', error);
   }
@@ -34,6 +37,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 // Escuchar mensajes desde el popup y content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Mensaje recibido:', message);
+  
+  // API_REQUEST es manejado por api-relay-handler.js, no lo procesamos aquí
+  if (message.type === 'API_REQUEST') {
+    return; // Dejar que api-relay-handler.js lo maneje
+  }
   
   switch (message.type) {
     case 'TOGGLE_EXTENSION':
