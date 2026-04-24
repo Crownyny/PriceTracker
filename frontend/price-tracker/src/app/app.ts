@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { TokenService } from './core/services/token.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,8 @@ import { CommonModule } from '@angular/common';
           <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
           <li><a routerLink="/price-history" routerLinkActive="active">Historial</a></li>
           <li><a routerLink="/alerts" routerLinkActive="active">Alertas</a></li>
+          <li><a routerLink="/login" routerLinkActive="active">Iniciar sesion</a></li>
+          <li><button type="button" class="logout-btn" (click)="logout()">Cerrar sesion</button></li>
         </ul>
       </nav>
 
@@ -30,5 +33,15 @@ import { CommonModule } from '@angular/common';
 })
 export class App {
   protected readonly title = 'price-traker';
+
+  constructor(
+    private tokenService: TokenService,
+    private router: Router
+  ) {}
+
+  logout(): void {
+    this.tokenService.clearTokens();
+    this.router.navigate(['/login']);
+  }
 }
 
