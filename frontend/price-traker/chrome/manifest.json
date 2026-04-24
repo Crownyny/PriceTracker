@@ -18,6 +18,10 @@
     "https://google.com/*",
     "https://google.com.co/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'",
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' https://www.gstatic.com; object-src 'self'"
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -40,13 +44,16 @@
       ],
       "js": [
         "content/constants.js",
+        "content/firebase-config.js",
         "content/state.js",
         "content/state/status-messages.js",
         "content/domain/contracts.js",
         "content/pom/google-search.page.js",
+        "content/transport/api-relay.js",
         "content/transport/stomp-relay-client.js",
         "content/services/pricing.service.js",
         "content/services/intent.service.js",
+        "content/firebase-auth.service.js",
         "content/application/search-workflow.service.js",
         "content/presentation/search-panel.presenter.js",
         "content/ui/status-indicator.ui.js",

@@ -12,16 +12,22 @@
       throw new Error('La query es requerida para evaluar intención');
     }
 
-    const endpoint = `${constants.API.BASE_URL}${constants.API.REST_INTENT_PATH}`;
+    const endpoint = constants.API.REST_INTENT_PATH || '/api/intent/intent';
 
-    const response = await fetch(endpoint, {
+    // Usar API Relay para bypasear CORS
+    const apiRelay = PriceTracker.apiRelay;
+    if (!apiRelay) {
+      throw new Error('API Relay no disponible');
+    }
+
+    const response = await apiRelay.apiRequest(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+      body: {
         query: query.trim(),
-      }),
+      },
     }).catch(() => null);
 
     if (!response?.ok) {

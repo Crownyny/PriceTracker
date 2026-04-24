@@ -5,6 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Price Tracker</title>
   <link rel="stylesheet" href="popup.css">
+  <style>
+    .auth-section {
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      background-color: #f9f9f9;
+    }
+
+    .auth-section input {
+      width: 100%;
+      padding: 8px 10px;
+      margin: 6px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 12px;
+      font-family: inherit;
+    }
+
+    .auth-section input:focus {
+      outline: none;
+      border-color: #4285f4;
+      box-shadow: 0 0 4px rgba(66, 133, 244, 0.3);
+    }
+
+    .auth-section button {
+      width: 100%;
+      padding: 8px 12px;
+      margin: 4px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: white;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.2s;
+    }
+
+    .auth-section button:hover:not(:disabled) {
+      background-color: #f0f0f0;
+    }
+
+    .auth-section button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .auth-section button#logoutBtn {
+      background-color: #ff6b6b;
+      color: white;
+      border-color: #ff6b6b;
+    }
+
+    .auth-section button#logoutBtn:hover {
+      background-color: #ff5252;
+    }
+
+    .auth-section button#loginBtn {
+      background-color: #4285f4;
+      color: white;
+      border-color: #4285f4;
+      font-weight: 500;
+    }
+
+    .auth-section button#loginBtn:hover:not(:disabled) {
+      background-color: #3367d6;
+    }
+
+    #userEmail {
+      font-size: 11px;
+      color: #666;
+      margin: 8px 0;
+      padding: 8px;
+      background-color: white;
+      border-radius: 3px;
+      word-break: break-all;
+      border: 1px solid #e0e0e0;
+    }
+
+    #authContainer {
+      display: none;
+    }
+
+    .form-label {
+      font-size: 11px;
+      color: #666;
+      font-weight: 500;
+      margin-top: 8px;
+      margin-bottom: 2px;
+      display: block;
+    }
+  </style>
 </head>
 <body>
   <div class="popup-container">
@@ -13,6 +105,42 @@
     </div>
     
     <div class="content">
+      <!-- Sección de autenticación Firebase -->
+      <div class="auth-section">
+        <!-- Formulario de login (email + password) -->
+        <form id="loginForm" style="display: block;">
+          <label class="form-label">Email</label>
+          <input 
+            type="email" 
+            id="emailInput" 
+            placeholder="tu@email.com" 
+            required
+            autocomplete="email"
+          >
+          
+          <label class="form-label">Contraseña</label>
+          <input 
+            type="password" 
+            id="passwordInput" 
+            placeholder="••••••••" 
+            required
+            autocomplete="current-password"
+          >
+          
+          <button id="loginBtn" type="submit" style="background-color: #4285f4; color: white;">
+            Iniciar sesión
+          </button>
+        </form>
+
+        <!-- Información del usuario autenticado -->
+        <div id="authContainer" style="display: none;">
+          <div id="userEmail"></div>
+          <button id="logoutBtn" style="background-color: #ff6b6b; color: white;">
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+
       <div class="toggle-section">
         <div class="toggle-info">
           <span class="toggle-label">Activar extensión</span>
@@ -41,6 +169,13 @@
     </div>
   </div>
 
+  <!-- Firebase SDK desde CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
+  
+  <!-- Scripts de autenticación y popup -->
+  <script src="background/firebase-popup-auth.js"></script>
+  <script src="popup-setup.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

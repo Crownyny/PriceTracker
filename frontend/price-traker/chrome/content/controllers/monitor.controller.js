@@ -124,11 +124,23 @@
       if (!state.monitoringActive || document.visibilityState !== 'visible') {
         return;
       }
+      // Only trigger fallback if NOT actively searching/streaming
+      const currentState = workflow.getState && workflow.getState();
+      if (currentState && (currentState.status === 'searching' || currentState.status === 'streaming')) {
+        console.log(`[MONITOR] Page became visible but search is active (${currentState.status}) - NOT triggering fallback`);
+        return;
+      }
       await workflow.runFallback('visibility-refresh');
     });
 
     window.addEventListener('focus', async () => {
       if (!state.monitoringActive) {
+        return;
+      }
+      // Only trigger fallback if NOT actively searching/streaming
+      const currentState = workflow.getState && workflow.getState();
+      if (currentState && (currentState.status === 'searching' || currentState.status === 'streaming')) {
+        console.log(`[MONITOR] Window focused but search is active (${currentState.status}) - NOT triggering fallback`);
         return;
       }
       await workflow.runFallback('focus-refresh');
@@ -164,17 +176,27 @@
 
   function scheduleRender(workflowState) {
     latestWorkflowState = workflowState;
+    
+    // Clear existing timer so we can render each batch as it arrives
     if (renderTimer) {
-      return;
+      clearTimeout(renderTimer);
     }
 
-    const waitMs = Number(constants.UI?.RENDER_DEBOUNCE_MS || 250);
-    renderTimer = window.setTimeout(() => {
+    // Render immediately during streaming to show batches progressively
+    // Only debounce during idle periods
+    if (workflowState.status === 'streaming') {
       renderTimer = null;
-      if (latestWorkflowState) {
-        renderFromWorkflow(latestWorkflowState);
-      }
-    }, waitMs);
+      renderFromWorkflow(latestWorkflowState);
+    } else {
+      // For other statuses, use debounce
+      const waitMs = Number(constants.UI?.RENDER_DEBOUNCE_MS || 250);
+      renderTimer = window.setTimeout(() => {
+        renderTimer = null;
+        if (latestWorkflowState) {
+          renderFromWorkflow(latestWorkflowState);
+        }
+      }, waitMs);
+    }
   }
 
   function clearRenderTimer() {
