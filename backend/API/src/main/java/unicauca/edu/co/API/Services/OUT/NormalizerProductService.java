@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Config.WebSocketConfig;
+import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.IProductValidator;
 import unicauca.edu.co.API.Presentation.DTO.Enum.ProcessStatus;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormlaizedProductEventDTO;
@@ -17,7 +18,6 @@ import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Events.NormlaizedProductFinalizedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.INormalizerProductService;
-import unicauca.edu.co.API.Services.Validators.InterfacesValidators.IProductValidator;
 
 /**
  * Servicio que maneja la lógica de negocio relacionada con productos normalizados.

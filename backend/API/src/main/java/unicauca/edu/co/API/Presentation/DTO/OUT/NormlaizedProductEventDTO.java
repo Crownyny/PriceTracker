@@ -28,6 +28,9 @@ public class NormlaizedProductEventDTO {
     @JsonProperty("completed_at")
     private LocalDateTime completedAt;
     
+    @JsonProperty("is_update")
+    private Boolean update;
+    
     public NormlaizedProductEventDTO() {
     }
 }

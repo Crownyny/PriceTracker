@@ -1,10 +1,10 @@
-package unicauca.edu.co.API.Services.Validators.ValidatorImpl;
+package unicauca.edu.co.API.Domain.Validators.ValidatorImpl;
 
 import org.springframework.stereotype.Component;
 
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
+import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.AbstractProductValidator;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
-import unicauca.edu.co.API.Services.Validators.InterfacesValidators.AbstractProductValidator;
 
 @Component
 public class ProductExistsValidator extends AbstractProductValidator {

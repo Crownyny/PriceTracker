@@ -1,4 +1,4 @@
-package unicauca.edu.co.API.Services.Validators.ValidatorImpl;
+package unicauca.edu.co.API.Domain.Validators.ValidatorImpl;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import unicauca.edu.co.API.Config.WebSocketConfig;
+import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.AbstractProductValidator;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
-import unicauca.edu.co.API.Services.Validators.InterfacesValidators.AbstractProductValidator;
 
 /**
  * Compara el título/canonicalName del producto con la consulta del usuario;

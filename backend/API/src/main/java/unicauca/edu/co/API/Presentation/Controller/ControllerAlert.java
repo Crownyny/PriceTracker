@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -18,9 +19,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
+import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Services.IN.AlertService;
+import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
 /**
  * Controlador REST para la gestión de alertas de precios.
@@ -30,9 +35,9 @@ import unicauca.edu.co.API.Services.IN.AlertService;
 @RequestMapping("/api/alerts")
 public class ControllerAlert {
 
-    private final AlertService alertService;
+    private final IAlertService alertService;
 
-    public ControllerAlert(AlertService alertService) {
+    public ControllerAlert(IAlertService alertService) {
         this.alertService = alertService;
     }
 
@@ -61,13 +66,13 @@ public class ControllerAlert {
      * @param alertDTO Datos de la alerta a crear
      * @return ResponseEntity con el AlertDTO creado y estado 201 (Created)
      */
-    @PostMapping
+    @PostMapping("/{productId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AlertDTO> createAlert(@RequestBody AlertDTO alertDTO) {
+    public ResponseEntity<AlertDTO> createAlert( 
+        @PathVariable  @NotBlank String productId,
+        @Valid @RequestBody AlertFrequency frequency) {
         UUID userId = getUserIdFromContext();
-        alertDTO.setUserId(userId);
-        
-        AlertDTO createdAlert = alertService.createAlert(alertDTO);
+        AlertDTO createdAlert = alertService.createAlert(frequency, productId, userId);
         return new ResponseEntity<>(createdAlert, HttpStatus.CREATED);
     }
 
@@ -80,7 +85,7 @@ public class ControllerAlert {
      */
     @GetMapping("/{productId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AlertDTO> getAlertById(@PathVariable String productId) {
+    public ResponseEntity<AlertDTO> getAlertById(@PathVariable @NotBlank String productId) {
         UUID userId = getUserIdFromContext();
         AlertDTO alert = alertService.getAlertById(productId, userId);
         
@@ -114,8 +119,8 @@ public class ControllerAlert {
     @PutMapping("/{productId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlert(
-            @PathVariable String productId,
-            @RequestBody AlertDTO alertDTO) {
+            @PathVariable @NotBlank String productId,
+            @RequestBody @Valid AlertDTO alertDTO) {
         UUID userId = getUserIdFromContext();
         AlertDTO updatedAlert = alertService.updateAlert(productId, userId, alertDTO);
         
@@ -136,8 +141,8 @@ public class ControllerAlert {
     @PatchMapping("/{productId}/status")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlertStatus(
-            @PathVariable String productId,
-            @RequestParam Boolean isActive) {
+            @PathVariable @NotBlank String productId,
+            @RequestParam @Valid Boolean isActive) {
         UUID userId = getUserIdFromContext();
         AlertDTO updatedAlert = alertService.updateAlertStatus(productId, userId, isActive);
         
@@ -156,7 +161,7 @@ public class ControllerAlert {
      */
     @DeleteMapping("/{productId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AlertDTO> deleteAlert(@PathVariable String productId) {
+    public ResponseEntity<AlertDTO> deleteAlert(@PathVariable @NotBlank String productId) {
         UUID userId = getUserIdFromContext();
         AlertDTO deletedAlert = alertService.deleteAlert(productId, userId);
         
