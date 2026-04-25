@@ -18,7 +18,7 @@ async function loadFirebaseConfigFromStorage() {
       return true;
     } else {
       console.error('[FIREBASE POPUP] ✗ No hay configuración de Firebase en chrome.storage');
-      console.warn('[FIREBASE POPUP] Asegúrate de haber configurado Firebase en .env o manualmente');
+      console.warn('[FIREBASE POPUP] Asegúrate de haber configurado Firebase en .env.local o manualmente');
       return false;
     }
   } catch (error) {

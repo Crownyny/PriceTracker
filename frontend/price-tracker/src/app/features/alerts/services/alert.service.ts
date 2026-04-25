@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, map, of, catchError } from 'rxjs';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import {
@@ -25,14 +26,19 @@ import {
 })
 export class AlertService {
   constructor(
+    private http: HttpClient,
     private httpConfig: HttpConfigService
   ) {}
 
+  private getAlertsBaseUrl(): string {
+    return `${this.httpConfig.getApiBaseUrl()}/alerts`;
+  }
+
   private normalizeFrequency(value?: string): AlertFrequency {
     const normalized = (value || '').toUpperCase();
-    if (normalized === 'D1' || normalized === 'DAILY' || normalized === '1D') return 'D1';
-    if (normalized === 'W1' || normalized === 'WEEKLY' || normalized === '1W') return 'W1';
-    return 'ALL';
+    if (normalized === 'DAILY' || normalized === 'D1' || normalized === '1D') return 'daily';
+    if (normalized === 'WEEKLY' || normalized === 'W1' || normalized === '1W') return 'weekly';
+    return 'instant';
   }
 
   private toAlert(raw: any): Alert {
@@ -69,21 +75,22 @@ export class AlertService {
   }
 
   /**
-   * Obtiene las alertas de un producto
+   * Obtiene alertas (si se envía productId, obtiene solo esa alerta)
    */
-  getAlerts(productId: string, frequency: AlertFrequency = 'ALL'): Observable<AlertListResponse> {
-    let endpoint = `/products/${productId}/alert`;
+  getAlerts(productId?: string): Observable<AlertListResponse> {
+    const url = productId ? `${this.getAlertsBaseUrl()}/${productId}` : this.getAlertsBaseUrl();
 
-    endpoint += `?frecuency=${frequency}`;
-
-    return this.httpConfig.get<any>(endpoint).pipe(
+    return this.http.get<any>(url).pipe(
       map((response) => {
-        const rawAlerts = Array.isArray(response?.alerts) ? response.alerts : [];
+        const rawAlerts = Array.isArray(response)
+          ? response
+          : (response?.alerts ? response.alerts : (response ? [response] : []));
+
         return {
           alerts: rawAlerts.map((raw: any) => this.toAlert(raw)),
-          total: response?.total,
-          page: response?.page,
-          pageSize: response?.pageSize
+          total: rawAlerts.length,
+          page: 0,
+          pageSize: rawAlerts.length
         };
       })
     );
@@ -98,7 +105,7 @@ export class AlertService {
     }
 
     const requests = productIds.map((productId) =>
-      this.getAlerts(productId, 'ALL').pipe(
+      this.getAlerts(productId).pipe(
         map((response) => response.alerts),
         catchError(() => of([]))
       )
@@ -113,7 +120,7 @@ export class AlertService {
    * Obtiene una alerta específica
    */
   getAlert(productId: string, alertId: string): Observable<Alert> {
-    return this.getAlerts(productId, 'ALL').pipe(
+    return this.getAlerts(productId).pipe(
       map((response) => response.alerts.find((alert) => alert.id === alertId) as Alert)
     );
   }
@@ -122,13 +129,9 @@ export class AlertService {
    * Crea una nueva alerta
    */
   createAlert(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
-    const body = {
-      ...request,
-      frecuency: request.frequency,
-      frequency: request.frequency
-    };
+    const body = request.frequency;
 
-    return this.httpConfig.post<any>(`/products/${productId}/alert`, body).pipe(
+    return this.http.post<any>(`${this.getAlertsBaseUrl()}/${productId}`, body).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -137,12 +140,7 @@ export class AlertService {
    * Actualiza una alerta (edita precio objetivo o frecuencia)
    */
   updateAlert(productId: string, request: UpdateAlertRequest): Observable<AlertResponse> {
-    const body = {
-      ...request,
-      frecuency: request.frequency
-    };
-
-    return this.httpConfig.put<any>(`/products/${productId}/alert`, body).pipe(
+    return this.http.put<any>(`${this.getAlertsBaseUrl()}/${productId}`, request).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -151,7 +149,7 @@ export class AlertService {
    * Cambia el estado de una alerta (activa/desactiva)
    */
   updateAlertStatus(productId: string, request: UpdateAlertStatusRequest): Observable<AlertResponse> {
-    return this.httpConfig.patch<any>(`/products/${productId}/alert`, request).pipe(
+    return this.http.patch<any>(`${this.getAlertsBaseUrl()}/${productId}/status?isActive=${request.isActive}`, {}).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -160,7 +158,7 @@ export class AlertService {
    * Elimina una alerta
    */
   deleteAlert(productId: string): Observable<AlertResponse> {
-    return this.httpConfig.delete<any>(`/products/${productId}/alert`).pipe(
+    return this.http.delete<any>(`${this.getAlertsBaseUrl()}/${productId}`).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }

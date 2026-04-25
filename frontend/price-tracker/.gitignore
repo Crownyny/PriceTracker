@@ -39,6 +39,10 @@ testem.log
 /typings
 __screenshots__/
 
+# Local runtime secrets and generated config
+chrome/.env.local
+public/app-config.json
+
 # System files
 .DS_Store
 Thumbs.db

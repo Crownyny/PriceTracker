@@ -1,6 +1,13 @@
 // API Request Handler para Background Script
 // Maneja las peticiones desde el content script y las relaya a localhost
 
+const GOOGLE_SEARCH_HOSTS = new Set([
+  'www.google.com',
+  'www.google.com.co',
+  'google.com',
+  'google.com.co'
+]);
+
 /**
  * Maneja peticiones API desde el content script
  */
@@ -17,22 +24,35 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function handleApiRequest(message, sender, sendResponse) {
   try {
     const { endpoint, options } = message;
+    const apiConfig = globalThis.PriceTracker?.constants?.API || {};
+    const allowedMethods = new Set(apiConfig.RELAY_ALLOWED_METHODS || ['POST']);
+    const allowedEndpoints = new Set(apiConfig.RELAY_ALLOWED_ENDPOINTS || ['/api/intent/intent', '/api/products/search']);
+
+    if (!isAllowedSender(sender)) {
+      throw new Error('Sender no autorizado para API relay');
+    }
+
+    if (!isAllowedEndpoint(endpoint, allowedEndpoints)) {
+      throw new Error('Endpoint no permitido por API relay');
+    }
     
     const baseUrl = 'http://localhost:8080';
     const url = `${baseUrl}${endpoint}`;
+    const method = String(options?.method || 'GET').toUpperCase();
 
-    console.log(`[API_RELAY - BACKGROUND] Realizando petición a: ${url}`);
-    console.log(`[API_RELAY - BACKGROUND] Método: ${options.method || 'GET'}`);
-    console.log(`[API_RELAY - BACKGROUND] Headers:`, options.headers);
-    console.log(`[API_RELAY - BACKGROUND] Body original:`, options.body);
+    if (!allowedMethods.has(method)) {
+      throw new Error('Método no permitido por API relay');
+    }
 
-    const bodyString = options.body ? JSON.stringify(options.body) : undefined;
-    console.log(`[API_RELAY - BACKGROUND] Body serializado:`, bodyString);
+    const headers = sanitizeHeaders(options?.headers || {});
+    console.log(`[API_RELAY - BACKGROUND] Petición permitida: ${method} ${url}`);
 
-    // Construir fetchOptions sin spread de options para evitar sobrescribir body
+    const bodyString = options?.body ? JSON.stringify(options.body) : undefined;
+
+    // Construir fetchOptions de forma explícita para evitar pasar campos no permitidos.
     const fetchOptions = {
-      method: options.method || 'GET',
-      headers: options.headers || {},
+      method,
+      headers,
     };
 
     // Añadir body solo si existe (string ya serializado)
@@ -40,12 +60,7 @@ async function handleApiRequest(message, sender, sendResponse) {
       fetchOptions.body = bodyString;
     }
 
-    console.log(`[API_RELAY - BACKGROUND] Opciones finales:`, fetchOptions);
-
     const response = await fetch(url, fetchOptions);
-
-    console.log(`[API_RELAY - BACKGROUND] Respuesta: ${response.status} ${response.statusText}`);
-    console.log(`[API_RELAY - BACKGROUND] Content-Type:`, response.headers.get('content-type'));
 
     // Leer el body
     let data = null;
@@ -53,18 +68,9 @@ async function handleApiRequest(message, sender, sendResponse) {
     
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
-      console.log(`[API_RELAY - BACKGROUND] Data (JSON):`, data);
     } else {
       data = await response.text();
-      console.log(`[API_RELAY - BACKGROUND] Data (TEXT):`, data);
     }
-
-    console.log(`[API_RELAY - BACKGROUND] Enviando respuesta:`, {
-      success: true,
-      status: response.status,
-      ok: response.ok,
-      data: data
-    });
 
     // Enviar respuesta al content script
     sendResponse({
@@ -77,11 +83,41 @@ async function handleApiRequest(message, sender, sendResponse) {
       text: data
     });
   } catch (error) {
-    console.error(`[API_RELAY - BACKGROUND] Error en petición:`, error);
+    console.error(`[API_RELAY - BACKGROUND] Error en petición segura:`, error.message);
     sendResponse({
       success: false,
       error: error.message,
       status: 0
     });
   }
+}
+
+function isAllowedSender(sender) {
+  if (!sender || !sender.tab || !sender.url) {
+    return false;
+  }
+
+  try {
+    const url = new URL(sender.url);
+    return GOOGLE_SEARCH_HOSTS.has(url.hostname) && url.pathname.startsWith('/search');
+  } catch (error) {
+    return false;
+  }
+}
+
+function isAllowedEndpoint(endpoint, allowedEndpoints) {
+  return typeof endpoint === 'string' && allowedEndpoints.has(endpoint);
+}
+
+function sanitizeHeaders(headers) {
+  const safeHeaders = {};
+  const allowedHeaderNames = new Set(['content-type', 'authorization']);
+
+  for (const [key, value] of Object.entries(headers || {})) {
+    if (allowedHeaderNames.has(String(key).toLowerCase())) {
+      safeHeaders[key] = value;
+    }
+  }
+
+  return safeHeaders;
 }

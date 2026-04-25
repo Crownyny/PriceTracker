@@ -26,6 +26,15 @@ chrome/
 4. Selecciona la carpeta `chrome/`
 5. ¡La extensión estará cargada!
 
+## Cambiar entre dev y prod
+
+La URL del dashboard se controla desde `chrome/.env.local` con una sola línea:
+
+- `APP_ENV=development` usa `DASHBOARD_URL_DEV`
+- `APP_ENV=production` usa `DASHBOARD_URL_PROD`
+
+Si no hay sesión guardada en la extensión, el botón de abrir dashboard lleva a `/login`; si ya hay token, abre directamente el dashboard.
+
 ## Funcionalidad Actual
 
 ### Popup (popup.html/js/css)

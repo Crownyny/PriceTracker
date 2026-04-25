@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
-import { TokenService } from '../../core/services/token.service';
 import { AuthResponse } from '../../shared/models/auth.model';
 
 @Component({
@@ -34,8 +33,6 @@ import { AuthResponse } from '../../shared/models/auth.model';
         </form>
 
         <p *ngIf="error" class="error">{{ error }}</p>
-        <p class="hint">Si aun no tienes usuarios en Firebase, usa acceso demo:</p>
-        <button class="secondary" (click)="loginDemo()" [disabled]="loading">Entrar en modo demo</button>
 
         <p class="back-link"><a routerLink="/dashboard">Ir al dashboard</a></p>
       </article>
@@ -102,19 +99,9 @@ import { AuthResponse } from '../../shared/models/auth.model';
         cursor: not-allowed;
       }
 
-      .secondary {
-        background: #0f766e;
-        margin-bottom: 8px;
-      }
-
       .error {
         color: #b91c1c;
         margin-top: 12px;
-      }
-
-      .hint {
-        margin-top: 16px;
-        margin-bottom: 8px;
       }
 
       .back-link {
@@ -131,7 +118,6 @@ export class LoginComponent {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private tokenService: TokenService,
     private route: ActivatedRoute,
     private router: Router
   ) {
@@ -152,7 +138,7 @@ export class LoginComponent {
 
     this.authService.login(this.form.getRawValue() as { email: string; password: string }).pipe(
       catchError((err) => {
-        this.error = 'No fue posible iniciar sesion con Firebase. Verifica email/password o usa modo demo.';
+        this.error = 'No fue posible iniciar sesion con Firebase. Verifica email y contraseña.';
         console.error('Login error:', err);
         return of(null);
       }),
@@ -164,37 +150,8 @@ export class LoginComponent {
         return;
       }
 
-      this.persistSession(response);
       this.navigateToReturnUrl();
     });
-  }
-
-  loginDemo(): void {
-    this.error = null;
-    const now = Math.floor(Date.now() / 1000);
-    const payload = {
-      sub: 'demo-user',
-      email: 'demo@pricetracker.local',
-      iat: now,
-      exp: now + 60 * 60 * 24
-    };
-
-    const token = `demo.${btoa(JSON.stringify(payload))}.signature`;
-
-    this.tokenService.setTokens(token);
-    this.tokenService.setUserProfile({
-      id: 'demo-user',
-      email: payload.email,
-      name: 'Demo User',
-      createdAt: new Date().toISOString()
-    });
-
-    this.navigateToReturnUrl();
-  }
-
-  private persistSession(response: AuthResponse): void {
-    this.tokenService.setTokens(response.accessToken, response.refreshToken);
-    this.tokenService.setUserProfile(response.user);
   }
 
   private navigateToReturnUrl(): void {

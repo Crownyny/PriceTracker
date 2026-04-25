@@ -35,6 +35,8 @@
       BASE_URL: 'http://localhost:8080',
       REST_SEARCH_PATH: '/api/products/search',
       REST_INTENT_PATH: '/api/intent/intent',
+      RELAY_ALLOWED_METHODS: ['POST'],
+      RELAY_ALLOWED_ENDPOINTS: ['/api/intent/intent', '/api/products/search'],
       REST_FALLBACK_ENABLED: true,
     },
     WS: {

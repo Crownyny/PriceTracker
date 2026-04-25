@@ -11,6 +11,8 @@
   "host_permissions": [
     "http://localhost:8080/*",
     "http://localhost:8443/*",
+    "http://localhost:4200/*",
+    "http://127.0.0.1:4200/*",
     "https://localhost:8080/*",
     "https://localhost:8443/*",
     "https://www.google.com/*",
@@ -64,6 +66,16 @@
       ],
       "css": ["content.css", "content/ui/minimized-tab.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:4200/*",
+        "http://127.0.0.1:4200/*"
+      ],
+      "js": [
+        "content/dashboard-auth-bridge.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "icons": {

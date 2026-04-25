@@ -55,9 +55,9 @@ import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
           <div class="form-group">
             <label>Frecuencia:</label>
             <select [(ngModel)]="newAlert.frequency" name="frequency">
-              <option value="D1">Diaria</option>
-              <option value="W1">Semanal</option>
-              <option value="ALL">Cada cambio</option>
+              <option value="instant">Inmediata</option>
+              <option value="daily">Diaria</option>
+              <option value="weekly">Semanal</option>
             </select>
           </div>
 
@@ -146,7 +146,7 @@ export class AlertsComponent implements OnInit {
     productId: '',
     targetPrice: 0,
     currency: 'USD',
-    frequency: 'D1' as AlertFrequency,
+    frequency: 'daily' as AlertFrequency,
     notificationMethod: 'email' as const
   };
 
@@ -167,7 +167,7 @@ export class AlertsComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.alertService.getAlerts(this.selectedProductId, 'ALL').subscribe({
+    this.alertService.getAlerts(this.selectedProductId).subscribe({
       next: (response) => {
         this.alerts = response.alerts;
       },
@@ -272,7 +272,10 @@ export class AlertsComponent implements OnInit {
     const labels: { [key: string]: string } = {
       'D1': 'Diaria',
       'W1': 'Semanal',
-      'ALL': 'Cada cambio'
+      'ALL': 'Cada cambio',
+      'instant': 'Inmediata',
+      'daily': 'Diaria',
+      'weekly': 'Semanal'
     };
     return labels[frequency] || frequency;
   }
@@ -282,7 +285,7 @@ export class AlertsComponent implements OnInit {
       productId: '',
       targetPrice: 0,
       currency: 'USD',
-      frequency: 'D1',
+      frequency: 'daily',
       notificationMethod: 'email'
     };
   }
