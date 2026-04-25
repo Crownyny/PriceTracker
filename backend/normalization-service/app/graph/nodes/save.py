@@ -1,6 +1,6 @@
 """Save Node — Persistencia en PostgreSQL
 
-Persiste NormalizedProduct y añade historial de precios.
+Persiste NormalizedProduct, añade historial de precios y libera lock de scraping.
 """
 import logging
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def make_save_node(product_repo):
-    """Factoría: persiste NormalizedProduct y añade historial de precios."""
+    """Factoría: persiste NormalizedProduct, historial y metadatos de scheduling."""
 
     async def save(state: NormalizationState) -> NormalizationState:
         if state.get("error") or state.get("validation_errors"):
@@ -20,8 +20,15 @@ def make_save_node(product_repo):
 
         product = NormalizedProduct.model_validate(state["final_product"])
         job_id = state["job_id"]
+        policy_next_scrape_at = state.get("policy_next_scrape_at")
+        policy_last_scraped_at = state.get("policy_last_scraped_at")
         try:
-            product_id = await product_repo.upsert_product(product)
+            product_id = await product_repo.upsert_product(
+                product,
+                next_scrape_at=policy_next_scrape_at,
+                last_scraped_at=policy_last_scraped_at,
+                release_lock=True,
+            )
             await product_repo.append_price_history(
                 product_id=product_id,
                 price=product.price,

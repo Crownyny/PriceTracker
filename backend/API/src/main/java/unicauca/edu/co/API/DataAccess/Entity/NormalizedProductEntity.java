@@ -66,6 +66,21 @@ public class NormalizedProductEntity {
     
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "last_scraped_at")
+    private LocalDateTime lastScrapedAt;
+
+    @Column(name = "next_scrape_at")
+    private LocalDateTime nextScrapeAt;
+
+    @Column(name = "volatility_score")
+    private Double volatilityScore;
+
+    @Column(name = "alert_priority")
+    private Integer alertPriority;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
     
     @Column(name = "image_url")
     private String imageUrl;

@@ -13,6 +13,7 @@ from .llm_extractor import make_llm_extractor_node
 from .attribute_merger import attribute_merger_node
 from .semantic_normalizer import make_semantic_normalizer_node
 from .validation import validation_node
+from .calculate_policy import calculate_policy_node
 from .save import make_save_node
 from .error_end import error_end_node
 
@@ -27,6 +28,7 @@ __all__ = [
     "attribute_merger_node",
     "make_semantic_normalizer_node",
     "validation_node",
+    "calculate_policy_node",
     "make_save_node",
     "error_end_node",
 ]

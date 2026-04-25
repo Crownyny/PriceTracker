@@ -19,6 +19,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from app.config import settings
 from app.graph.pipeline import build_pipeline
 
 
@@ -597,3 +598,68 @@ async def test_pipeline_filtered_semantico_no_persiste():
     assert result.get("outcome") == "normalization_failed"
     assert result.get("final_product") is None
     assert any("Semantic filtered" in err for err in (result.get("validation_errors") or []))
+
+
+@pytest.mark.asyncio
+async def test_calculate_policy_pasa_next_scrape_y_libera_lock_en_save():
+    repo = _mock_repo()
+    pipeline = build_pipeline(product_repo=repo, llm=None)
+
+    captured_at = "2026-04-23T10:00:00+00:00"
+    state = _initial_state(
+        {
+            "raw_title": "Gildan Camiseta de Cuello Redondo para Hombre",
+            "raw_price": "COP 72,007",
+            "raw_currency": "COP",
+            "raw_availability": "available",
+            "raw_url": "https://example.com/product/policy-1",
+            "alert_priority": 3,
+            "volatility_score": 1.0,
+        }
+    )
+    state["captured_at"] = captured_at
+
+    result = await pipeline.ainvoke(state)
+
+    assert result.get("outcome") == "normalized"
+    expected_last_scraped_at = datetime.datetime.fromisoformat(captured_at)
+    expected_next_scrape_at = expected_last_scraped_at + datetime.timedelta(
+        seconds=(5 * 60) / (1 + settings.scraping_policy_alpha * 1.0)
+    )
+
+    upsert_kwargs = repo.upsert_product.await_args.kwargs
+    assert upsert_kwargs["release_lock"] is True
+    assert upsert_kwargs["last_scraped_at"] == expected_last_scraped_at
+    assert upsert_kwargs["next_scrape_at"] == expected_next_scrape_at
+
+
+@pytest.mark.asyncio
+async def test_calculate_policy_fallback_para_prioridad_y_volatilidad_invalidas():
+    repo = _mock_repo()
+    pipeline = build_pipeline(product_repo=repo, llm=None)
+
+    captured_at = "2026-04-23T10:00:00+00:00"
+    state = _initial_state(
+        {
+            "raw_title": "Hanes Camiseta algodón para hombre multipaquete",
+            "raw_price": "COP 90,404.60",
+            "raw_currency": "COP",
+            "raw_availability": "available",
+            "raw_url": "https://example.com/product/policy-2",
+            "alert_priority": "no-valida",
+            "volatility_score": -3,
+        }
+    )
+    state["captured_at"] = captured_at
+
+    result = await pipeline.ainvoke(state)
+
+    assert result.get("policy_alert_priority") == 0
+    assert result.get("policy_volatility_score") == 0.0
+
+    expected_last_scraped_at = datetime.datetime.fromisoformat(captured_at)
+    expected_next_scrape_at = expected_last_scraped_at + datetime.timedelta(days=14)
+    assert result.get("policy_next_scrape_at") == expected_next_scrape_at
+
+    upsert_kwargs = repo.upsert_product.await_args.kwargs
+    assert upsert_kwargs["next_scrape_at"] == expected_next_scrape_at
