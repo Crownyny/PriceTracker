@@ -4,22 +4,24 @@
 export interface Alert {
   id: string;
   productId: string;
-  productRef: string;
+  productRef?: string;
   userId: string;
   targetPrice: number;
-  currency: string;
+  currency?: string;
+  condition?: string;
   frequency: AlertFrequency;
   isActive: boolean;
-  notificationMethod: NotificationMethod;
-  createdAt: Date;
-  updatedAt: Date;
-  lastNotified?: Date;
+  notificationMethod?: NotificationMethod;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  lastNotified?: Date | string;
+  deletedAt?: Date | string;
 }
 
 /**
  * Frecuencia de alertas
  */
-export type AlertFrequency = '1h' | '6h' | '1d' | '1w' | '1m';
+export type AlertFrequency = 'D1' | 'W1' | 'ALL';
 
 /**
  * Método de notificación
@@ -30,11 +32,13 @@ export type NotificationMethod = 'email' | 'push' | 'both';
  * DTO para crear una alerta
  */
 export interface CreateAlertRequest {
-  productId: string;
-  targetPrice: number;
-  currency: string;
+  productId?: string;
+  targetPrice?: number;
+  currency?: string;
+  condition?: string;
+  frecuency?: AlertFrequency;
   frequency: AlertFrequency;
-  notificationMethod: NotificationMethod;
+  notificationMethod?: NotificationMethod;
 }
 
 /**
@@ -42,6 +46,8 @@ export interface CreateAlertRequest {
  */
 export interface UpdateAlertRequest {
   targetPrice?: number;
+  condition?: string;
+  frecuency?: AlertFrequency;
   frequency?: AlertFrequency;
   notificationMethod?: NotificationMethod;
 }
@@ -57,8 +63,8 @@ export interface UpdateAlertStatusRequest {
  * Respuesta de alerta
  */
 export interface AlertResponse {
-  alert: Alert;
-  message: string;
+  alert?: Alert;
+  message?: string;
 }
 
 /**
@@ -66,7 +72,7 @@ export interface AlertResponse {
  */
 export interface AlertListResponse {
   alerts: Alert[];
-  total: number;
-  page: number;
-  pageSize: number;
+  total?: number;
+  page?: number;
+  pageSize?: number;
 }

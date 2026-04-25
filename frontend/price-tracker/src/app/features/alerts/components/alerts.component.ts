@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AlertService } from '../services/alert.service';
-import { TokenService } from '../../../core/services/token.service';
 import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
 
 @Component({
@@ -15,6 +15,14 @@ import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
         <h2>Gestionar Alertas de Precios</h2>
         <p>Recibe notificaciones cuando los precios bajen</p>
       </header>
+
+      <div class="form-group filter-group">
+        <label>Producto a consultar:</label>
+        <div class="filter-row">
+          <input [(ngModel)]="selectedProductId" name="selectedProductId" placeholder="Ingresa productId" />
+          <button class="btn-secondary" (click)="loadAlerts()">Listar alertas</button>
+        </div>
+      </div>
 
       <!-- Create Alert Button -->
       <button (click)="toggleCreateForm()" class="btn-primary">
@@ -47,11 +55,9 @@ import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
           <div class="form-group">
             <label>Frecuencia:</label>
             <select [(ngModel)]="newAlert.frequency" name="frequency">
-              <option value="1h">Cada Hora</option>
-              <option value="6h">Cada 6 Horas</option>
-              <option value="1d">Diario</option>
-              <option value="1w">Semanal</option>
-              <option value="1m">Mensual</option>
+              <option value="D1">Diaria</option>
+              <option value="W1">Semanal</option>
+              <option value="ALL">Cada cambio</option>
             </select>
           </div>
 
@@ -130,6 +136,7 @@ import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
 })
 export class AlertsComponent implements OnInit {
   alerts: Alert[] = [];
+  selectedProductId: string = '';
   showCreateForm: boolean = false;
   loading: boolean = true;
   error: string | null = null;
@@ -139,45 +146,39 @@ export class AlertsComponent implements OnInit {
     productId: '',
     targetPrice: 0,
     currency: 'USD',
-    frequency: '1d' as AlertFrequency,
+    frequency: 'D1' as AlertFrequency,
     notificationMethod: 'email' as const
   };
 
   constructor(
-    private alertService: AlertService,
-    private tokenService: TokenService
+    private alertService: AlertService
   ) {}
 
   ngOnInit(): void {
-    this.loadAlerts();
+    this.loading = false;
   }
 
-  private loadAlerts(): void {
-    try {
-      const userProfile = this.tokenService.getUserProfile();
-      
-      if (!userProfile?.id) {
-        this.error = 'Usuario no autenticado';
-        this.loading = false;
-        return;
-      }
-
-      this.alertService.getAlerts(userProfile.id).subscribe({
-        next: (response) => {
-          this.alerts = response.alerts;
-        },
-        error: (err) => {
-          console.error('Error cargando alertas:', err);
-          this.error = 'Error al cargar las alertas';
-        },
-        complete: () => {
-          this.loading = false;
-        }
-      });
-    } catch (err) {
-      this.error = 'Error al cargar alertas';
-      this.loading = false;
+  loadAlerts(): void {
+    if (!this.selectedProductId.trim()) {
+      this.error = 'Debes indicar un productId para listar alertas';
+      return;
     }
+
+    this.loading = true;
+    this.error = null;
+
+    this.alertService.getAlerts(this.selectedProductId, 'ALL').subscribe({
+      next: (response) => {
+        this.alerts = response.alerts;
+      },
+      error: (err) => {
+        console.error('Error cargando alertas:', err);
+        this.error = 'Error al cargar las alertas';
+      },
+      complete: () => {
+        this.loading = false;
+      }
+    });
   }
 
   toggleCreateForm(): void {
@@ -203,12 +204,23 @@ export class AlertsComponent implements OnInit {
       notificationMethod: this.newAlert.notificationMethod
     }).subscribe({
       next: (response) => {
-        this.alerts.push(response.alert);
+        this.selectedProductId = this.newAlert.productId;
+        this.alerts.push(response.alert as Alert);
         this.resetForm();
         this.showCreateForm = false;
         this.error = null;
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 409) {
+          this.error = 'ALERT_ALREADY_EXISTS: Ya existe una alerta activa para este producto';
+          return;
+        }
+
+        if (err.status === 403) {
+          this.error = 'ALERT_LIMIT_REACHED: Alcanzaste el limite de alertas para tu plan';
+          return;
+        }
+
         this.error = 'Error al crear la alerta';
       },
       complete: () => {
@@ -218,7 +230,7 @@ export class AlertsComponent implements OnInit {
   }
 
   toggleAlertStatus(alert: Alert): void {
-    this.alertService.updateAlertStatus(alert.productId, alert.id, {
+    this.alertService.updateAlertStatus(alert.productId, {
       isActive: !alert.isActive
     }).subscribe({
       next: () => {
@@ -231,13 +243,21 @@ export class AlertsComponent implements OnInit {
   }
 
   editAlert(alert: Alert): void {
-    // Implementar edición de alerta
-    console.log('Editar alerta:', alert);
+    this.alertService.updateAlert(alert.productId, {
+      frequency: alert.frequency
+    }).subscribe({
+      next: () => {
+        this.error = null;
+      },
+      error: () => {
+        this.error = 'Error al editar la alerta';
+      }
+    });
   }
 
   deleteAlert(alertId: string, productId: string): void {
     if (confirm('¿Estás seguro de que deseas eliminar esta alerta?')) {
-      this.alertService.deleteAlert(productId, alertId).subscribe({
+      this.alertService.deleteAlert(productId).subscribe({
         next: () => {
           this.alerts = this.alerts.filter(a => a.id !== alertId);
         },
@@ -250,11 +270,9 @@ export class AlertsComponent implements OnInit {
 
   getFrequencyLabel(frequency: string): string {
     const labels: { [key: string]: string } = {
-      '1h': 'Cada Hora',
-      '6h': 'Cada 6 Horas',
-      '1d': 'Diario',
-      '1w': 'Semanal',
-      '1m': 'Mensual'
+      'D1': 'Diaria',
+      'W1': 'Semanal',
+      'ALL': 'Cada cambio'
     };
     return labels[frequency] || frequency;
   }
@@ -264,7 +282,7 @@ export class AlertsComponent implements OnInit {
       productId: '',
       targetPrice: 0,
       currency: 'USD',
-      frequency: '1d',
+      frequency: 'D1',
       notificationMethod: 'email'
     };
   }

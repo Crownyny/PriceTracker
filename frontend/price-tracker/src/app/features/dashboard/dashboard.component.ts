@@ -144,19 +144,19 @@ export class DashboardComponent implements OnInit {
         next: (response) => {
           this.savedProducts = response.products ?? [];
           this.calculateStats();
-        }
-      });
 
-      // Cargar alertas activas
-      this.alertService.getAlerts(userProfile.id).pipe(
-        timeout(10000),
-        catchError((err) => {
-          console.error('Error cargando alertas:', err);
-          return of({ alerts: [] } as any);
-        })
-      ).subscribe({
-        next: (response) => {
-          this.activeAlerts = (response.alerts ?? []).filter((a: Alert) => a.isActive);
+          const productIds = this.savedProducts.map((product) => product.id);
+          this.alertService.getAlertsForProducts(productIds).pipe(
+            timeout(10000),
+            catchError((err) => {
+              console.error('Error cargando alertas:', err);
+              return of([] as Alert[]);
+            })
+          ).subscribe({
+            next: (alerts) => {
+              this.activeAlerts = alerts.filter((alert) => alert.isActive);
+            }
+          });
         }
       });
     } catch (err) {
