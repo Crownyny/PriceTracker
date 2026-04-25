@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -71,6 +72,8 @@ public class ProductService implements IProductService {
         query.setSearch_id(var_productRef);
         return query;
     }
+
+    
 
 
 }

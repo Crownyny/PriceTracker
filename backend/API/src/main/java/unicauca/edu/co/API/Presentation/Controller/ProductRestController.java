@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/products")
@@ -30,4 +33,5 @@ public class ProductRestController {
 	public List<NormalizedProductDTO> searchProductQuery(@RequestBody QueryDTOIN query) {
 		return productService.getProductByProductRef(query);
 	}
+
 }
