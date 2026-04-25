@@ -8,45 +8,41 @@ import { Injectable } from '@angular/core';
 })
 export class TokenService {
   private readonly TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly USER_KEY = 'user_profile';
 
   /**
    * Obtiene el token de acceso
    */
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return sessionStorage.getItem(this.TOKEN_KEY);
   }
 
   /**
    * Obtiene el token de refresco
    */
   getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    return null;
   }
 
   /**
    * Guarda los tokens
    */
   setTokens(accessToken: string, refreshToken?: string): void {
-    localStorage.setItem(this.TOKEN_KEY, accessToken);
-    if (refreshToken) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
-    }
+    sessionStorage.setItem(this.TOKEN_KEY, accessToken);
   }
 
   /**
    * Guarda el perfil del usuario
    */
   setUserProfile(user: any): void {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    sessionStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
   /**
    * Obtiene el perfil del usuario
    */
   getUserProfile(): any {
-    const user = localStorage.getItem(this.USER_KEY);
+    const user = sessionStorage.getItem(this.USER_KEY);
     return user ? JSON.parse(user) : null;
   }
 
@@ -61,9 +57,8 @@ export class TokenService {
    * Limpia todos los tokens y datos de usuario
    */
   clearTokens(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    localStorage.removeItem(this.USER_KEY);
+    sessionStorage.removeItem(this.TOKEN_KEY);
+    sessionStorage.removeItem(this.USER_KEY);
   }
 
   /**
@@ -73,8 +68,10 @@ export class TokenService {
     try {
       const parts = token.split('.');
       if (parts.length !== 3) return null;
-      
-      const decoded = JSON.parse(atob(parts[1]));
+
+      const base64Url = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
+      const decoded = JSON.parse(atob(base64Url + padding));
       return decoded;
     } catch (error) {
       return null;

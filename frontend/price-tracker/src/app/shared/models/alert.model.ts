@@ -21,7 +21,7 @@ export interface Alert {
 /**
  * Frecuencia de alertas
  */
-export type AlertFrequency = 'D1' | 'W1' | 'ALL';
+export type AlertFrequency = 'instant' | 'daily' | 'weekly';
 
 /**
  * Método de notificación

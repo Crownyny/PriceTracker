@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
+import { ExtensionAuthBridgeService } from './core/services/extension-auth-bridge.service';
 
 @Component({
   selector: 'app-root',
@@ -36,7 +37,8 @@ export class App {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private extensionAuthBridge: ExtensionAuthBridgeService
   ) {}
 
   async logout(): Promise<void> {

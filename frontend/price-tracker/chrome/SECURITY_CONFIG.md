@@ -4,22 +4,22 @@
 
 Las credenciales de Firebase **ya NO están hardcodeadas** en el código. Ahora se usan de 3 formas:
 
-### 1️⃣ **Desarrollo Local** - Usando `.env`
-Para desarrollo rápido, puedes usar un archivo `.env`:
+### 1️⃣ **Desarrollo Local** - Usando `.env.local`
+Para desarrollo rápido, puedes usar un archivo `.env.local`:
 
 ```bash
-# .env (NUNCA commitar este archivo)
-FIREBASE_API_KEY=AIzaSy...
-FIREBASE_AUTH_DOMAIN=my-project.firebaseapp.com
-FIREBASE_PROJECT_ID=my-project
-FIREBASE_STORAGE_BUCKET=my-project.firebasestorage.app
-FIREBASE_MESSAGING_SENDER_ID=123456...
-FIREBASE_APP_ID=1:123456:web:abc123...
+# .env.local (NUNCA commitar este archivo)
+FIREBASE_API_KEY=your_api_key_here
+FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=123456789012
+FIREBASE_APP_ID=1:123456789012:web:your-app-id
 FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 **⚠️ MUY IMPORTANTE:**
-- El archivo `.env` está en `.gitignore` - **NUNCA se sube a Git**
+- El archivo `.env.local` está en `.gitignore` - **NUNCA se sube a Git**
 - Solo se usa en desarrollo
 - En producción, no se carga
 
@@ -56,7 +56,7 @@ Las credenciales se guardan en `chrome.storage.sync`:
 ### Opción A: Proyecto Firebase Existente
 
 1. Abre [Firebase Console](https://console.firebase.google.com)
-2. Selecciona tu proyecto: **price-tracker-60c8c**
+2. Selecciona tu proyecto Firebase
 3. Ve a **⚙️ Configuración del Proyecto**
 4. Haz clic en **Tu App** (o agrega una si no existe)
 5. Selecciona tu app web
@@ -64,12 +64,12 @@ Las credenciales se guardan en `chrome.storage.sync`:
 
 ```json
 {
-  "apiKey": "AIzaSyCpXGbxnNVXcHOtL01ImblW3e8aRdDPhq4",
-  "authDomain": "price-tracker-60c8c.firebaseapp.com",
-  "projectId": "price-tracker-60c8c",
-  "storageBucket": "price-tracker-60c8c.firebasestorage.app",
-  "messagingSenderId": "933689005506",
-  "appId": "1:933689005506:web:42b5f571a272bc0b7db25b",
+   "apiKey": "your_api_key_here",
+   "authDomain": "your-project.firebaseapp.com",
+   "projectId": "your-project-id",
+   "storageBucket": "your-project.firebasestorage.app",
+   "messagingSenderId": "123456789012",
+   "appId": "1:123456789012:web:your-app-id",
   "measurementId": "G-K6601BQ4Q4"
 }
 ```
@@ -96,7 +96,6 @@ Las credenciales se guardan en `chrome.storage.sync`:
    ↓
 2. Haces clic en el popup
    ↓
-3. La extensión detecta que NO hay configuración
    ↓
 4. Muestra formulario para ingresar credenciales
    ↓
@@ -129,28 +128,13 @@ Las credenciales se guardan en `chrome.storage.sync`:
 // Credenciales visibles en el código
 const config = {
   apiKey: "AIzaSy...",  // ❌ VISIBLE EN CÓDIGO
-  ...
 };
 ```
 
-Problemas:
-- Cualquiera puede leer el código fuente
-- Las credenciales quedan en Git
-- Si la extensión es robada, se roban las credenciales
-
 ### Ahora (✅ Seguro):
-```javascript
 // Credenciales en chrome.storage (encriptado)
 → chrome.storage.sync.get('firebaseConfig')
   ↓
-  [Encriptado por Chrome]
-  ↓
-  Retorna configuración cuando se necesita
-```
-
-Ventajas:
-- ✅ No están visibles en el código
-- ✅ Chrome las encripta automáticamente
 - ✅ Sincronizadas entre dispositivos
 - ✅ El usuario controla quién las ve
 
@@ -161,11 +145,11 @@ Ventajas:
 ### Desarrollo:
 
 ```bash
-# 1. Crear/editar .env
-cp .env.example .env
-# Editar .env con tus credenciales reales
+# 1. Crear/editar .env.local
+cp .env.example .env.local
+# Editar .env.local con tus credenciales reales
 
-# 2. La extensión carga .env al iniciar
+# 2. La extensión carga .env.local al iniciar
 # (setup-dev-config.js lo hace automáticamente)
 
 # 3. Credenciales se guardan en chrome.storage
@@ -194,9 +178,9 @@ cp .env.example .env
 4. Haz clic "Guardar"
 5. Recarga la extensión
 
-### Opción 2: Actualizar .env (Desarrollo)
+### Opción 2: Actualizar .env.local (Desarrollo)
 
-1. Edita `.env` con nuevas credenciales
+1. Edita `.env.local` con nuevas credenciales
 2. En DevTools → Console (popup):
    ```javascript
    await setupDevConfig();
@@ -240,18 +224,18 @@ chrome.storage.local.get(['firebaseAuthToken']).then(r => console.log(r));
 
 ## 📚 Archivos Relacionados
 
-- `setup-dev-config.js` - Carga credenciales de `.env` en desarrollo
+- `setup-dev-config.js` - Carga credenciales de `.env.local` en desarrollo
 - `firebase-config.js` - Lee de `chrome.storage.sync`
 - `background/firebase-popup-auth.js` - Maneja auth y storage de tokens
 - `popup-setup.js` - Formulario de configuración
-- `.env` - Template para desarrollo (debe tener credenciales reales)
+- `.env.local` - Template local con credenciales reales
 
 ---
 
 ## ✅ Checklist de Configuración
 
 - [ ] Tienes cuenta en Firebase
-- [ ] Creaste un proyecto (o usas price-tracker-60c8c)
+- [ ] Creaste un proyecto Firebase
 - [ ] Registraste una app web en el proyecto
 - [ ] Copiaste las credenciales de Firebase Console
 - [ ] Completaste el formulario en el popup

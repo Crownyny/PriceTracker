@@ -1,5 +1,5 @@
 // Background Service Worker para la extensión
-importScripts('vendor/sockjs.min.js', 'vendor/stomp.umd.min.js', 'setup-dev-config.js', 'background/ws-relay.js', 'background/api-relay-handler.js');
+importScripts('vendor/sockjs.min.js', 'vendor/stomp.umd.min.js', 'setup-dev-config.js', 'dashboard-config.js', 'background/ws-relay.js', 'background/api-relay-handler.js');
 
 console.log('Price Tracker Background Service Worker iniciado');
 
@@ -15,7 +15,7 @@ async function hydrateExtensionState() {
     extensionActive = result.extensionActive ?? false;
     console.log(`Estado inicial cargado: ${extensionActive ? 'activada' : 'desactivada'}`);
     
-    // Cargar configuración de Firebase desde .env (desarrollo)
+    // Cargar configuración de Firebase desde .env.local (desarrollo)
     await setupDevConfig();
   } catch (error) {
     console.error('Error cargando estado inicial:', error);
@@ -61,9 +61,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
 
     case 'OPEN_DASHBOARD':
-      chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html') })
-        .then(() => sendResponse({ success: true }))
-        .catch(error => sendResponse({ success: false, error: error.message }));
+      (async () => {
+        const dashboardUrl = (globalThis.PriceTracker?.dashboardConfigManager?.getDashboardEntryUrl)
+          ? await globalThis.PriceTracker.dashboardConfigManager.getDashboardEntryUrl()
+          : 'http://localhost:4200/dashboard';
+
+        return chrome.tabs.create({ url: dashboardUrl })
+          .then(() => sendResponse({ success: true }))
+          .catch(error => sendResponse({ success: false, error: error.message }));
+      })();
       return true;
       break;
       

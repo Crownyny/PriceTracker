@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { Product, ProductSearchResponse } from '../../../shared/models/product.model';
 
@@ -10,16 +12,70 @@ import { Product, ProductSearchResponse } from '../../../shared/models/product.m
   providedIn: 'root'
 })
 export class ProductsService {
+  private readonly SAVED_PRODUCTS_KEY_PREFIX = 'saved_products_';
+
   constructor(
+    private http: HttpClient,
     private httpConfig: HttpConfigService
   ) {}
+
+  private mapBackendProduct(raw: any): Product {
+    return {
+      id: raw.id,
+      productRef: raw.product_ref ?? raw.productRef ?? '',
+      name: raw.canonical_name ?? raw.name ?? '',
+      category: raw.category,
+      image: raw.image_url ?? raw.image,
+      description: raw.description,
+      currentPrice: Number(raw.price ?? raw.currentPrice ?? 0),
+      currency: raw.currency ?? 'USD',
+      availability: Boolean(raw.availability),
+      source: raw.source_name ?? raw.source
+    };
+  }
+
+  private getSavedProductsKey(userId: string): string {
+    return `${this.SAVED_PRODUCTS_KEY_PREFIX}${userId}`;
+  }
+
+  private readSavedProducts(userId: string): Product[] {
+    const raw = localStorage.getItem(this.getSavedProductsKey(userId));
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private writeSavedProducts(userId: string, products: Product[]): void {
+    localStorage.setItem(this.getSavedProductsKey(userId), JSON.stringify(products));
+  }
 
   /**
    * Busca productos por query (REST fallback)
    */
   searchProducts(query: string): Observable<ProductSearchResponse> {
-    return this.httpConfig.get<ProductSearchResponse>(
-      `/products/search?q=${encodeURIComponent(query)}`
+    const productRef = query.trim().replace(/\s+/g, '');
+    const payload = {
+      query,
+      search_id: productRef,
+      product_ref: productRef
+    };
+
+    return this.http.post<any[]>(`${this.httpConfig.getApiBaseUrl()}/products/search`, payload).pipe(
+      map((response) => {
+        const products = (response ?? []).map((item) => this.mapBackendProduct(item));
+        return {
+          productRef,
+          products,
+          totalResults: products.length
+        };
+      })
     );
   }
 
@@ -41,9 +97,15 @@ export class ProductsService {
    * Obtiene productos guardados del usuario
    */
   getSavedProducts(userId: string, page: number = 0, pageSize: number = 10): Observable<ProductSearchResponse> {
-    return this.httpConfig.get<ProductSearchResponse>(
-      `/users/${userId}/saved-products?page=${page}&pageSize=${pageSize}`
-    );
+    const products = this.readSavedProducts(userId);
+    const start = page * pageSize;
+    const paged = products.slice(start, start + pageSize);
+
+    return of({
+      productRef: '',
+      products: paged,
+      totalResults: products.length
+    });
   }
 
   /**

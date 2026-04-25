@@ -4,7 +4,7 @@
 Las credenciales de Firebase estaban **hardcodeadas** en el código fuente:
 - `firebase-config.js` - Credenciales visibles
 - `background/firebase-popup-auth.js` - Credenciales visibles
-- Fichero `.env` con datos reales subido a Git
+- Fichero `.env.local` con datos reales solo en local
 
 ## ✅ Solución Implementada
 
@@ -19,14 +19,14 @@ Las credenciales de Firebase estaban **hardcodeadas** en el código fuente:
 
 ### 3. **Configuración flexible**
 
-#### Opción A: Desarrollo con `.env`
+#### Opción A: Desarrollo con `.env.local`
 ```bash
-# Crea .env con tus credenciales reales
-FIREBASE_API_KEY=AIzaSy...
-FIREBASE_AUTH_DOMAIN=project.firebaseapp.com
+# Crea .env.local con tus credenciales reales
+FIREBASE_API_KEY=your_api_key_here
+FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 ...
 ```
-- Archivo `.env` está en `.gitignore` - **NUNCA se sube a Git**
+- Archivo `.env.local` está en `.gitignore` - **NUNCA se sube a Git**
 - Setup script `setup-dev-config.js` lo carga automáticamente
 - Al cerrar Dev Tools, las credenciales se guardan en `chrome.storage`
 
@@ -72,8 +72,8 @@ popup-setup.js
 - 🔄 `popup.html` - Carga `popup-setup.js`
 
 ### Configuración:
-- 🔄 `.env.example` - Template sin datos reales (NO está en .gitignore)
-- 🔄 `.gitignore` - Excluye `frontend/price-traker/chrome/.env`
+- 🔄 `.env.example` - Template sin datos reales
+- 🔄 `.gitignore` - Excluye `frontend/price-traker/chrome/.env.local` y `public/app-config.json`
 
 ## 🎯 Flujo de Usuario
 
@@ -127,15 +127,15 @@ FIREBASE_API_KEY=your_api_key_here  # Template sin datos
 ### Si vas a hacer desarrollo:
 
 ```bash
-# 1. Crea tu .env personal (NO lo subas)
+# 1. Crea tu .env.local personal (NO lo subas)
 cp frontend/price-traker/chrome/.env.example \
-   frontend/price-traker/chrome/.env
+  frontend/price-traker/chrome/.env.local
 
-# 2. Edita .env con tus credenciales REALES de Firebase
+# 2. Edita .env.local con tus credenciales REALES de Firebase
 # (obtén de https://console.firebase.google.com)
 
 # 3. La extensión cargará automáticamente las credenciales
-# desde .env al iniciar el background script
+# desde .env.local al iniciar el background script
 
 # 4. Recarga la extensión en chrome://extensions si necesario
 ```

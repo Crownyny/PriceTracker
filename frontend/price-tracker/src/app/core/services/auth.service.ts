@@ -11,7 +11,8 @@ import {
 import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
 import { AuthCredentials, AuthResponse } from '../../shared/models/auth.model';
 import { TokenService } from './token.service';
-import { firebaseConfig } from '../config/firebase.config';
+import { RuntimeConfigService } from '../config/runtime-config.service';
+import { ExtensionAuthBridgeService } from './extension-auth-bridge.service';
 
 @Injectable({
   providedIn: 'root'
@@ -20,7 +21,12 @@ export class AuthService {
   private readonly app: FirebaseApp;
   private readonly auth: Auth;
 
-  constructor(private tokenService: TokenService) {
+  constructor(
+    private tokenService: TokenService,
+    private runtimeConfig: RuntimeConfigService,
+    private extensionAuthBridge: ExtensionAuthBridgeService
+  ) {
+    const firebaseConfig = this.runtimeConfig.getFirebaseConfig();
     this.app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     this.auth = getAuth(this.app);
 
@@ -32,8 +38,9 @@ export class AuthService {
       }
 
       const token = await user.getIdToken();
-      this.tokenService.setTokens(token, user.refreshToken);
+      this.tokenService.setTokens(token);
       this.tokenService.setUserProfile(this.mapUserProfile(user));
+      this.extensionAuthBridge.publishAuthUpdate(token, user.email ?? undefined);
     });
   }
 
@@ -43,8 +50,9 @@ export class AuthService {
         from(credential.user.getIdToken()).pipe(
           map((token) => {
             const response = this.toAuthResponse(credential.user, token);
-            this.tokenService.setTokens(response.accessToken, response.refreshToken);
+            this.tokenService.setTokens(response.accessToken);
             this.tokenService.setUserProfile(response.user);
+            this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
             return response;
           })
         )
@@ -57,6 +65,7 @@ export class AuthService {
       await signOut(this.auth);
     } finally {
       this.tokenService.clearTokens();
+      this.extensionAuthBridge.publishLogout();
     }
   }
 

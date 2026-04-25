@@ -69,9 +69,12 @@ toggleCheckbox.addEventListener('change', (event) => {
 });
 
 // Event listener para abrir el dashboard
-openDashboardButton.addEventListener('click', () => {
-  // Abrir el dashboard en una nueva pestaña
-  chrome.tabs.create({ 
-    url: chrome.runtime.getURL('dashboard.html')
+openDashboardButton.addEventListener('click', async () => {
+  const dashboardUrl = (window.PriceTracker?.dashboardConfigManager?.getDashboardEntryUrl)
+    ? await window.PriceTracker.dashboardConfigManager.getDashboardEntryUrl()
+    : 'http://localhost:4200/dashboard';
+
+  chrome.tabs.create({
+    url: dashboardUrl
   });
 });
