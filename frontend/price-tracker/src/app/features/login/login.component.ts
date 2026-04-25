@@ -15,7 +15,7 @@ import { AuthResponse } from '../../shared/models/auth.model';
     <section class="login-shell">
       <article class="login-card">
         <h2>Iniciar sesion</h2>
-        <p>Accede para usar tu dashboard de seguimiento de precios.</p>
+        <p>Accede con Firebase para usar tu dashboard de seguimiento de precios.</p>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
           <label>
@@ -34,7 +34,7 @@ import { AuthResponse } from '../../shared/models/auth.model';
         </form>
 
         <p *ngIf="error" class="error">{{ error }}</p>
-        <p class="hint">Si aun no tienes backend de auth, usa acceso demo:</p>
+        <p class="hint">Si aun no tienes usuarios en Firebase, usa acceso demo:</p>
         <button class="secondary" (click)="loginDemo()" [disabled]="loading">Entrar en modo demo</button>
 
         <p class="back-link"><a routerLink="/dashboard">Ir al dashboard</a></p>
@@ -152,7 +152,7 @@ export class LoginComponent {
 
     this.authService.login(this.form.getRawValue() as { email: string; password: string }).pipe(
       catchError((err) => {
-        this.error = 'No fue posible iniciar sesion con el backend. Puedes usar modo demo.';
+        this.error = 'No fue posible iniciar sesion con Firebase. Verifica email/password o usa modo demo.';
         console.error('Login error:', err);
         return of(null);
       }),

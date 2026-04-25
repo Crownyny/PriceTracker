@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { TokenService } from './core/services/token.service';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -35,12 +35,12 @@ export class App {
   protected readonly title = 'price-traker';
 
   constructor(
-    private tokenService: TokenService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
-  logout(): void {
-    this.tokenService.clearTokens();
+  async logout(): Promise<void> {
+    await this.authService.logout();
     this.router.navigate(['/login']);
   }
 }

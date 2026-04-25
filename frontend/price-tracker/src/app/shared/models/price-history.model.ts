@@ -2,11 +2,11 @@
  * Price History Model - Registro histórico de precios
  */
 export interface PriceHistoryPoint {
-  date: Date;
+  updatedAt: Date | string;
   price: number;
   currency: string;
   availability: boolean;
-  source: string;
+  source?: string;
 }
 
 /**
@@ -15,6 +15,7 @@ export interface PriceHistoryPoint {
 export interface PriceHistoryResponse {
   productRef: string;
   productId: string;
+  category: PriceHistoryRange;
   history: PriceHistoryPoint[];
 }
 
@@ -35,7 +36,7 @@ export interface PriceTrendAnalysis {
 /**
  * Filtro para obtener historial de precios
  */
-export type PriceHistoryRange = 'W1' | 'W2' | 'M1' | 'M3' | 'M6' | 'Y1' | 'ALL';
+export type PriceHistoryRange = 'W1' | 'W3' | 'W12' | 'ALL';
 
 export interface PriceHistoryFilter {
   range: PriceHistoryRange;

@@ -23,9 +23,9 @@ export class PriceHistoryService {
   /**
    * Obtiene el historial de precios de un producto
    * @param productId - ID del producto
-   * @param range - Rango de tiempo (W1, W2, M1, M3, M6, Y1, ALL)
+    * @param range - Rango de tiempo (W1, W3, W12, ALL)
    */
-  getPriceHistory(productId: string, range: PriceHistoryRange = 'M1'): Observable<PriceHistoryResponse> {
+    getPriceHistory(productId: string, range: PriceHistoryRange = 'W1'): Observable<PriceHistoryResponse> {
     return this.httpConfig.get<PriceHistoryResponse>(
       `/products/${productId}/priceHistory?range=${range}`
     );
@@ -41,7 +41,7 @@ export class PriceHistoryService {
   /**
    * Obtiene el historial de precios para múltiples productos
    */
-  getMultipleProductHistory(productIds: string[], range: PriceHistoryRange = 'M1'): Observable<PriceHistoryResponse[]> {
+  getMultipleProductHistory(productIds: string[], range: PriceHistoryRange = 'W1'): Observable<PriceHistoryResponse[]> {
     const params = {
       productIds: productIds.join(','),
       range

@@ -34,11 +34,8 @@ import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/
           <label>Rango:</label>
           <select [(ngModel)]="selectedRange" (change)="onRangeChange()">
             <option value="W1">Última Semana</option>
-            <option value="W2">2 Semanas</option>
-            <option value="M1">Último Mes</option>
-            <option value="M3">3 Meses</option>
-            <option value="M6">6 Meses</option>
-            <option value="Y1">Último Año</option>
+            <option value="W3">3 Semanas</option>
+            <option value="W12">3 Meses</option>
             <option value="ALL">Todo el Historial</option>
           </select>
         </div>
@@ -78,9 +75,9 @@ import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/
             </thead>
             <tbody>
               <tr *ngFor="let point of priceData.history.slice(0, 20)">
-                <td>{{ point.date | date: 'short' }}</td>
+                <td>{{ point.updatedAt | date: 'short' }}</td>
                 <td>{{ point.price | currency }}</td>
-                <td>{{ point.source }}</td>
+                <td>{{ point.source || '-' }}</td>
                 <td>
                   <span [class.available]="point.availability" [class.unavailable]="!point.availability">
                     {{ point.availability ? 'Disponible' : 'No disponible' }}
@@ -112,7 +109,7 @@ import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/
 })
 export class PriceHistoryComponent implements OnInit {
   searchQuery: string = '';
-  selectedRange: PriceHistoryRange = 'M1';
+  selectedRange: PriceHistoryRange = 'W1';
   priceData: PriceHistoryResponse | null = null;
   loading: boolean = false;
   error: string | null = null;
