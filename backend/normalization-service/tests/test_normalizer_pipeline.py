@@ -142,6 +142,24 @@ async def test_precio_formato_europeo(pipeline):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4b – Precio: float serializado con .0 en moneda COP
+# ─────────────────────────────────────────────────────────────────────────────
+@pytest.mark.asyncio
+async def test_precio_cop_float_con_cero_decimal(pipeline):
+    """'1499900.0' debe parsearse como 1499900.0 y no como 14999000.0."""
+    state = _initial_state({
+        "raw_title": "Samsung Galaxy A56 5G",
+        "raw_price": "1499900.0",
+        "raw_currency": "COP",
+        "raw_availability": "available",
+        "raw_url": "https://www.olimpica.com/samsung-galaxy-a56-5g/p",
+    })
+    result = await pipeline.ainvoke(state)
+
+    assert result["final_product"]["price"] == pytest.approx(1499900.0)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 5 – Precio nulo produce fallo de validación
 # ─────────────────────────────────────────────────────────────────────────────
 @pytest.mark.asyncio

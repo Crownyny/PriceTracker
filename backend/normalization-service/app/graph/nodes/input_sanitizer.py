@@ -159,13 +159,13 @@ def _parse_price_full(raw_price: str, context_currency: str = None) -> tuple[flo
     elif dot_count > 0:
         if is_thousands_dot:
             # En COP/CLP, el punto es casi siempre miles.
-            # Excepción rara: separar centavos con punto (1.500 bolivares fuertes?)
-            # Asumimos miles siempre si hay más de un punto o si los dígitos finales son 3
+            # Si hay un solo punto y la cola tiene 1-2 dígitos, suele ser un float
+            # serializado por el scraper (por ejemplo "1499900.0"), no un separador de miles.
             parts = cleaned.split(".")
-            # Si el último grupo tiene 3 dígitos, es muy probable que sea miles (1.234)
-            # Si tiene 2 dígitos (1.50), es ambiguo, pero en COP no se usan centavos así comúnmente en e-commerce
-            # Mejor asumir miles para COP.
-            cleaned = cleaned.replace(".", "")
+            if dot_count == 1 and len(parts[-1]) <= 2:
+                pass
+            else:
+                cleaned = cleaned.replace(".", "")
         else:
             # En USD, el punto es decimal si solo hay uno (10.50)
             # Si hay más de uno (1.200.000) es miles estilo europeo
