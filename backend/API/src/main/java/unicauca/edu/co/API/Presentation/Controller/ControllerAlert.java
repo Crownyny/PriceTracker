@@ -33,7 +33,7 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
  * Proporciona endpoints para crear, consultar, actualizar y eliminar alertas.
  */
 @RestController
-@RequestMapping("/api/alerts")
+@RequestMapping("/api")
 public class ControllerAlert {
 
     private final IAlertService alertService;
@@ -67,7 +67,7 @@ public class ControllerAlert {
      * @param alertDTO Datos de la alerta a crear
      * @return ResponseEntity con el AlertDTO creado y estado 201 (Created)
      */
-    @PostMapping("/{productId}")
+    @PostMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> createAlert( 
         @PathVariable  @NotBlank String productId,
@@ -86,7 +86,7 @@ public class ControllerAlert {
      * @param productId ID del producto asociado a la alerta
      * @return ResponseEntity con el AlertDTO si existe, estado 200 (OK) o 404 (Not Found)
      */
-    @GetMapping("/{productId}")
+    @GetMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> getAlertById(@PathVariable @NotBlank String productId) {
         UUID userId = getUserIdFromContext();
@@ -119,7 +119,7 @@ public class ControllerAlert {
      * @param alertDTO Datos actualizados de la alerta
      * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
      */
-    @PutMapping("/{productId}")
+    @PutMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlert(
             @PathVariable @NotBlank String productId,
@@ -141,7 +141,7 @@ public class ControllerAlert {
      * @param isActive Nuevo estado de la alerta
      * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
      */
-    @PatchMapping("/{productId}/status")
+    @PatchMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlertStatus(
             @PathVariable @NotBlank String productId,
