@@ -17,7 +17,7 @@ import uuid
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from typing import Optional, Tuple
 
-from sqlalchemy import JSON, ForeignKey, Index, String, text
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Index, Integer, String, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -95,6 +95,15 @@ class NormalizedProductORM(Base):
     category: Mapped[str]
     availability: Mapped[bool]
     updated_at: Mapped[datetime.datetime]
+    last_scraped_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+    next_scrape_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
+    volatility_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0, server_default=text("0"))
+    alert_priority: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    locked_until: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
     image_url: Mapped[Optional[str]]
     description: Mapped[Optional[str]]
     extra: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -187,49 +196,102 @@ class ProductRepository:
                     """
                 )
             )
+            await conn.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_producto_queue
+                        ON normalized_products (alert_priority DESC, volatility_score DESC, next_scrape_at ASC)
+                        WHERE locked_until IS NULL
+                    """
+                )
+            )
+            await conn.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_normalized_products_locked_until
+                        ON normalized_products (locked_until)
+                    """
+                )
+            )
         logger.info("Tablas PostgreSQL inicializadas.")
 
-    async def upsert_product(self, product: NormalizedProduct) -> str:
+    async def upsert_product(
+        self,
+        product: NormalizedProduct,
+        *,
+        next_scrape_at: Optional[datetime.datetime] = None,
+        last_scraped_at: Optional[datetime.datetime] = None,
+        release_lock: bool = False,
+    ) -> str:
         """INSERT … ON CONFLICT DO UPDATE por source_url. Retorna el product_id."""
         if not product.source_url or not product.source_url.strip():
             raise ValueError("source_url es obligatoria para persistir productos normalizados")
 
         canonical_url = _canonicalize_source_url(product.source_url)
         product_id = _build_product_id(canonical_url)
-        updated_at = product.updated_at.replace(tzinfo=None) if product.updated_at.tzinfo else product.updated_at
+
+        def _to_naive(value: Optional[datetime.datetime]) -> Optional[datetime.datetime]:
+            if value is None:
+                return None
+            return value.replace(tzinfo=None) if value.tzinfo else value
+
+        updated_at = _to_naive(product.updated_at)
+
+        persisted_last_scraped_at = _to_naive(last_scraped_at)
+        if persisted_last_scraped_at is None and product.scraped_at is not None:
+            persisted_last_scraped_at = _to_naive(product.scraped_at)
+        if persisted_last_scraped_at is None:
+            persisted_last_scraped_at = updated_at
+
+        persisted_next_scrape_at = _to_naive(next_scrape_at)
+
+        insert_values = {
+            "id": product_id,
+            "product_ref": product.product_ref,
+            "source_name": product.source_name,
+            "source_url": canonical_url,
+            "canonical_name": product.canonical_name,
+            "price": product.price,
+            "currency": product.currency,
+            "category": product.category,
+            "availability": product.availability,
+            "updated_at": updated_at,
+            "last_scraped_at": persisted_last_scraped_at,
+            "image_url": product.image_url,
+            "description": product.description,
+            "extra": product.extra,
+        }
+        if persisted_next_scrape_at is not None:
+            insert_values["next_scrape_at"] = persisted_next_scrape_at
+        if release_lock:
+            insert_values["locked_until"] = None
+
+        update_values = {
+            "product_ref": product.product_ref,
+            "source_name": product.source_name,
+            "canonical_name": product.canonical_name,
+            "price": product.price,
+            "currency": product.currency,
+            "category": product.category,
+            "availability": product.availability,
+            "updated_at": updated_at,
+            "last_scraped_at": persisted_last_scraped_at,
+            "image_url": product.image_url,
+            "description": product.description,
+            "extra": product.extra,
+        }
+        if persisted_next_scrape_at is not None:
+            update_values["next_scrape_at"] = persisted_next_scrape_at
+        if release_lock:
+            update_values["locked_until"] = None
+
         async with self._session_factory() as session:
             stmt = (
                 pg_insert(NormalizedProductORM)
-                .values(
-                    id=product_id,
-                    product_ref=product.product_ref,
-                    source_name=product.source_name,
-                    source_url=canonical_url,
-                    canonical_name=product.canonical_name,
-                    price=product.price,
-                    currency=product.currency,
-                    category=product.category,
-                    availability=product.availability,
-                    updated_at=updated_at,
-                    image_url=product.image_url,
-                    description=product.description,
-                    extra=product.extra,
-                )
+                .values(**insert_values)
                 .on_conflict_do_update(
                     index_elements=["source_url"],
-                    set_={
-                        "product_ref": product.product_ref,
-                        "source_name": product.source_name,
-                        "canonical_name": product.canonical_name,
-                        "price": product.price,
-                        "currency": product.currency,
-                        "category": product.category,
-                        "availability": product.availability,
-                        "updated_at": updated_at,
-                        "image_url": product.image_url,
-                        "description": product.description,
-                        "extra": product.extra,
-                    },
+                    set_=update_values,
                 )
                 .returning(NormalizedProductORM.id)
             )
@@ -237,12 +299,14 @@ class ProductRepository:
             await session.commit()
             persisted_id = result.scalar_one()
         logger.info(
-            "Producto upserted: %s / %s (id=%s, %.2f %s)",
+            "Producto upserted: %s / %s (id=%s, %.2f %s, next_scrape_at=%s, lock_released=%s)",
             product.source_name,
             product.product_ref,
             persisted_id,
             product.price,
             product.currency,
+            persisted_next_scrape_at,
+            release_lock,
         )
         return persisted_id
 

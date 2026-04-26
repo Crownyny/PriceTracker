@@ -27,6 +27,27 @@ Keep business logic independent from persistence details.
 - `DataAccess/Entity` and `DataAccess/Repository`
   - Persistence details only.
 
+## Scraping Queue Metadata (Data Layer)
+
+`normalized_products` now acts as a materialized scraping queue with these columns:
+
+- `last_scraped_at`: last successful scrape timestamp.
+- `next_scrape_at`: next scheduled scrape timestamp.
+- `volatility_score`: dynamic volatility signal used to adjust cadence.
+- `alert_priority`: business priority (`0..3`) used for deterministic ordering.
+- `locked_until`: short lock window to prevent duplicate parallel processing.
+
+Priority selection order for eligible rows:
+
+- `alert_priority DESC`
+- `volatility_score DESC`
+- `next_scrape_at ASC`
+
+Indexing note:
+
+- The queue index is implemented as a partial index for unlocked rows (`locked_until IS NULL`) plus a dedicated index on `locked_until`.
+- This keeps queue reads fast while still allowing efficient evaluation of lock expiration in runtime queries.
+
 ## User Module Applied Pattern
 - Domain model:
   - `Domain/Model/User`

@@ -1,5 +1,5 @@
 """graph/pipeline.py
-Construcción y compilación del grafo LangGraph de normalización (v2 — 9 nodos).
+Construcción y compilación del grafo LangGraph de normalización (v3 — 10 nodos).
 
 Topología:
 
@@ -15,7 +15,7 @@ Topología:
                                                                            └─► semantic_normalizer
                                                                                 └─► validation
                                                                                      ├─(error)──► error_end ──► END
-                                                                                     └─(ok)──► save ──► END
+                                                                                    └─(ok)──► calculate_policy ──► save ──► END
 """
 import logging
 
@@ -32,6 +32,7 @@ from .nodes import (
     attribute_merger_node,
     make_semantic_normalizer_node,
     validation_node,
+    calculate_policy_node,
     make_save_node,
     error_end_node,
 )
@@ -61,14 +62,14 @@ def _route_after_validation(state: NormalizationState) -> str:
     """Desvía a error_end si hay errores de validación."""
     if state.get("error") or state.get("validation_errors"):
         return "error_end"
-    return "save"
+    return "calculate_policy"
 
 
 # ── Factory del pipeline ──────────────────────────────────────────────────────
 
 def build_pipeline(product_repo, llm=None, enable_enricher: bool = False, semantic_validator=None):
     """
-    Construye y compila el grafo de normalización de 9 nodos.
+    Construye y compila el grafo de normalización de 10 nodos.
 
     Args:
         product_repo:    ProductRepository — escritura de productos normalizados.
@@ -93,6 +94,7 @@ def build_pipeline(product_repo, llm=None, enable_enricher: bool = False, semant
     graph.add_node("attribute_merger", attribute_merger_node)
     graph.add_node("semantic_normalizer", make_semantic_normalizer_node(active_llm))
     graph.add_node("validation", validation_node)
+    graph.add_node("calculate_policy", calculate_policy_node)
     graph.add_node("save", make_save_node(product_repo))
     graph.add_node("error_end", error_end_node)
 
@@ -126,15 +128,17 @@ def build_pipeline(product_repo, llm=None, enable_enricher: bool = False, semant
     graph.add_conditional_edges(
         "validation",
         _route_after_validation,
-        {"error_end": "error_end", "save": "save"},
+        {"error_end": "error_end", "calculate_policy": "calculate_policy"},
     )
+
+    graph.add_edge("calculate_policy", "save")
 
     graph.add_edge("save", END)
     graph.add_edge("error_end", END)
 
     compiled = graph.compile()
     logger.info(
-        "Pipeline LangGraph v2 compiled (LLM enrichment: %s)",
+        "Pipeline LangGraph v3 compiled (LLM enrichment: %s)",
         active_llm is not None,
     )
     return compiled

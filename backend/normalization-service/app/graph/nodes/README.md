@@ -1,7 +1,7 @@
 # Nodos del Pipeline de Normalización
 
 ```
-START → 1 → 2 → 3 → 4 → 5 ─┬─(score ≥ 3)──► 8 → 9 → save → END
+START → 1 → 2 → 3 → 4 → 5 ─┬─(score ≥ 3)──► 8 → 9 → 10 → save → END
                               └─(score < 3)──► 6 → 7 → 8 ↗
                               
 Cualquier error ──► error_end → END
@@ -20,12 +20,13 @@ Cualquier error ──► error_end → END
 | 7 | `attribute_merger.py` | Attribute Merger | Fusiona heurísticas + LLM. LLM tiene prioridad en conflictos |
 | 8 | `semantic_normalizer.py` | Product Semantic Normalizer | Genera `canonical_name` y representación canónica. Usa LLM solo en ruta de baja confianza; determinista si confianza alta |
 | 9 | `validation.py` | Validation + Confidence | Valida coherencia (storage ≥ memory), asegura brand/model en canonical_name, calcula confianza final (high/medium/low) |
+| 10 | `calculate_policy.py` | Calculate Policy | Calcula `next_scrape_at` usando `alert_priority`, `volatility_score` y `alpha` |
 
 ## Auxiliares
 
 | Archivo | Descripción |
 |---------|-------------|
-| `save.py` | Persiste `NormalizedProduct` en PostgreSQL + historial de precios |
+| `save.py` | Persiste `NormalizedProduct` en PostgreSQL + historial de precios + libera `locked_until` |
 | `error_end.py` | Nodo terminal: registra error y cierra el pipeline |
 | `constants.py` | Diccionarios compartidos (colores, condiciones, monedas, tokens no-modelo) |
 | `helpers.py` | `heuristic_to_merged()` — convierte candidatos heurísticos al formato fusionado |

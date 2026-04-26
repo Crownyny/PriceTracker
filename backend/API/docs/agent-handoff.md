@@ -9,6 +9,7 @@ Provide enough context so another agent or developer can continue work without r
 2. HTTP layer is globally `permitAll`; protection is method-level with `@PreAuthorize`.
 3. Services should use domain models, not JPA entities directly.
 4. Data access for business services should go through output ports and adapters.
+5. Product scraping orchestration runs from a scheduler daemon using queue metadata in `normalized_products`.
 
 ## Mandatory Rule: Service Boundary
 
@@ -17,6 +18,18 @@ Do not import `DataAccess/Entity/*` inside `Services/*` for new/refactored modul
 Use this direction:
 
 `Presentation -> Services/Interfaces/IN -> Services/IN -> Services/Interfaces/OUT -> DataAccess/Adapter -> DataAccess/Repository`
+
+## Product Scraping Daemon Components
+
+- Inbound contract:
+  - `src/main/java/unicauca/edu/co/API/Services/Interfaces/IN/IProductScrapingDaemonService.java`
+- Service implementation:
+  - `src/main/java/unicauca/edu/co/API/Services/IN/ProductScrapingDaemonService.java`
+- Outbound ports:
+  - `src/main/java/unicauca/edu/co/API/Services/Interfaces/OUT/IProductScrapingQueuePort.java`
+  - `src/main/java/unicauca/edu/co/API/Services/Interfaces/OUT/IScrapingService.java`
+- Data adapter:
+  - `src/main/java/unicauca/edu/co/API/DataAccess/Adapter/ProductScrapingQueueAdapter.java`
 
 ## Reference Implementation (User Module)
 

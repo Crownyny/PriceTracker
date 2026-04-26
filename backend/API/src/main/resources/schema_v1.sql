@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS "user"(
     "id" UUID NOT NULL,
+    "uuid_firebase" VARCHAR(255) NOT NULL, -- Esta es la línea que falta
     "email" VARCHAR(255) NOT NULL,
     "image_profile" VARCHAR(255) NOT NULL DEFAULT '',
     "role" VARCHAR(255) CHECK ("role" IN('registered', 'premium')) NOT NULL DEFAULT 'registered',
@@ -31,6 +32,11 @@ CREATE TABLE IF NOT EXISTS "normalized_products"(
     "category" VARCHAR(255) NOT NULL,
     "availability" BOOLEAN NOT NULL,
     "updated_at" TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL,
+    "last_scraped_at" TIMESTAMP(0) WITHOUT TIME ZONE NULL,
+    "next_scrape_at" TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "volatility_score" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "alert_priority" INTEGER NOT NULL DEFAULT 0,
+    "locked_until" TIMESTAMP(0) WITHOUT TIME ZONE NULL,
     "image_url" TEXT NULL,
     "description" TEXT NULL,
     "extra" JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -39,6 +45,20 @@ CREATE TABLE IF NOT EXISTS "normalized_products"(
 
 CREATE UNIQUE INDEX IF NOT EXISTS "uq_product_source_url"
     ON "normalized_products" ("source_url");
+
+ALTER TABLE "normalized_products"
+    ADD COLUMN IF NOT EXISTS "last_scraped_at" TIMESTAMP(0) WITHOUT TIME ZONE,
+    ADD COLUMN IF NOT EXISTS "next_scrape_at" TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    ADD COLUMN IF NOT EXISTS "volatility_score" DOUBLE PRECISION DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "alert_priority" INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "locked_until" TIMESTAMP(0) WITHOUT TIME ZONE;
+
+CREATE INDEX IF NOT EXISTS "idx_producto_queue"
+    ON "normalized_products" ("alert_priority" DESC, "volatility_score" DESC, "next_scrape_at" ASC)
+    WHERE "locked_until" IS NULL;
+
+CREATE INDEX IF NOT EXISTS "ix_normalized_products_locked_until"
+    ON "normalized_products" ("locked_until");
 
 CREATE TABLE IF NOT EXISTS "price_history"(
     "id" SERIAL NOT NULL,

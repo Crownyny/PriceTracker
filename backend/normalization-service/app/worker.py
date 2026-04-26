@@ -11,7 +11,8 @@ Flujo por mensaje recibido:
            b. clean      → aplica reglas deterministas (DefaultNormalizer)
            c. [enrich]   → enriquecimiento LLM opcional
            d. validate   → valida reglas de negocio (ProductValidator)
-           e. save       → upsert en PostgreSQL + historial de precios
+              e. calculate_policy → calcula next_scrape_at dinamico
+              f. save       → upsert en PostgreSQL + historial de precios + unlock
         5. Publica NormalizedEventMessage con el resultado.
         6. Incrementa el contador de jobs completados en PostgreSQL.
         7. Si completed == expected: publica SearchNormalizedMessage (cierre).
@@ -305,6 +306,11 @@ class NormalizerWorker(BaseConsumer):
                 "normalized_product": None,
                 "final_confidence": None,
                 "final_product": None,
+                "policy_alert_priority": None,
+                "policy_volatility_score": None,
+                "policy_alpha": None,
+                "policy_last_scraped_at": None,
+                "policy_next_scrape_at": None,
                 "validation_errors": [],
                 "error": None,
                 "outcome": ScrapingState.NORMALIZATION_FAILED,

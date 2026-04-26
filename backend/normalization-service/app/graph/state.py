@@ -1,15 +1,16 @@
 """graph/state.py
-Estado del grafo LangGraph de normalización (v2 — pipeline de 9 nodos).
+Estado del grafo LangGraph de normalización (v3 — pipeline de 10 nodos).
 
 Flujo:
   input_sanitizer → field_standardizer → text_canonicalizer
   → attribute_extractor → quality_evaluator
   → [llm_extractor → attribute_merger] (solo si confianza baja)
-  → semantic_normalizer → validation → save → END
+  → semantic_normalizer → validation → calculate_policy → save → END
 
 Cada nodo retorna un dict con SOLO los campos que modifica;
 LangGraph hace el merge con el estado anterior.
 """
+import datetime
 from typing import Optional
 from typing_extensions import TypedDict
 
@@ -61,6 +62,13 @@ class NormalizationState(TypedDict):
     final_confidence: Optional[str]          # "high" | "medium" | "low"
     final_product: Optional[dict]            # NormalizedProduct.model_dump() validado
     validation_errors: list                  # Errores de validación de negocio
+
+    # ── Node 10: Calculate Policy ─────────────────────────────────────────────
+    policy_alert_priority: Optional[int]     # Prioridad validada (0..3)
+    policy_volatility_score: Optional[float] # Volatilidad validada (>= 0)
+    policy_alpha: Optional[float]            # Alpha aplicado en la formula
+    policy_last_scraped_at: Optional[datetime.datetime]
+    policy_next_scrape_at: Optional[datetime.datetime]
 
     # ── Control de flujo ──────────────────────────────────────────────────────
     error: Optional[str]                     # Error fatal → error_end
