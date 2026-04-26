@@ -29,6 +29,7 @@ public class NormalizedEventDTO {
      * @param errorMessage: Mensaje de error si ocurrió alguno.
      * @param searchId: Identificador de la búsqueda del producto.
      * @param normalizedProduct: Objeto que contiene toda la información del producto normalizado.
+     * @param is_update: Indica si el evento corresponde a una actualización de un producto ya existente.
      */
      @JsonProperty("job_id")
     private String jobId;
@@ -55,6 +56,9 @@ public class NormalizedEventDTO {
 
     @JsonProperty("normalized_product")
     private NormalizedProductDTO normalizedProduct;
+
+    @JsonProperty("is_update")
+    private boolean update;
 
     public NormalizedEventDTO() {
     }

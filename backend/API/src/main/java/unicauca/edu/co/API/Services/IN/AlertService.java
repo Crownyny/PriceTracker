@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.google.firebase.database.annotations.NotNull;
+
 import jakarta.persistence.EntityNotFoundException;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity;
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
@@ -25,6 +27,7 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
  */
 @Service
 public class AlertService implements IAlertService {
+    @NotNull
     private final AlertRepository alertRepository;
     private final AlertMapper alertMapper;
     private final ProductRepository productRepository;
@@ -44,6 +47,10 @@ public class AlertService implements IAlertService {
         AlertEntity alertEntity = new AlertEntity();
         NormalizedProductEntity productEntity = productRepository.findById(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + productId));
+        boolean exists = alertRepository.existsByUserIdAndProductId(userId, productId);
+        if (exists) {
+            throw new IllegalStateException("Alert already exists for this product and user");
+        }
         alertEntity = buildAlertEntity(productEntity, frequency, productId, userId);
         AlertEntity savedAlert = alertRepository.save(alertEntity);
         return alertMapper.toDTO(savedAlert);

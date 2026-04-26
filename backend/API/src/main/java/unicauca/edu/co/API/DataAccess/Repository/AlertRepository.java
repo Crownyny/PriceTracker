@@ -51,4 +51,12 @@ public interface AlertRepository extends JpaRepository<AlertEntity, UUID> {
      * @return Lista de alertas del usuario
      */
     List<AlertEntity> findByUserIdOrderByCreateAtDesc(UUID userId);
+
+    /**
+     * Verifica si existe una alerta para un producto específico y un usuario específico.
+     * @param userId ID del usuario propietario
+     * @param productId ID del producto
+     * @return true si existe una alerta para el producto y usuario, false en caso contrario
+     */
+    boolean existsByUserIdAndProductId(UUID userId, String productId);
 }

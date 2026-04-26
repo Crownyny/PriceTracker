@@ -1,6 +1,7 @@
 package unicauca.edu.co.API.Services.Interfaces.IN;
 
 import java.util.List;
+import java.util.UUID;
 
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
@@ -34,4 +35,8 @@ public interface IProductService {
      * @return Un objeto QueryDTOIN que contiene el query original y el productRef generado.
      */
     QueryDTOIN createProductRef(QueryDTOIN query);
+
+
+
+
 }

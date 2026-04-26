@@ -10,6 +10,7 @@ import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Repositorio para NormalizedProductEntity.
@@ -91,4 +92,5 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
      */
 
     List<NormalizedProductEntity> findByProductRefStartingWith(String productRef);
+
 }
