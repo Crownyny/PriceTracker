@@ -17,20 +17,20 @@ import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IProductService;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IScrapingService;
 import unicauca.edu.co.API.Services.OUT.MessengerService;
-import unicauca.edu.co.API.Services.OUT.ScrapingService;
 
 
 @Service
 public class ProductService implements IProductService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProductService.class); 
-    private final ScrapingService scrapingService;
+    private final IScrapingService scrapingService;
     private final ProductRepository productRepository;
     private final NormalizedProductMapper mapperProduct;
 
     public ProductService(
-        ScrapingService scrapingService, 
+        IScrapingService scrapingService,
         ProductRepository productRepository,
         WebSocketConfig webSocket, 
         MessengerService messengerService,

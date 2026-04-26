@@ -8,6 +8,7 @@ Contiene implementaciones de logica de negocio. Cada clase aqui representa un ca
 - `AuthorizationService`: validacion de roles/permisos y parsing de bearer token.
 - `UserService`: reglas de usuario y aprovisionamiento automatico desde token.
 - `ProductService`: busquedas y orquestacion relacionada a productos.
+- `ProductScrapingDaemonService`: scheduler que bloquea elegibles y publica jobs directos a `scraping.jobs`.
 - `IntentProductService`: integracion con servicio de intencion.
 - `HistoryPriceService`: logica de historial de precios.
 - `ReferenceCheckService` y `StrategyService`: soporte a estrategia de busqueda.

@@ -5,6 +5,7 @@ Contener adaptadores de infraestructura que implementan puertos de salida defini
 
 ## Implementacion actual
 - `UserPersistenceAdapter` implementa `IUserPersistencePort`.
+- `ProductScrapingQueueAdapter` implementa `IProductScrapingQueuePort`.
 
 ## Responsabilidades del adapter
 - Traducir llamadas de negocio a repositorios JPA.
