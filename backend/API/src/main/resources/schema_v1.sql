@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS "user"(
     "id" UUID NOT NULL,
+    "uuid_firebase" VARCHAR(255) NOT NULL, -- Esta es la línea que falta
     "email" VARCHAR(255) NOT NULL,
     "image_profile" VARCHAR(255) NOT NULL DEFAULT '',
     "role" VARCHAR(255) CHECK ("role" IN('registered', 'premium')) NOT NULL DEFAULT 'registered',
