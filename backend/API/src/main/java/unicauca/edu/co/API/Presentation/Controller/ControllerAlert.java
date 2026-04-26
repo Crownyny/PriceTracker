@@ -24,6 +24,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
 import unicauca.edu.co.API.Services.IN.AlertService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
@@ -70,9 +71,11 @@ public class ControllerAlert {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> createAlert( 
         @PathVariable  @NotBlank String productId,
-        @Valid @RequestBody AlertFrequency frequency) {
+        @Valid @RequestBody AlertRequestDTO frequency) {
+        System.out.println(SecurityContextHolder.getContext().getAuthentication());    
+        System.out.println(frequency);
         UUID userId = getUserIdFromContext();
-        AlertDTO createdAlert = alertService.createAlert(frequency, productId, userId);
+        AlertDTO createdAlert = alertService.createAlert(frequency.getFrequency(), productId, userId);
         return new ResponseEntity<>(createdAlert, HttpStatus.CREATED);
     }
 
