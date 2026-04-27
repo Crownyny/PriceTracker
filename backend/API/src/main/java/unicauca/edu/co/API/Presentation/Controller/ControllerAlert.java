@@ -33,6 +33,7 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
  * Proporciona endpoints para crear, consultar, actualizar y eliminar alertas.
  */
 @RestController
+@Validated
 @RequestMapping("/api")
 public class ControllerAlert {
 
@@ -162,7 +163,7 @@ public class ControllerAlert {
      * @param productId ID del producto asociado a la alerta
      * @return ResponseEntity con el AlertDTO eliminado, estado 200 (OK) o 404 (Not Found)
      */
-    @DeleteMapping("/{productId}")
+    @DeleteMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> deleteAlert(@PathVariable @NotBlank String productId) {
         UUID userId = getUserIdFromContext();

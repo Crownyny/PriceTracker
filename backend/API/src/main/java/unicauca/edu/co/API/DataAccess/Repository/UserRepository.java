@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.DataAccess.Repository;
 
+import java.lang.StackWalker.Option;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     Optional<UserEntity> findByEmail(String email);
     boolean existsByEmailIgnoreCase(String email);
 
+    Optional<UserEntity> findById(UUID id);
     @Query("SELECT u FROM UserEntity u WHERE u.UUID_firebase = :username")
     Optional<UserEntity> findByUUID_firebase(@Param("username") String username);
 }

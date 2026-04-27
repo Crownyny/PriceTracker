@@ -20,8 +20,6 @@ public class AlertDTO {
     private UUID id;
     private UUID userId;
     private String productId;
-    private BigDecimal targetPrice;
-    private AlertCondition condition;
     private Boolean isActive;
     private AlertFrequency frequency;
     private LocalDateTime createAt;
