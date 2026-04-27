@@ -1,5 +1,5 @@
 /**
- * Script para cargar configuración desde .env.local en desarrollo
+ * Script para cargar configuración desde .env en desarrollo
  * 
  * Uso:
  * 1. En background.js, importa este script:
@@ -13,12 +13,12 @@ async function setupDevConfig() {
   try {
     console.log('[SETUP DEV CONFIG] Intentando cargar configuración de desarrollo...');
 
-    // Intentar cargar primero .env.local y luego .env como respaldo
+    // Intentar cargar primero .env y luego .env.local como respaldo
     const envConfig = await loadEnvConfig();
 
     // Validar que tenemos credenciales
     if (!envConfig.FIREBASE_API_KEY || envConfig.FIREBASE_API_KEY.includes('your_')) {
-      console.warn('[SETUP DEV CONFIG] .env.local contiene placeholders, necesitas configurar Firebase');
+      console.warn('[SETUP DEV CONFIG] .env contiene placeholders, necesitas configurar Firebase');
       return;
     }
 
@@ -38,7 +38,7 @@ async function setupDevConfig() {
     // Guardar en chrome.storage
     await chrome.storage.sync.set({ firebaseConfig, dashboardUrl });
     
-    console.log('[SETUP DEV CONFIG] ✓ Configuración cargada desde .env.local');
+    console.log('[SETUP DEV CONFIG] ✓ Configuración cargada desde .env');
     console.log('[SETUP DEV CONFIG] Proyecto:', firebaseConfig.projectId);
     console.log('[SETUP DEV CONFIG] Dashboard URL:', dashboardUrl);
 
@@ -48,7 +48,7 @@ async function setupDevConfig() {
 }
 
 async function loadEnvConfig() {
-  const candidates = ['.env.local', '.env'];
+  const candidates = ['.env', '.env.local'];
 
   for (const candidate of candidates) {
     try {

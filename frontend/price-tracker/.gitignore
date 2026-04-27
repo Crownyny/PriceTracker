@@ -40,6 +40,7 @@ testem.log
 __screenshots__/
 
 # Local runtime secrets and generated config
+chrome/.env
 chrome/.env.local
 public/app-config.json
 
