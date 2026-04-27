@@ -3,10 +3,13 @@ package unicauca.edu.co.API.Services.IN;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
 import unicauca.edu.co.API.Presentation.DTO.OUT.FirebaseTokenDTO;
@@ -139,4 +142,6 @@ public class AuthorizationService implements IAuthorizationService {
             case premium -> 2;
         };
     }
+
+ 
 }
