@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -66,7 +67,7 @@ public class ProductService implements IProductService {
 
     @Override
     public QueryDTOIN createProductRef(QueryDTOIN query){
-        String baseRef = query.getQuery().trim().replaceAll(" ", "");
+        String baseRef = query.getQuery().trim().replaceAll(" ", "").toLowerCase(Locale.ROOT);
         String var_productRef = baseRef;
         query.setProduct_ref(var_productRef);
         query.setSearch_id(var_productRef);

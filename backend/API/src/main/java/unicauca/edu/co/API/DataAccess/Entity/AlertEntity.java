@@ -17,6 +17,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,39 +33,42 @@ import lombok.Setter;
 public class AlertEntity {
 
     @Id
+    @NotNull
     @Column(nullable = false, updatable = false)
     private UUID id;
 
+    @NotNull
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    @NotNull
+    @NotBlank
     @Column(name = "product_id", nullable = false, length = 36)
     private String productId;
 
-    @Column(name = "target_price", nullable = false, precision = 8, scale = 2)
-    private BigDecimal targetPrice;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "condition", nullable = false)
-    private AlertCondition condition;
-
+    @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "frequency", nullable = false)
     private AlertFrequency frequency;
 
+    @NotNull
     @Column(name = "create_at", nullable = false, updatable = false)
     private LocalDateTime createAt;
 
-    @Column(name = "deleted_at", nullable = false)
+
+    @Column(name = "deleted_at", nullable = true)
     private LocalDateTime deletedAt;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserEntity user;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private NormalizedProductEntity product;
