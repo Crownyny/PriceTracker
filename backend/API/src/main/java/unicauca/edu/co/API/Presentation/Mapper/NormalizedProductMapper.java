@@ -15,4 +15,13 @@ public interface NormalizedProductMapper extends GenericMapper<NormalizedProduct
     @Mapping(target = "scrapedAt", ignore = true)
     @Mapping(target = "confidence", ignore = true)
     NormalizedProductDTO toDTO(NormalizedProductEntity entity);
+
+    @Mapping(target = "lastScrapedAt", ignore = true)
+    @Mapping(target = "nextScrapeAt", ignore = true)
+    @Mapping(target = "volatilityScore", ignore = true)
+    @Mapping(target = "alertPriority", ignore = true)
+    @Mapping(target = "lockedUntil", ignore = true)
+    @Mapping(target = "alerts", ignore = true)
+    @Mapping(target = "notifications", ignore = true)
+    NormalizedProductEntity toEntity(NormalizedProductDTO dto);
 }

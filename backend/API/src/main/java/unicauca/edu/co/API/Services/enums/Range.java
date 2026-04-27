@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 public enum Range {
 
     W1(7),
-    W3(21),
+    W3(31),
     W12(90),
     ALL(0);
 

@@ -5,6 +5,7 @@ Define puertos hacia infraestructura externa: persistencia, mensajeria y servici
 
 ## Puertos actuales
 - `IUserPersistencePort`: acceso a datos de usuario desde logica de negocio.
+- `IProductScrapingQueuePort`: seleccion/bloqueo transaccional de productos elegibles para scraping.
 - `IMessengerService`: integracion con mensajeria/eventos.
 - `INormalizerProductService`: integracion de normalizacion.
 - `IScrapingService`: integracion con scraping.

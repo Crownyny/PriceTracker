@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # Concurrencia: mensajes procesados en paralelo dentro del worker
     normalizer_prefetch_count: int = 4
 
+    # Politica matematica para programar el proximo scraping
+    scraping_policy_alpha: float = 1.0
+
     # Archivo de fallos de normalización (JSONL). Vacío = desactivado.
     failures_log_path: str = "/tmp/normalization_failures.jsonl"
 

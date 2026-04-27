@@ -95,6 +95,23 @@ The application requires the following environment variables or properties:
 - `mvn test`: Runs unit and integration tests.
 - `mvn spring-boot:run`: Runs the application locally.
 
+## Database Queue Metadata Migration
+
+To support the scraping daemon queue in PostgreSQL, the project now includes:
+
+- `src/main/resources/schema_v1.sql` with queue metadata columns for fresh environments.
+- `src/main/resources/schema_v2_scraping_queue.sql` with idempotent `ALTER TABLE` for existing environments.
+
+Both scripts are configured in `spring.sql.init.schema-locations`.
+
+Queue metadata is stored in `normalized_products` (canonical product table in this codebase):
+
+- `last_scraped_at`
+- `next_scrape_at`
+- `volatility_score`
+- `alert_priority`
+- `locked_until`
+
 ## Project Structure
 ```text
 ├── src/main/java/unicauca/edu/co/API
@@ -149,6 +166,27 @@ The email notification module was added to support alert-based communication per
 - `Services/IN/Email/EmailTemplateService`
 - `Services/IN/Email/Template/*EmailTemplateStrategy`
 - `Services/OUT/EmailSenderService`
+
+## Product Scraping Daemon (Scheduler)
+
+The API includes a scheduler that acts as orchestration daemon for product-by-product scraping.
+
+- Frequency: `@Scheduled` with `scraping.daemon.cron` (default `0 * * * * *`, every minute).
+- Batch locking strategy:
+   - locks only eligible products (`next_scrape_at <= now` and unlocked rows)
+   - ordering: `alert_priority DESC`, `volatility_score DESC`, `next_scrape_at ASC`
+   - uses transactional SQL with `FOR UPDATE SKIP LOCKED`
+   - sets `locked_until = now + lock_window`
+- Publication:
+   - each selected row is mapped to a scraper-compatible queue payload
+   - payload is published into `scraping.jobs`
+
+Daemon properties:
+
+- `scraping.daemon.enabled` (default `true`)
+- `scraping.daemon.cron` (default `0 * * * * *`)
+- `scraping.daemon.capacity` (default `100`)
+- `scraping.daemon.lock-minutes` (default `15`)
 
 ## API & WebSocket Endpoints
 
