@@ -37,7 +37,7 @@ function parseEnvFile(content) {
 }
 
 async function loadEnvConfig() {
-  const envPaths = [path.join(chromeDir, '.env.local'), path.join(chromeDir, '.env')];
+  const envPaths = [path.join(chromeDir, '.env'), path.join(chromeDir, '.env.local')];
 
   for (const envPath of envPaths) {
     if (!(await fileExists(envPath))) {
@@ -51,7 +51,7 @@ async function loadEnvConfig() {
     }
   }
 
-  throw new Error('No se encontró una configuración válida en chrome/.env.local ni chrome/.env');
+  throw new Error('No se encontró una configuración válida en chrome/.env ni chrome/.env.local');
 }
 
 function buildRuntimeConfig(envConfig) {
