@@ -75,8 +75,7 @@ public class ControllerAlert {
         @Valid @RequestBody AlertRequestDTO frequency) {
         System.out.println(SecurityContextHolder.getContext().getAuthentication());    
         System.out.println(frequency);
-        UUID userId = getUserIdFromContext();
-        AlertDTO createdAlert = alertService.createAlert(frequency.getFrequency(), productId, userId);
+        AlertDTO createdAlert = alertService.createAlert(frequency.getFrequency(), productId);
         return new ResponseEntity<>(createdAlert, HttpStatus.CREATED);
     }
 
@@ -166,8 +165,7 @@ public class ControllerAlert {
     @DeleteMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> deleteAlert(@PathVariable @NotBlank String productId) {
-        UUID userId = getUserIdFromContext();
-        AlertDTO deletedAlert = alertService.deleteAlert(productId, userId);
+        AlertDTO deletedAlert = alertService.deleteAlert(productId);
         
         if (deletedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

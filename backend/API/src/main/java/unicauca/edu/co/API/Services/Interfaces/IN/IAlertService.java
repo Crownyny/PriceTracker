@@ -14,7 +14,7 @@ public interface IAlertService {
       * @param userId El ID del usuario que intenta crear la alerta
      * @return El AlertDTO creado 
      */
-    AlertDTO createAlert(AlertFrequency frequency, String productId, UUID userId);
+    AlertDTO createAlert(AlertFrequency frequency, String productId);
     /**
      * Obtiene una alerta por su ID. El usuario debe estar autenticado para obtener una alerta.
      * @param productId El ID del producto asociado a la alerta a obtener
@@ -43,7 +43,7 @@ public interface IAlertService {
      * @param productId El ID del producto asociado a la alerta a eliminar
      * @return El AlertDTO eliminado, o null si no se encuentra la alerta a eliminar
      */
-    AlertDTO deleteAlert(String productId, UUID userId);
+    AlertDTO deleteAlert(String productId);
     /**
      * Obtiene todas las alertas existentes. El usuario debe estar autenticado para obtener las alertas.
      * @return Lista de alertas existentes, o una lista vacía si no se encuentran alertas

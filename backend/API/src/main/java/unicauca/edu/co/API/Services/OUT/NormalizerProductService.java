@@ -57,7 +57,8 @@ public class NormalizerProductService implements INormalizerProductService {
             product != null ? product.getProductRef() : null,
             product != null ? product.getCanonicalName() : null,
             product != null ? product.getPrice() : null,
-            product != null ? product.getCurrency() : null
+            product != null ? product.getCurrency() : null,
+            product != null ? product.getId() : null
         );
         if (product == null) {
             return;
