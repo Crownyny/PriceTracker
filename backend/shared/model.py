@@ -110,6 +110,7 @@ class SearchCompletedMessage(BaseModel):
 # ── Producto normalizado (salida del Normalizer Service) ──────────────────────
 class NormalizedProduct(BaseModel):
     """Representación canónica de un producto. Formato estándar de la plataforma."""
+    id: Optional[str] = None
     product_ref: str
     source_name: str
     canonical_name: str
