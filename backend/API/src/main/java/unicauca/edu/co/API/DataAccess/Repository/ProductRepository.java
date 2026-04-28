@@ -1,6 +1,7 @@
 package unicauca.edu.co.API.DataAccess.Repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -84,6 +85,34 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
         @Param("productRef") String productRef,
         @Param("dateTime") LocalDateTime dateTime
     );
+
+        /**
+         * Cuenta productos elegibles para scraping en el instante indicado.
+         */
+        @Query("""
+                SELECT COUNT(p)
+                FROM NormalizedProductEntity p
+                WHERE p.nextScrapeAt <= :now
+                    AND (p.lockedUntil IS NULL OR p.lockedUntil <= :now)
+                """)
+        long countEligibleForScraping(@Param("now") LocalDateTime now);
+
+        /**
+         * Lista candidatos elegibles ordenados por prioridad del daemon.
+         */
+        @Query("""
+                SELECT p
+                FROM NormalizedProductEntity p
+                WHERE p.nextScrapeAt <= :now
+                    AND (p.lockedUntil IS NULL OR p.lockedUntil <= :now)
+                ORDER BY p.alertPriority DESC, p.volatilityScore DESC, p.nextScrapeAt ASC
+                """)
+        List<NormalizedProductEntity> findEligibleForScraping(@Param("now") LocalDateTime now, Pageable pageable);
+
+        /**
+         * Cuenta productos actualmente bloqueados por el daemon.
+         */
+        long countByLockedUntilAfter(LocalDateTime now);
 
     /**
      * Encuentra productos cuya referencia comience con un prefijo dado. Esto es útil para implementar búsquedas por referencia parcial.

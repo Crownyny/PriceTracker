@@ -35,7 +35,12 @@ def make_save_node(product_repo):
                 currency=product.currency,
                 job_id=job_id,
             )
-            return {**state, "outcome": ScrapingState.NORMALIZED}
+            persisted_product = product.model_copy(update={"id": product_id})
+            return {
+                **state,
+                "final_product": persisted_product.model_dump(mode="json"),
+                "outcome": ScrapingState.NORMALIZED,
+            }
         except Exception as exc:
             logger.exception("[%s] Error saving to PostgreSQL", job_id)
             return {**state, "error": str(exc), "outcome": ScrapingState.NORMALIZATION_FAILED}

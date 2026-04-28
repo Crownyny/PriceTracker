@@ -18,19 +18,25 @@ public class ProductScrapingQueueAdapter implements IProductScrapingQueuePort {
 
     private static final String LOCK_ELIGIBLE_PRODUCTS_SQL = """
         WITH candidates AS (
-            SELECT id
+            SELECT id,
+                   ROW_NUMBER() OVER (
+                       ORDER BY alert_priority DESC, volatility_score DESC, next_scrape_at ASC
+                   ) AS ordering_rank
             FROM normalized_products
             WHERE next_scrape_at <= :now
               AND (locked_until IS NULL OR locked_until <= :now)
             ORDER BY alert_priority DESC, volatility_score DESC, next_scrape_at ASC
             LIMIT :capacity
-            FOR UPDATE SKIP LOCKED
+        ), updated AS (
+            UPDATE normalized_products p
+            SET locked_until = :lockUntil
+            FROM candidates c
+            WHERE p.id = c.id
+            RETURNING p.id, p.product_ref, p.source_url, p.source_name, p.canonical_name, p.alert_priority, c.ordering_rank
         )
-        UPDATE normalized_products p
-        SET locked_until = :lockUntil
-        FROM candidates c
-        WHERE p.id = c.id
-        RETURNING p.id, p.product_ref, p.source_url, p.source_name, p.canonical_name, p.alert_priority
+        SELECT id, product_ref, source_url, source_name, canonical_name, alert_priority
+        FROM updated
+        ORDER BY ordering_rank
         """;
 
     private static final String RELEASE_LOCKS_SQL = """
