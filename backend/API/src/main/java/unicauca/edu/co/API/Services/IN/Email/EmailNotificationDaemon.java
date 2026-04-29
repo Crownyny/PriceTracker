@@ -144,9 +144,7 @@ public class EmailNotificationDaemon {
             }
 
             ProductChangeEmailItemDTO item = optionalItem.get();
-            if (!matchesAlertCondition(alert, item.currentPrice(), item.changeDirection())) {
-                continue;
-            }
+            
 
             Optional<String> optionalEmail = resolveUserEmail(alert.getUserId(), usersCache);
             if (optionalEmail.isEmpty()) {
@@ -199,9 +197,7 @@ public class EmailNotificationDaemon {
             }
 
             ProductChangeEmailItemDTO item = optionalItem.get();
-            if (!matchesAlertCondition(alert, item.currentPrice(), item.changeDirection())) {
-                continue;
-            }
+            
 
             changesByUser.computeIfAbsent(alert.getUserId(), key -> new ArrayList<>()).add(item);
         }
@@ -350,20 +346,7 @@ public class EmailNotificationDaemon {
             .filter(this::hasText);
     }
 
-    /**
-     * Evalua la condicion funcional de la alerta contra el precio detectado.
-     */
-    private boolean matchesAlertCondition(AlertEntity alert, double currentPrice, PriceChangeDirection direction) {
-        if (alert.getCondition() == null || alert.getTargetPrice() == null) {
-            return false;
-        }
 
-        return switch (alert.getCondition()) {
-            case any_change -> direction != PriceChangeDirection.SAME;
-            case below -> BigDecimal.valueOf(currentPrice).compareTo(alert.getTargetPrice()) < 0;
-            case above -> BigDecimal.valueOf(currentPrice).compareTo(alert.getTargetPrice()) > 0;
-        };
-    }
 
     private PriceChangeDirection resolveDirection(double previousPrice, double currentPrice) {
         if (currentPrice > previousPrice) {

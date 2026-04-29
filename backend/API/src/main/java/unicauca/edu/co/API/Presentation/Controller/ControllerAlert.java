@@ -33,7 +33,8 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
  * Proporciona endpoints para crear, consultar, actualizar y eliminar alertas.
  */
 @RestController
-@RequestMapping("/api/alerts")
+@Validated
+@RequestMapping("/api")
 public class ControllerAlert {
 
     private final IAlertService alertService;
@@ -67,15 +68,14 @@ public class ControllerAlert {
      * @param alertDTO Datos de la alerta a crear
      * @return ResponseEntity con el AlertDTO creado y estado 201 (Created)
      */
-    @PostMapping("/{productId}")
+    @PostMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> createAlert( 
         @PathVariable  @NotBlank String productId,
         @Valid @RequestBody AlertRequestDTO frequency) {
         System.out.println(SecurityContextHolder.getContext().getAuthentication());    
         System.out.println(frequency);
-        UUID userId = getUserIdFromContext();
-        AlertDTO createdAlert = alertService.createAlert(frequency.getFrequency(), productId, userId);
+        AlertDTO createdAlert = alertService.createAlert(frequency.getFrequency(), productId);
         return new ResponseEntity<>(createdAlert, HttpStatus.CREATED);
     }
 
@@ -86,7 +86,7 @@ public class ControllerAlert {
      * @param productId ID del producto asociado a la alerta
      * @return ResponseEntity con el AlertDTO si existe, estado 200 (OK) o 404 (Not Found)
      */
-    @GetMapping("/{productId}")
+    @GetMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> getAlertById(@PathVariable @NotBlank String productId) {
         UUID userId = getUserIdFromContext();
@@ -119,7 +119,7 @@ public class ControllerAlert {
      * @param alertDTO Datos actualizados de la alerta
      * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
      */
-    @PutMapping("/{productId}")
+    @PutMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlert(
             @PathVariable @NotBlank String productId,
@@ -141,7 +141,7 @@ public class ControllerAlert {
      * @param isActive Nuevo estado de la alerta
      * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
      */
-    @PatchMapping("/{productId}/status")
+    @PatchMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlertStatus(
             @PathVariable @NotBlank String productId,
@@ -162,11 +162,10 @@ public class ControllerAlert {
      * @param productId ID del producto asociado a la alerta
      * @return ResponseEntity con el AlertDTO eliminado, estado 200 (OK) o 404 (Not Found)
      */
-    @DeleteMapping("/{productId}")
+    @DeleteMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> deleteAlert(@PathVariable @NotBlank String productId) {
-        UUID userId = getUserIdFromContext();
-        AlertDTO deletedAlert = alertService.deleteAlert(productId, userId);
+        AlertDTO deletedAlert = alertService.deleteAlert(productId);
         
         if (deletedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

@@ -197,6 +197,20 @@ Daemon properties:
 - **POST `/api/auth/invalidate`**: Invalidate the cache for a specific JWT.
 - **GET `/actuator/health`**: Health check endpoint.
 
+### Internal Test Endpoints (dev/test profiles only)
+These endpoints are enabled only when profile is `dev`, `test`, or `test-integration`.
+
+- **POST `/api/internal/test/scraping/trigger`**: Execute one scraping daemon cycle immediately.
+- **POST `/api/internal/test/scraping/volatility-trigger`**: Execute volatility recomputation cycle.
+- **GET `/api/internal/test/scraping/status?limit=20`**: Inspect queue status and next eligible products.
+- **POST `/api/internal/test/email/trigger`**: Execute one email daemon cycle immediately.
+- **GET `/api/internal/test/email/alerts-status`**: Inspect active alerts count by frequency.
+
+Quick manual flow:
+```bash
+./scripts/trigger-daemons.sh http://localhost:8080 20
+```
+
 ## Authentication and Authorization
 
 Security is implemented with Spring Security, JWT token validation and method-level authorization.

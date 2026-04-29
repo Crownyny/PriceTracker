@@ -29,6 +29,16 @@ public interface AlertRepository extends JpaRepository<AlertEntity, UUID> {
      * @return
      */
     List<AlertEntity> findByIsActiveTrue();
+
+    /**
+     * Cuenta todas las alertas activas.
+     */
+    long countByIsActiveTrue();
+
+    /**
+     * Cuenta alertas activas por frecuencia.
+     */
+    long countByIsActiveTrueAndFrequency(AlertEntity.AlertFrequency frequency);
     
     /**
      * Encuentra una alerta por productId y userId para asegurar que pertenece al usuario.

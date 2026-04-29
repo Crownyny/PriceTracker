@@ -36,14 +36,6 @@ public class AccessoryAndVariantExclusionValidator extends AbstractProductValida
         if (text.isBlank()) {
             return next(request);
         }
-        String lower = text.toLowerCase(Locale.ROOT);
-        for (String keyword : EXCLUSION_KEYWORDS) {
-            if (lower.contains(keyword)) {
-                logger.info("Producto descartado por palabra de exclusión '{}': productRef={}, canonicalName={}",
-                    keyword, request.getProductRef(), request.getCanonicalName());
-                return false;
-            }
-        }
         return next(request);
     }
 

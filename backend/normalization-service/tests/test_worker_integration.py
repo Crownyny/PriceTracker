@@ -115,6 +115,7 @@ async def test_flujo_feliz_amazon_product_normalizado():
     assert published_payload["state"] == "normalized"
     assert published_payload["job_id"] == "integration-job-001"
     assert published_payload["error_message"] is None
+    assert published_payload["normalized_product"]["id"] == "test-product-id"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

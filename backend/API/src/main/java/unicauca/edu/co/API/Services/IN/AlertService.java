@@ -7,16 +7,21 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.google.firebase.database.annotations.NotNull;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
+import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity;
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
+import unicauca.edu.co.API.DataAccess.Entity.UserEntity;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.DataAccess.Repository.AlertRepository;
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
+import unicauca.edu.co.API.DataAccess.Repository.UserRepository;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.Mapper.AlertMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
@@ -31,28 +36,37 @@ public class AlertService implements IAlertService {
     private final AlertRepository alertRepository;
     private final AlertMapper alertMapper;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
 
     public AlertService(
         AlertRepository alertRepository,
          AlertMapper alertMapper,
-         ProductRepository productRepository    
+         ProductRepository productRepository,
+         UserRepository userRepository
         ) {
         this.alertRepository = alertRepository;
         this.alertMapper = alertMapper;
         this.productRepository = productRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
-    public AlertDTO createAlert(AlertFrequency frequency, String productId, UUID userId) {
-        AlertEntity alertEntity = new AlertEntity();
-        NormalizedProductEntity productEntity = productRepository.findById(productId)
+    public AlertDTO createAlert(AlertFrequency frequency, String productId) {
+
+        UUID userId = getCurrentUserId();
+
+        NormalizedProductEntity product = productRepository.findById(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + productId));
-        boolean exists = alertRepository.existsByUserIdAndProductId(userId, productId);
-        if (exists) {
-            throw new IllegalStateException("Alert already exists for this product and user");
-        }
-        alertEntity = buildAlertEntity(productEntity, frequency, productId, userId);
-        AlertEntity savedAlert = alertRepository.save(alertEntity);
+
+        validateAlertDoesNotExist(userId, productId);
+
+        UserEntity user = userRepository.findById(userId)
+            .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+
+        AlertEntity alert = buildAlertEntity(product, frequency, productId, user);
+
+        AlertEntity savedAlert = alertRepository.saveAndFlush(alert);
+
         return alertMapper.toDTO(savedAlert);
     }
 
@@ -69,7 +83,6 @@ public class AlertService implements IAlertService {
     public AlertDTO updateAlert(String productId, UUID userId, AlertDTO alertDTO) {
         return alertRepository.findByProductIdAndUserId(productId, userId)
             .map(alertEntity -> {
-                alertEntity.setCondition(alertDTO.getCondition());
                 alertEntity.setFrequency(alertDTO.getFrequency());
                 AlertEntity updatedAlert = alertRepository.save(alertEntity);
                 return alertMapper.toDTO(updatedAlert);
@@ -94,7 +107,8 @@ public class AlertService implements IAlertService {
     }
 
     @Override
-    public AlertDTO deleteAlert(String productId, UUID userId) {
+    public AlertDTO deleteAlert(String productId) {
+        UUID userId = getCurrentUserId();   
         return alertRepository.findByProductIdAndUserId(productId, userId)
             .map(alertEntity -> {
                 AlertDTO dto = alertMapper.toDTO(alertEntity);
@@ -126,14 +140,37 @@ public class AlertService implements IAlertService {
      * @param userId El ID del usuario que crea la alerta
      * @return  Una nueva instancia de AlertEntity con los datos proporcionados y valores predeterminados para los campos restantes
      */
-    private AlertEntity buildAlertEntity(NormalizedProductEntity product,  AlertFrequency frequency, String productId, UUID userId) {
+    @Valid
+    private AlertEntity buildAlertEntity(NormalizedProductEntity product, AlertFrequency frequency, String productId, UserEntity user) {
+        System.out.println("Building AlertEntity");
         AlertEntity alertEntity = new AlertEntity();
         alertEntity.setFrequency(frequency);
         alertEntity.setProductId(productId);
-        alertEntity.setUserId(userId);
+        alertEntity.setUserId(user.getId());
         alertEntity.setIsActive(true);
         alertEntity.setCreateAt(LocalDateTime.now());
-        alertEntity.setProduct(product);    
-        return alertEntity; 
+        alertEntity.setProduct(product);
+        alertEntity.setUser(user);
+        System.out.println("AlertEntity built successfully");
+        return alertEntity;
+    }
+
+    private UUID getCurrentUserId() {
+        Object principal = SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getPrincipal();
+
+        if (principal instanceof AuthenticatedUserPrincipal user) {
+            return user.id(); 
+        }
+
+        throw new IllegalStateException("User not authenticated");
+    }
+    private void validateAlertDoesNotExist(UUID userId, String productId) {
+        boolean exists = alertRepository.existsByUserIdAndProductId(userId, productId);
+
+        if (exists) {
+            throw new IllegalStateException("Alert already exists for this product and user");
+        }
     }
 }
