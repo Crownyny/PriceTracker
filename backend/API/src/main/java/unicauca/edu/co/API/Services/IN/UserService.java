@@ -187,6 +187,48 @@ public class UserService implements IUserService {
         return changed ? userPersistencePort.save(existingUser) : existingUser;
     }
 
+    @Override
+    public User upgradeToPremium(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("El id del usuario es obligatorio");
+        }
+
+        User user = userPersistencePort.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (user.getRole() == UserRole.premium) {
+            return user; // ya es premium
+        }
+
+        user.setRole(UserRole.premium);
+        return userPersistencePort.save(user);
+    }
+    @Override
+    public User downgradeToFreemium(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("El id del usuario es obligatorio");
+        }
+
+        User user = userPersistencePort.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (user.getRole() == UserRole.registered) {
+            return user; // ya es freemium
+        }
+
+        user.setRole(UserRole.registered);
+        return userPersistencePort.save(user);
+    }
+
+    @Override
+    public User findById(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("El id del usuario es obligatorio");
+        }
+        return userPersistencePort.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+    }
+    
     private String normalizeOptionalValue(String value) {
         return hasText(value) ? value.trim() : null;
     }
