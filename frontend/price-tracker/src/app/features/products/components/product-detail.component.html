@@ -99,10 +99,14 @@
             </button>
             <button 
               (click)="createAlert()" 
-              class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              [disabled]="alertLoading"
+              class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              🔔 Crear Alerta de Precio
+              🔔 {{ hasAlert ? 'Gestionar Alerta' : (alertLoading ? 'Creando...' : 'Crear Alerta de Precio') }}
             </button>
+          </div>
+          <div *ngIf="alertError" class="mt-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg p-3">
+            {{ alertError }}
           </div>
         </div>
       </div>

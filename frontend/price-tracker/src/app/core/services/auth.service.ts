@@ -2,10 +2,15 @@ import { Injectable } from '@angular/core';
 import { Observable, from, map, switchMap } from 'rxjs';
 import {
   Auth,
+  AuthProvider,
   User,
+  createUserWithEmailAndPassword,
   getAuth,
+  GoogleAuthProvider,
   onIdTokenChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut
 } from 'firebase/auth';
 import { FirebaseApp, getApp, getApps, initializeApp } from 'firebase/app';
@@ -20,6 +25,7 @@ import { ExtensionAuthBridgeService } from './extension-auth-bridge.service';
 export class AuthService {
   private readonly app: FirebaseApp;
   private readonly auth: Auth;
+  private readonly googleProvider: AuthProvider;
 
   constructor(
     private tokenService: TokenService,
@@ -29,6 +35,7 @@ export class AuthService {
     const firebaseConfig = this.runtimeConfig.getFirebaseConfig();
     this.app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     this.auth = getAuth(this.app);
+    this.googleProvider = new GoogleAuthProvider();
 
     // Mantiene sincronizados token/perfil en localStorage cuando Firebase renueva sesión.
     onIdTokenChanged(this.auth, async (user) => {
@@ -58,6 +65,42 @@ export class AuthService {
         )
       )
     );
+  }
+
+  register(credentials: AuthCredentials & { displayName?: string }): Observable<AuthResponse> {
+    return from(createUserWithEmailAndPassword(this.auth, credentials.email, credentials.password)).pipe(
+      switchMap((credential) =>
+        from(credential.user.getIdToken()).pipe(
+          map((token) => {
+            const response = this.toAuthResponse(credential.user, token);
+            this.tokenService.setTokens(response.accessToken);
+            this.tokenService.setUserProfile(response.user);
+            this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
+            return response;
+          })
+        )
+      )
+    );
+  }
+
+  loginWithGoogle(): Observable<AuthResponse> {
+    return from(signInWithPopup(this.auth, this.googleProvider)).pipe(
+      switchMap((credential) =>
+        from(credential.user.getIdToken()).pipe(
+          map((token) => {
+            const response = this.toAuthResponse(credential.user, token);
+            this.tokenService.setTokens(response.accessToken);
+            this.tokenService.setUserProfile(response.user);
+            this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
+            return response;
+          })
+        )
+      )
+    );
+  }
+
+  resetPassword(email: string): Observable<void> {
+    return from(sendPasswordResetEmail(this.auth, email));
   }
 
   async logout(): Promise<void> {

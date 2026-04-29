@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProductsService } from '../services/products.service';
 import { Product } from '../../../shared/models/product.model';
-import { catchError, of } from 'rxjs';
+import { catchError, finalize, of } from 'rxjs';
+import { AlertService } from '../../alerts/services/alert.service';
+import { AlertFrequency } from '../../../shared/models/alert.model';
 
 @Component({
   selector: 'app-product-detail',
@@ -17,11 +19,16 @@ export class ProductDetailComponent implements OnInit {
   isSaved = false;
   loading = false;
   error = '';
+  alertError: string | null = null;
+  alertLoading = false;
+  hasAlert = false;
   private productId = '';
 
   constructor(
     private productsService: ProductsService,
-    private route: ActivatedRoute
+    private alertService: AlertService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -38,10 +45,15 @@ export class ProductDetailComponent implements OnInit {
         this.error = 'Error cargando producto';
         console.error(error);
         return of(null);
+      }),
+      finalize(() => {
+        this.loading = false;
       })
     ).subscribe((product: Product | null) => {
       this.product = product;
-      this.loading = false;
+      if (product?.id) {
+        this.refreshAlertState(product.id);
+      }
     });
   }
 
@@ -53,7 +65,60 @@ export class ProductDetailComponent implements OnInit {
   }
 
   createAlert() {
-    // Aquí irá la lógica para crear alertas
-    alert('Funcionalidad de alertas próximamente');
+    if (!this.product?.id) {
+      return;
+    }
+
+    // Si ya existe, manda al panel central para gestionarla.
+    if (this.hasAlert) {
+      this.router.navigate(['/alerts'], { queryParams: { productId: this.product.id } });
+      return;
+    }
+
+    this.alertLoading = true;
+    this.alertError = null;
+
+    const frequency: AlertFrequency = 'instant';
+    this.alertService.createAlert(this.product.id, {
+      productId: this.product.id,
+      targetPrice: 0,
+      currency: 'COP',
+      frequency,
+      notificationMethod: 'email'
+    }).pipe(
+      catchError((err) => {
+        if (err?.status === 409) {
+          this.hasAlert = true;
+          return of(null);
+        }
+        if (err?.status === 403) {
+          this.alertError = 'ALERT_LIMIT_REACHED: Alcanzaste el límite de alertas para tu plan';
+          return of(null);
+        }
+        this.alertError = 'No fue posible crear la alerta';
+        console.error('Create alert error:', err);
+        return of(null);
+      }),
+      finalize(() => {
+        this.alertLoading = false;
+      })
+    ).subscribe((response) => {
+      if (!response) {
+        return;
+      }
+      this.hasAlert = true;
+    });
+  }
+
+  private refreshAlertState(productId: string): void {
+    this.alertService.getAlerts(productId).pipe(
+      catchError((err) => {
+        // No bloquear la vista por esto; solo dejar el estado como "sin alerta".
+        console.warn('Error consultando alertas:', err);
+        return of({ alerts: [], total: 0, page: 0, pageSize: 0 });
+      })
+    ).subscribe((response) => {
+      this.hasAlert = Array.isArray(response.alerts) && response.alerts.length > 0;
+    });
   }
 }

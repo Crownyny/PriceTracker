@@ -40,7 +40,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
   // API_REQUEST es manejado por api-relay-handler.js, no lo procesamos aquí
   if (message.type === 'API_REQUEST') {
-    return; // Dejar que api-relay-handler.js lo maneje
+    return true; // Mantener el canal abierto para api-relay-handler.js
   }
   
   switch (message.type) {
@@ -62,11 +62,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case 'OPEN_DASHBOARD':
       (async () => {
-        const dashboardUrl = (globalThis.PriceTracker?.dashboardConfigManager?.getDashboardEntryUrl)
-          ? await globalThis.PriceTracker.dashboardConfigManager.getDashboardEntryUrl()
+        const baseDashboardUrl = (globalThis.PriceTracker?.dashboardConfigManager?.getDashboardUrl)
+          ? await globalThis.PriceTracker.dashboardConfigManager.getDashboardUrl()
           : 'http://localhost:4200/dashboard';
 
-        return chrome.tabs.create({ url: dashboardUrl })
+        const deepLinkUrl = buildDashboardDeepLink(baseDashboardUrl, {
+          productRef: message.productRef,
+          query: message.query,
+        });
+
+        return chrome.tabs.create({ url: deepLinkUrl })
           .then(() => sendResponse({ success: true }))
           .catch(error => sendResponse({ success: false, error: error.message }));
       })();
@@ -83,6 +88,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: false, error: 'Tipo de mensaje desconocido' });
   }
 });
+
+function buildDashboardDeepLink(baseDashboardUrl, payload) {
+  try {
+    const url = new URL(baseDashboardUrl);
+    // If config points to /dashboard, replace with /open-product
+    const pathname = url.pathname.replace(/\/$/, '');
+    if (pathname.endsWith('/dashboard')) {
+      url.pathname = pathname.slice(0, -'/dashboard'.length) + '/open-product';
+    } else {
+      url.pathname = '/open-product';
+    }
+
+    if (payload?.productRef) {
+      url.searchParams.set('productRef', String(payload.productRef));
+    }
+    if (payload?.query) {
+      url.searchParams.set('query', String(payload.query));
+    }
+
+    return url.toString();
+  } catch (err) {
+    // Fallback
+    const fallback = 'http://localhost:4200/open-product';
+    const qs = new URLSearchParams();
+    if (payload?.productRef) qs.set('productRef', String(payload.productRef));
+    if (payload?.query) qs.set('query', String(payload.query));
+    const suffix = qs.toString();
+    return suffix ? `${fallback}?${suffix}` : fallback;
+  }
+}
 
 // Manejar activación/desactivación de la extensión
 async function handleToggleExtension(active) {

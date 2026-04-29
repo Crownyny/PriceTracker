@@ -32,7 +32,15 @@ import { AuthResponse } from '../../shared/models/auth.model';
           </button>
         </form>
 
+        <button type="button" class="google" (click)="onGoogle()" [disabled]="loading">
+          Continuar con Google
+        </button>
+
         <p *ngIf="error" class="error">{{ error }}</p>
+
+        <p class="links">
+          <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
+        </p>
 
         <p class="back-link"><a routerLink="/dashboard">Ir al dashboard</a></p>
       </article>
@@ -99,9 +107,21 @@ import { AuthResponse } from '../../shared/models/auth.model';
         cursor: not-allowed;
       }
 
+      .google {
+        margin-top: 12px;
+        width: 100%;
+        background: #fff;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+      }
+
       .error {
         color: #b91c1c;
         margin-top: 12px;
+      }
+
+      .links {
+        margin-top: 10px;
       }
 
       .back-link {
@@ -150,6 +170,30 @@ export class LoginComponent {
         return;
       }
 
+      this.navigateToReturnUrl();
+    });
+  }
+
+  onGoogle(): void {
+    this.error = null;
+    this.loading = true;
+
+    this.authService.loginWithGoogle().pipe(
+      catchError((err) => {
+        const code = err?.code as string | undefined;
+        if (code === 'auth/popup-closed-by-user') {
+          this.error = 'Cerraste la ventana de Google antes de completar el inicio de sesión.';
+        } else {
+          this.error = 'No fue posible iniciar sesión con Google.';
+        }
+        console.error('Google login error:', err);
+        return of(null);
+      }),
+      finalize(() => {
+        this.loading = false;
+      })
+    ).subscribe((response) => {
+      if (!response) return;
       this.navigateToReturnUrl();
     });
   }

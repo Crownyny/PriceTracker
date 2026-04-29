@@ -1,4 +1,13 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  avatar?: string;
+  createdAt?: string | Date;
+}
 
 /**
  * Token Service - Maneja almacenamiento y recuperación de tokens
@@ -9,6 +18,9 @@ import { Injectable } from '@angular/core';
 export class TokenService {
   private readonly TOKEN_KEY = 'access_token';
   private readonly USER_KEY = 'user_profile';
+  private readonly authStateSubject = new BehaviorSubject<boolean>(this.hasStoredSession());
+
+  public readonly authState$ = this.authStateSubject.asObservable();
 
   /**
    * Obtiene el token de acceso
@@ -29,19 +41,20 @@ export class TokenService {
    */
   setTokens(accessToken: string, refreshToken?: string): void {
     sessionStorage.setItem(this.TOKEN_KEY, accessToken);
+    this.authStateSubject.next(true);
   }
 
   /**
    * Guarda el perfil del usuario
    */
-  setUserProfile(user: any): void {
+  setUserProfile(user: UserProfile): void {
     sessionStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
   /**
    * Obtiene el perfil del usuario
    */
-  getUserProfile(): any {
+  getUserProfile(): UserProfile | null {
     const user = sessionStorage.getItem(this.USER_KEY);
     return user ? JSON.parse(user) : null;
   }
@@ -59,6 +72,7 @@ export class TokenService {
   clearTokens(): void {
     sessionStorage.removeItem(this.TOKEN_KEY);
     sessionStorage.removeItem(this.USER_KEY);
+    this.authStateSubject.next(false);
   }
 
   /**
@@ -97,5 +111,9 @@ export class TokenService {
 
     const expirationDate = new Date(decoded.exp * 1000);
     return expirationDate <= new Date();
+  }
+
+  private hasStoredSession(): boolean {
+    return !!sessionStorage.getItem(this.TOKEN_KEY) && !!sessionStorage.getItem(this.USER_KEY);
   }
 }

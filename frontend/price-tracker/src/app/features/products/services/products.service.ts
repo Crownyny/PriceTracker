@@ -71,6 +71,14 @@ export class ProductsService {
   searchProducts(query: string): Observable<ProductSearchResponse> {
     const productRef = query.trim().replace(/\s+/g, '');
 
+    if (!productRef) {
+      return of({
+        productRef: '',
+        products: [],
+        totalResults: 0
+      });
+    }
+
     // Si STOMP está conectado, usar WebSocket
     if (this.stompService.isConnectedNow()) {
       console.log('📡 Usando STOMP para búsqueda');
@@ -117,6 +125,28 @@ export class ProductsService {
         const products = (response ?? []).map((item) => this.mapBackendProduct(item));
         return {
           productRef,
+          products,
+          totalResults: products.length
+        };
+      })
+    );
+  }
+
+  /**
+   * Obtiene resultados ya guardados en BD por product_ref (sin disparar scraping nuevo).
+   * Endpoint (Postman): POST /api/products/search { product_ref }
+   */
+  getSearchFromDb(productRef: string): Observable<ProductSearchResponse> {
+    const ref = String(productRef || '').trim();
+    if (!ref) {
+      return of({ productRef: '', products: [], totalResults: 0 });
+    }
+
+    return this.http.post<any[]>(`${this.httpConfig.getApiBaseUrl()}/products/search`, { product_ref: ref }).pipe(
+      map((response) => {
+        const products = (response ?? []).map((item) => this.mapBackendProduct(item));
+        return {
+          productRef: ref,
           products,
           totalResults: products.length
         };

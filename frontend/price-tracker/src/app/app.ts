@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { ExtensionAuthBridgeService } from './core/services/extension-auth-bridge.service';
 import { StompWebSocketService } from './core/services/stomp-websocket.service';
+import { Subject, skip, takeUntil } from 'rxjs';
+import { TokenService, UserProfile } from './core/services/token.service';
 
 @Component({
   selector: 'app-root',
@@ -11,22 +13,49 @@ import { StompWebSocketService } from './core/services/stomp-websocket.service';
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="app-container">
-      <!-- Navigation -->
       <nav class="navbar">
-        <div class="navbar-brand">
+        <a routerLink="/dashboard" class="navbar-brand">
           <h1>💰 PriceTracker</h1>
-          <!-- Connection Status Indicator -->
-          <span class="connection-badge" [class.connected]="isConnected" [class.disconnected]="!isConnected">
+        </a>
+
+        <div class="navbar-actions">
+          <span *ngIf="!isAuthenticated" class="connection-badge" [class.connected]="isConnected" [class.disconnected]="!isConnected">
             {{ isConnected ? '🟢 Conectado' : '🔴 Desconectado' }}
           </span>
+
+          <ul class="nav-links desktop-links">
+            <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+            <li><a routerLink="/price-history" routerLinkActive="active">Historial</a></li>
+            <li><a routerLink="/alerts" routerLinkActive="active">Alertas</a></li>
+          </ul>
+
+          <button *ngIf="!isAuthenticated" type="button" class="auth-link" routerLink="/login">
+            Iniciar sesión
+          </button>
+
+          <div *ngIf="isAuthenticated" class="account-menu-wrap">
+            <button type="button" class="account-button" (click)="toggleAccountMenu()">
+              <span class="account-avatar">{{ userInitial }}</span>
+              <span class="account-label">Mi cuenta</span>
+            </button>
+
+            <div *ngIf="showAccountMenu" class="account-menu">
+              <div class="account-menu-header">
+                <div class="account-menu-name">{{ userDisplayName }}</div>
+                <div class="account-menu-email">{{ userEmail }}</div>
+              </div>
+
+              <a routerLink="/account" (click)="closeAccountMenu()" class="account-menu-item">Perfil y ajustes</a>
+              <a routerLink="/search" (click)="closeAccountMenu()" class="account-menu-item">Buscar productos</a>
+              <a routerLink="/saved" (click)="closeAccountMenu()" class="account-menu-item">Mis guardados</a>
+              <a routerLink="/email-notifications" (click)="closeAccountMenu()" class="account-menu-item">Notificaciones email</a>
+              <a routerLink="/price-history" (click)="closeAccountMenu()" class="account-menu-item">Historial de precios</a>
+              <a routerLink="/docs" (click)="closeAccountMenu()" class="account-menu-item">Documentación</a>
+
+              <button type="button" class="account-logout" (click)="logout()">Cerrar sesión</button>
+            </div>
+          </div>
         </div>
-        <ul class="nav-links">
-          <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-          <li><a routerLink="/price-history" routerLinkActive="active">Historial</a></li>
-          <li><a routerLink="/alerts" routerLinkActive="active">Alertas</a></li>
-          <li><a routerLink="/login" routerLinkActive="active">Iniciar sesion</a></li>
-          <li><button type="button" class="logout-btn" (click)="logout()">Cerrar sesion</button></li>
-        </ul>
       </nav>
 
       <!-- Main Content -->
@@ -37,22 +66,47 @@ import { StompWebSocketService } from './core/services/stomp-websocket.service';
   `,
   styleUrl: './app.css'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   protected readonly title = 'price-traker';
   isConnected = false;
+  isAuthenticated = false;
+  showAccountMenu = false;
+  userDisplayName = 'Mi cuenta';
+  userEmail = '';
+  userInitial = 'M';
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private extensionAuthBridge: ExtensionAuthBridgeService,
-    private stompService: StompWebSocketService
+    private stompService: StompWebSocketService,
+    private tokenService: TokenService
   ) {
     console.log('🚀 Inicializando PriceTracker App');
   }
 
   ngOnInit(): void {
+    this.syncAuthState();
+
     // Conectar a STOMP WebSocket
     this.connectToWebSocket();
+
+    this.tokenService.authState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((isAuthenticated) => {
+        this.isAuthenticated = isAuthenticated;
+        this.refreshUserInfo();
+        if (!isAuthenticated) {
+          this.showAccountMenu = false;
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**
@@ -65,7 +119,7 @@ export class App implements OnInit {
     this.stompService.connect();
 
     // Escuchar cambios de estado de conexión
-    this.stompService.connected$.subscribe((isConnected: boolean) => {
+    this.stompService.connected$.pipe(skip(1)).subscribe((isConnected: boolean) => {
       this.isConnected = isConnected;
       if (isConnected) {
         console.log('✅ WebSocket conectado - listo para búsquedas en tiempo real');
@@ -75,7 +129,31 @@ export class App implements OnInit {
     });
   }
 
+  private syncAuthState(): void {
+    this.isAuthenticated = this.tokenService.hasToken() && !!this.tokenService.getUserProfile();
+    this.refreshUserInfo();
+  }
+
+  private refreshUserInfo(): void {
+    const profile = this.tokenService.getUserProfile() as UserProfile | null;
+    const email = profile?.email || '';
+    const name = profile?.name || email || 'Mi cuenta';
+
+    this.userEmail = email;
+    this.userDisplayName = name;
+    this.userInitial = (name || 'M').trim().charAt(0).toUpperCase();
+  }
+
+  toggleAccountMenu(): void {
+    this.showAccountMenu = !this.showAccountMenu;
+  }
+
+  closeAccountMenu(): void {
+    this.showAccountMenu = false;
+  }
+
   async logout(): Promise<void> {
+    this.closeAccountMenu();
     await this.authService.logout();
     this.router.navigate(['/login']);
   }

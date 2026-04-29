@@ -15,6 +15,8 @@
 
     let connected = false;
     let messageListenerBound = false;
+    let connectionFallbackTimer = null;
+    let connectionWatchdogTimer = null;
 
     function configure(nextHandlers) {
       handlers = { ...handlers, ...(nextHandlers || {}) };
@@ -22,6 +24,23 @@
 
     function connect(headers) {
       console.log(`${constants.LOG_PREFIX} [RELAY] Conectando al WebSocket a través del background...`);
+
+      if (connectionFallbackTimer) {
+        clearTimeout(connectionFallbackTimer);
+        connectionFallbackTimer = null;
+      }
+      if (connectionWatchdogTimer) {
+        clearTimeout(connectionWatchdogTimer);
+        connectionWatchdogTimer = null;
+      }
+
+      connectionWatchdogTimer = setTimeout(() => {
+        if (!connected) {
+          console.warn(`${constants.LOG_PREFIX} [RELAY] ws-relay-init no respondió a tiempo; continuando con modo resiliente`);
+          connected = true;
+          handlers.onConnect();
+        }
+      }, 2500);
       
       // Bind message listener only once
       if (!messageListenerBound) {
@@ -53,6 +72,17 @@
             }
             if (response && response.success) {
               console.log(`${constants.LOG_PREFIX} [RELAY] Background inicializado`);
+              if (connectionWatchdogTimer) {
+                clearTimeout(connectionWatchdogTimer);
+                connectionWatchdogTimer = null;
+              }
+              connectionFallbackTimer = setTimeout(() => {
+                if (!connected) {
+                  console.warn(`${constants.LOG_PREFIX} [RELAY] No llegó evento ws-relay-connected; continuando con fallback de init`);
+                  connected = true;
+                  handlers.onConnect();
+                }
+              }, 1500);
             } else {
               console.error(`${constants.LOG_PREFIX} [RELAY] Background error:`, response?.error);
               handlers.onTransportError(new Error(response?.error || 'Failed to initialize'));
@@ -68,6 +98,14 @@
     function disconnect() {
       console.log(`${constants.LOG_PREFIX} [RELAY] Desconectando...`);
       connected = false;
+      if (connectionFallbackTimer) {
+        clearTimeout(connectionFallbackTimer);
+        connectionFallbackTimer = null;
+      }
+      if (connectionWatchdogTimer) {
+        clearTimeout(connectionWatchdogTimer);
+        connectionWatchdogTimer = null;
+      }
       try {
         chrome.runtime.sendMessage(
           { type: 'ws-relay-disconnect' },
@@ -125,6 +163,14 @@
         case 'ws-relay-connected':
           console.log(`${constants.LOG_PREFIX} [RELAY] ✅ Conectado al servidor`);
           connected = true;
+          if (connectionWatchdogTimer) {
+            clearTimeout(connectionWatchdogTimer);
+            connectionWatchdogTimer = null;
+          }
+          if (connectionFallbackTimer) {
+            clearTimeout(connectionFallbackTimer);
+            connectionFallbackTimer = null;
+          }
           // Small delay to ensure subscriptions are processed
           setTimeout(() => {
             console.log(`${constants.LOG_PREFIX} [RELAY] Calling onConnect after subscription delay`);

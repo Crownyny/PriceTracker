@@ -48,7 +48,7 @@
       <div class="flex items-center justify-between">
         <div>
           <p class="text-gray-600 text-sm font-medium">Alertas Activas</p>
-          <p class="text-3xl font-bold text-gray-900 mt-2">{{ activeAlerts.length }}</p>
+          <p class="text-3xl font-bold text-gray-900 mt-2">{{ alertCount }}</p>
           <p class="text-xs text-gray-500 mt-1">Monitoreando precios</p>
         </div>
         <div class="text-4xl">🔔</div>
@@ -69,7 +69,7 @@
       </a>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div *ngIf="bestDeals.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <ng-container *ngFor="let product of bestDeals">
         <a [routerLink]="['/product', product.id]" class="group">
           <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
@@ -77,7 +77,7 @@
             <div class="aspect-square relative overflow-hidden bg-gray-100">
               <img *ngIf="product.image" [src]="product.image" [alt]="product.name" 
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-              <div class="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
+              <div *ngIf="(product.savingsPercent ?? 0) > 0" class="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold">
                 -{{ product.savingsPercent }}%
               </div>
             </div>
@@ -89,17 +89,20 @@
               
               <div class="space-y-2">
                 <div class="flex items-baseline gap-2">
-                  <span class="text-2xl font-bold text-gray-900">${{ product.bestPrice | number }}</span>
+                  <span class="text-2xl font-bold text-gray-900">${{ (product.bestPrice ?? product.currentPrice) | number }}</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-xs text-gray-500">Mejor oferta</span>
-                  <span class="text-sm font-medium text-green-600">Ahorra ${{ product.savings | number }}</span>
+                  <span class="text-sm font-medium text-green-600">Ahorra ${{ (product.savings ?? (product.currentPrice - (product.bestPrice ?? product.currentPrice))) | number }}</span>
                 </div>
               </div>
             </div>
           </div>
         </a>
       </ng-container>
+    </div>
+    <div *ngIf="bestDeals.length === 0" class="text-gray-600">
+      Aún no hay ofertas para mostrar. Guarda productos o realiza búsquedas para ver recomendaciones aquí.
     </div>
   </div>
 
@@ -121,35 +124,58 @@
           </tr>
         </thead>
         <tbody>
-          <ng-container *ngFor="let product of recentProducts">
+          <ng-container *ngFor="let row of comparativeRows">
             <tr class="border-b border-gray-100 hover:bg-gray-50">
               <td class="py-3 px-4">
                 <div class="flex items-center gap-3">
                   <div class="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                    <img *ngIf="product.image" [src]="product.image" [alt]="product.name" 
+                    <img *ngIf="row.product.image" [src]="row.product.image" [alt]="row.product.name" 
                       class="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p class="font-semibold text-gray-900 line-clamp-1">{{ product.name }}</p>
-                    <p class="text-xs text-gray-500">{{ product.category }}</p>
+                    <p class="font-semibold text-gray-900 line-clamp-1">{{ row.product.name }}</p>
+                    <p class="text-xs text-gray-500">{{ row.product.category }}</p>
                   </div>
                 </div>
               </td>
               <td class="py-3 px-4 text-right">
-                <p class="text-xl font-bold text-gray-900">${{ product.currentPrice | number }}</p>
+                <p class="text-xl font-bold text-gray-900">${{ row.product.currentPrice | number }}</p>
               </td>
               <td class="py-3 px-4 text-right">
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-semibold text-green-600 bg-green-100">
-                  ↑ 5.2%
-                </span>
+                <ng-container *ngIf="row.percentageChange !== null; else noChange">
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-semibold"
+                    [class.text-green-600]="row.percentageChange < 0"
+                    [class.bg-green-100]="row.percentageChange < 0"
+                    [class.text-red-600]="row.percentageChange > 0"
+                    [class.bg-red-100]="row.percentageChange > 0"
+                    [class.text-gray-700]="row.percentageChange === 0"
+                    [class.bg-gray-100]="row.percentageChange === 0"
+                  >
+                    <span *ngIf="row.percentageChange < 0">↓</span>
+                    <span *ngIf="row.percentageChange > 0">↑</span>
+                    <span *ngIf="row.percentageChange === 0">→</span>
+                    {{ row.percentageChange | number:'1.0-1' }}%
+                  </span>
+                </ng-container>
+                <ng-template #noChange>
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-semibold text-gray-700 bg-gray-100">
+                    —
+                  </span>
+                </ng-template>
               </td>
               <td class="py-3 px-4 text-right">
-                <a [routerLink]="['/product', product.id]" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                <a [routerLink]="['/product', row.product.id]" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
                   Ver detalles
                 </a>
               </td>
             </tr>
           </ng-container>
+          <tr *ngIf="comparativeRows.length === 0">
+            <td colspan="4" class="py-6 px-4 text-center text-gray-600">
+              No hay productos para comparar. Guarda productos desde la búsqueda para verlos aquí.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
