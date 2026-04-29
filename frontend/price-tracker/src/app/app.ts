@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { ExtensionAuthBridgeService } from './core/services/extension-auth-bridge.service';
+import { StompWebSocketService } from './core/services/stomp-websocket.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,10 @@ import { ExtensionAuthBridgeService } from './core/services/extension-auth-bridg
       <nav class="navbar">
         <div class="navbar-brand">
           <h1>💰 PriceTracker</h1>
+          <!-- Connection Status Indicator -->
+          <span class="connection-badge" [class.connected]="isConnected" [class.disconnected]="!isConnected">
+            {{ isConnected ? '🟢 Conectado' : '🔴 Desconectado' }}
+          </span>
         </div>
         <ul class="nav-links">
           <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
@@ -32,14 +37,43 @@ import { ExtensionAuthBridgeService } from './core/services/extension-auth-bridg
   `,
   styleUrl: './app.css'
 })
-export class App {
+export class App implements OnInit {
   protected readonly title = 'price-traker';
+  isConnected = false;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private extensionAuthBridge: ExtensionAuthBridgeService
-  ) {}
+    private extensionAuthBridge: ExtensionAuthBridgeService,
+    private stompService: StompWebSocketService
+  ) {
+    console.log('🚀 Inicializando PriceTracker App');
+  }
+
+  ngOnInit(): void {
+    // Conectar a STOMP WebSocket
+    this.connectToWebSocket();
+  }
+
+  /**
+   * Conecta el servicio STOMP y monitorea estado de conexión
+   */
+  private connectToWebSocket(): void {
+    console.log('🔌 Conectando a WebSocket STOMP...');
+    
+    // Conectar
+    this.stompService.connect();
+
+    // Escuchar cambios de estado de conexión
+    this.stompService.connected$.subscribe((isConnected: boolean) => {
+      this.isConnected = isConnected;
+      if (isConnected) {
+        console.log('✅ WebSocket conectado - listo para búsquedas en tiempo real');
+      } else {
+        console.log('⚠️ WebSocket desconectado - usando REST como fallback');
+      }
+    });
+  }
 
   async logout(): Promise<void> {
     await this.authService.logout();
