@@ -112,3 +112,38 @@
     font-size: 0.9rem;
   }
 }
+
+/* Connection Status Badge */
+.connection-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 1rem;
+  transition: all 0.3s ease;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.connection-badge.connected {
+  background: #d4edda;
+  color: #155724;
+  box-shadow: 0 0 0 1px #c3e6cb;
+}
+
+.connection-badge.disconnected {
+  background: #f8d7da;
+  color: #721c24;
+  box-shadow: 0 0 0 1px #f5c6cb;
+  animation: pulse-disconnect 2s infinite;
+}
+
+@keyframes pulse-disconnect {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

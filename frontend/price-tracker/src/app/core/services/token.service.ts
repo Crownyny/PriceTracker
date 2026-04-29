@@ -62,6 +62,13 @@ export class TokenService {
   }
 
   /**
+   * Realiza logout del usuario
+   */
+  logout(): void {
+    this.clearTokens();
+  }
+
+  /**
    * Decodifica el token JWT (sin validación)
    */
   decodeToken(token: string): any {

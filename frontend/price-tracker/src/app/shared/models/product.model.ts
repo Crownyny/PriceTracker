@@ -13,6 +13,10 @@ export interface Product {
   currency: string;
   availability: boolean;
   source?: string;
+  // Propiedades de comparación de precios
+  bestPrice?: number;
+  savings?: number;
+  savingsPercent?: number;
 }
 
 /**
