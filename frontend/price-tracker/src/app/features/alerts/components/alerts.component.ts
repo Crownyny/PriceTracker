@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { AlertService } from '../services/alert.service';
 import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
 
@@ -151,11 +152,17 @@ export class AlertsComponent implements OnInit {
   };
 
   constructor(
-    private alertService: AlertService
+    private alertService: AlertService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.loading = false;
+    const fromQuery = this.route.snapshot.queryParamMap.get('productId');
+    if (fromQuery) {
+      this.selectedProductId = fromQuery;
+      this.loadAlerts();
+    }
   }
 
   loadAlerts(): void {
@@ -196,6 +203,7 @@ export class AlertsComponent implements OnInit {
 
     this.submitting = true;
 
+    // El backend (Postman) solo pide frequency para crear.
     this.alertService.createAlert(this.newAlert.productId, {
       productId: this.newAlert.productId,
       targetPrice: this.newAlert.targetPrice,
@@ -205,7 +213,12 @@ export class AlertsComponent implements OnInit {
     }).subscribe({
       next: (response) => {
         this.selectedProductId = this.newAlert.productId;
-        this.alerts.push(response.alert as Alert);
+        if (response.alert) {
+          this.alerts = [response.alert, ...this.alerts];
+        } else {
+          // Re-sync
+          this.loadAlerts();
+        }
         this.resetForm();
         this.showCreateForm = false;
         this.error = null;

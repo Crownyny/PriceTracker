@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, map, of, catchError } from 'rxjs';
 import { HttpConfigService } from '../../../core/services/http-config.service';
+import { TokenService } from '../../../core/services/token.service';
 import {
   Alert,
   AlertListResponse,
@@ -15,11 +16,12 @@ import {
 /**
  * Alert Service - Gestiona alertas de precios
  * Endpoints:
- * - GET /api/v1/products/{productId}/alert?frequency=1d
- * - POST /api/v1/products/{productId}/alert
- * - DELETE /api/v1/products/{productId}/alert
- * - PATCH /api/v1/products/{productId}/alert
- * - PUT /api/v1/products/{productId}/alert
+ * - GET /api/alerts
+ * - GET /api/{userId}/alert?productId={productId}
+ * - POST /api/{userId}/alert?productId={productId}
+ * - PUT /api/{userId}/alert?productId={productId}
+ * - PATCH /api/{userId}/alert?productId={productId}
+ * - DELETE /api/{userId}/alert?productId={productId}
  */
 @Injectable({
   providedIn: 'root'
@@ -27,11 +29,25 @@ import {
 export class AlertService {
   constructor(
     private http: HttpClient,
-    private httpConfig: HttpConfigService
+    private httpConfig: HttpConfigService,
+    private tokenService: TokenService
   ) {}
 
-  private getAlertsBaseUrl(): string {
-    return `${this.httpConfig.getApiBaseUrl()}/alerts`;
+  private getApiBaseUrl(): string {
+    return this.httpConfig.getApiBaseUrl();
+  }
+
+  private getCurrentUserId(): string {
+    const profile = this.tokenService.getUserProfile();
+    const userId = profile?.id || localStorage.getItem('userId') || '';
+    if (!userId) {
+      throw new Error('No hay userId disponible para operar alertas');
+    }
+    return userId;
+  }
+
+  private buildUserAlertUrl(userId: string): string {
+    return `${this.getApiBaseUrl()}/${userId}/alert`;
   }
 
   private normalizeFrequency(value?: string): AlertFrequency {
@@ -78,7 +94,27 @@ export class AlertService {
    * Obtiene alertas (si se envía productId, obtiene solo esa alerta)
    */
   getAlerts(productId?: string): Observable<AlertListResponse> {
-    const url = productId ? `${this.getAlertsBaseUrl()}/${productId}` : this.getAlertsBaseUrl();
+    if (!productId) {
+      // GET /api/alerts
+      return this.http.get<any>(`${this.getApiBaseUrl()}/alerts`).pipe(
+        map((response) => {
+          const rawAlerts = Array.isArray(response)
+            ? response
+            : (response?.alerts ? response.alerts : (response ? [response] : []));
+
+          return {
+            alerts: rawAlerts.map((raw: any) => this.toAlert(raw)),
+            total: rawAlerts.length,
+            page: 0,
+            pageSize: rawAlerts.length
+          };
+        })
+      );
+    }
+
+    // GET /api/{userId}/alert?productId={productId}
+    const userId = this.getCurrentUserId();
+    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
 
     return this.http.get<any>(url).pipe(
       map((response) => {
@@ -129,9 +165,13 @@ export class AlertService {
    * Crea una nueva alerta
    */
   createAlert(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
-    const body = request.frequency;
+    const userId = this.getCurrentUserId();
+    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
+    const body = {
+      frequency: request.frequency
+    };
 
-    return this.http.post<any>(`${this.getAlertsBaseUrl()}/${productId}`, body).pipe(
+    return this.http.post<any>(url, body).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -140,7 +180,10 @@ export class AlertService {
    * Actualiza una alerta (edita precio objetivo o frecuencia)
    */
   updateAlert(productId: string, request: UpdateAlertRequest): Observable<AlertResponse> {
-    return this.http.put<any>(`${this.getAlertsBaseUrl()}/${productId}`, request).pipe(
+    const userId = this.getCurrentUserId();
+    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
+
+    return this.http.put<any>(url, request).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -149,7 +192,11 @@ export class AlertService {
    * Cambia el estado de una alerta (activa/desactiva)
    */
   updateAlertStatus(productId: string, request: UpdateAlertStatusRequest): Observable<AlertResponse> {
-    return this.http.patch<any>(`${this.getAlertsBaseUrl()}/${productId}/status?isActive=${request.isActive}`, {}).pipe(
+    const userId = this.getCurrentUserId();
+    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
+    const body = { isActive: request.isActive };
+
+    return this.http.patch<any>(url, body).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -158,7 +205,10 @@ export class AlertService {
    * Elimina una alerta
    */
   deleteAlert(productId: string): Observable<AlertResponse> {
-    return this.http.delete<any>(`${this.getAlertsBaseUrl()}/${productId}`).pipe(
+    const userId = this.getCurrentUserId();
+    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
+
+    return this.http.delete<any>(url).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }

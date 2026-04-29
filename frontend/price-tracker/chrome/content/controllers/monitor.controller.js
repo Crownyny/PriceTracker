@@ -236,7 +236,12 @@
         console.log(`${constants.LOG_PREFIX} Extensión cerrada manualmente - mostrando pestaña mínima`);
       },
       onOpenDashboard: () => {
-        chrome.runtime.sendMessage({ type: constants.MESSAGE_TYPES.OPEN_DASHBOARD });
+        const activeSearch = latestWorkflowState?.activeSearch || null;
+        chrome.runtime.sendMessage({
+          type: constants.MESSAGE_TYPES.OPEN_DASHBOARD,
+          productRef: activeSearch?.productRef || null,
+          query: activeSearch?.query || null,
+        });
       },
     });
 

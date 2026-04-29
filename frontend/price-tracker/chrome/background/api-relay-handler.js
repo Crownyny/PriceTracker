@@ -48,11 +48,15 @@ async function handleApiRequest(message, sender, sendResponse) {
     console.log(`[API_RELAY - BACKGROUND] Petición permitida: ${method} ${url}`);
 
     const bodyString = options?.body ? JSON.stringify(options.body) : undefined;
+    const requestTimeoutMs = 10000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
 
     // Construir fetchOptions de forma explícita para evitar pasar campos no permitidos.
     const fetchOptions = {
       method,
       headers,
+      signal: controller.signal,
     };
 
     // Añadir body solo si existe (string ya serializado)
@@ -60,7 +64,10 @@ async function handleApiRequest(message, sender, sendResponse) {
       fetchOptions.body = bodyString;
     }
 
+    console.log(`[API_RELAY - BACKGROUND] Enviando fetch a backend (${requestTimeoutMs}ms timeout)`);
     const response = await fetch(url, fetchOptions);
+    clearTimeout(timeoutId);
+    console.log(`[API_RELAY - BACKGROUND] Respuesta backend: ${response.status} ${response.statusText}`);
 
     // Leer el body
     let data = null;
@@ -83,6 +90,15 @@ async function handleApiRequest(message, sender, sendResponse) {
       text: data
     });
   } catch (error) {
+    if (error?.name === 'AbortError') {
+      console.error(`[API_RELAY - BACKGROUND] Timeout al contactar backend`);
+      sendResponse({
+        success: false,
+        error: 'Timeout al contactar backend',
+        status: 0
+      });
+      return;
+    }
     console.error(`[API_RELAY - BACKGROUND] Error en petición segura:`, error.message);
     sendResponse({
       success: false,

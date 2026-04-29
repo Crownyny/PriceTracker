@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { catchError, finalize, of } from 'rxjs';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
     <div class="forgot-password-container">
       <div class="forgot-password-card">
@@ -17,22 +19,21 @@ import { RouterLink } from '@angular/router';
             Ingresa tu email y te enviaremos instrucciones para recuperar tu contraseña.
           </p>
 
-          <form (ngSubmit)="submitEmail()">
+          <form [formGroup]="form" (ngSubmit)="submitEmail()" novalidate>
             <div class="form-group">
               <label for="email">Email</label>
               <input
                 id="email"
                 type="email"
-                [(ngModel)]="email"
-                name="email"
+                formControlName="email"
                 placeholder="tu@email.com"
                 class="input-field"
                 required
               />
             </div>
 
-            <button type="submit" class="submit-btn">
-              Enviar Instrucciones
+            <button type="submit" class="submit-btn" [disabled]="form.invalid || loading">
+              {{ loading ? 'Enviando...' : 'Enviar Instrucciones' }}
             </button>
           </form>
 
@@ -48,7 +49,7 @@ import { RouterLink } from '@angular/router';
         <div *ngIf="submitted" class="success-section">
           <h3>✓ Email Enviado</h3>
           <p>
-            Hemos enviado instrucciones de recuperación de contraseña a <strong>{{ email }}</strong>
+            Hemos enviado instrucciones de recuperación de contraseña a <strong>{{ submittedEmail }}</strong>
           </p>
           <p>Por favor, revisa tu bandeja de entrada.</p>
           
@@ -168,16 +169,52 @@ import { RouterLink } from '@angular/router';
   `]
 })
 export class ForgotPasswordComponent {
-  email = '';
+  loading = false;
   submitted = false;
-  error = '';
+  submittedEmail = '';
+  error: string | null = null;
+  readonly form;
 
-  submitEmail() {
-    // Aquí iría la lógica para enviar email de recuperación
-    if (!this.email) {
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService
+  ) {
+    this.form = this.formBuilder.group({
+      email: ['', [Validators.required, Validators.email]]
+    });
+  }
+
+  submitEmail(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
       this.error = 'Por favor ingresa un email válido';
       return;
     }
-    this.submitted = true;
+
+    this.loading = true;
+    this.error = null;
+    const email = (this.form.getRawValue() as { email: string }).email;
+
+    this.authService.resetPassword(email).pipe(
+      catchError((err) => {
+        const code = err?.code as string | undefined;
+        if (code === 'auth/user-not-found') {
+          this.error = 'No existe una cuenta con este correo.';
+        } else if (code === 'auth/invalid-email') {
+          this.error = 'El correo electrónico no es válido.';
+        } else {
+          this.error = 'No fue posible enviar el email de recuperación. Inténtalo de nuevo.';
+        }
+        console.error('Reset password error:', err);
+        return of(null);
+      }),
+      finalize(() => {
+        this.loading = false;
+      })
+    ).subscribe((result) => {
+      if (result === null) return;
+      this.submittedEmail = email;
+      this.submitted = true;
+    });
   }
 }

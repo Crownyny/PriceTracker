@@ -108,11 +108,19 @@
             throw new Error('API Relay no disponible');
           }
 
-          const response = await apiRelay.apiRequest(endpoint, {
+          console.log(`${constants.LOG_PREFIX} [INTENT] Sending relay request to ${endpoint}`);
+
+          const relayRequest = apiRelay.apiRequest(endpoint, {
             method: 'POST',
             headers: headers,
             body: { query },
           });
+
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`Intent relay timeout after ${INTENT_TIMEOUT_MS}ms`)), INTENT_TIMEOUT_MS);
+          });
+
+          const response = await Promise.race([relayRequest, timeoutPromise]);
           
           clearTimeout(timeoutId);
           
@@ -531,6 +539,17 @@
         throw new Error('La query es obligatoria');
       }
 
+      const searchId = generateSearchId();
+      activeSearch = {
+        searchId,
+        productRef: null,
+        query,
+        payload: {
+          query,
+          search_id: searchId,
+        },
+      };
+
       // FIRST: Immediately clear ALL state from previous search
       console.log(`${constants.LOG_PREFIX} [SEARCH] Starting new search, clearing old state...`);
       products = [];
@@ -561,27 +580,23 @@
         console.log(`${constants.LOG_PREFIX} [SEARCH] isBuyIntent value:`, isBuyIntent, `| type:`, typeof isBuyIntent);
         
         if (!isBuyIntent) {
-          console.warn(`${constants.LOG_PREFIX} [SEARCH] ❌ NO PURCHASE INTENT DETECTED - Extension will not process this query`);
+          console.warn(`${constants.LOG_PREFIX} [SEARCH] ⚠️ NO PURCHASE INTENT DETECTED - continuing as informational search`);
           console.log(`${constants.LOG_PREFIX} [SEARCH] Query: "${query}"`);
-          console.log(`${constants.LOG_PREFIX} [SEARCH] Reason: Query appears to be informational, not a purchase intent`);
-          updateStatus('idle');
-          emit();
-          return;
+          console.log(`${constants.LOG_PREFIX} [SEARCH] Reason: Query appears informational, but the workflow will continue so the overlay can render`);
+        } else {
+          console.log(`${constants.LOG_PREFIX} [SEARCH] ✓ Purchase intent confirmed - proceeding with search`);
         }
-        console.log(`${constants.LOG_PREFIX} [SEARCH] ✓ Purchase intent confirmed - proceeding with search`);
       } catch (err) {
         console.error(`${constants.LOG_PREFIX} [SEARCH] Intent check FAILED:`, err.message);
         console.log(`${constants.LOG_PREFIX} [SEARCH] Continuing anyway due to error...`);
-        // Continue anyway if intent check fails
+        // Continue anyway if intent check fails so the user still gets results/overlay
       }
 
-      // STEP 1: Generate search_id (frontend responsibility)
-      const searchId = generateSearchId();
       console.log(`${constants.LOG_PREFIX} [SEARCH] Generated search_id: ${searchId}`);
 
       // STEP 2: Build minimal payload - let backend generate productRef
       // Backend expects snake_case format and generates productRef from query
-      const payload = { 
+      const payload = {
         query,
         search_id: searchId,
       };
