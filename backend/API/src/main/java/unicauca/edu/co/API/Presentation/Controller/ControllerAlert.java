@@ -25,6 +25,7 @@ import jakarta.validation.constraints.NotBlank;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertStatusDTO;
 import unicauca.edu.co.API.Services.IN.AlertService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
@@ -89,8 +90,7 @@ public class ControllerAlert {
     @GetMapping("/{productId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> getAlertById(@PathVariable @NotBlank String productId) {
-        UUID userId = getUserIdFromContext();
-        AlertDTO alert = alertService.getAlertById(productId, userId);
+        AlertDTO alert = alertService.getAlertById(productId);
         
         if (alert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -124,8 +124,7 @@ public class ControllerAlert {
     public ResponseEntity<AlertDTO> updateAlert(
             @PathVariable @NotBlank String productId,
             @RequestBody @Valid AlertDTO alertDTO) {
-        UUID userId = getUserIdFromContext();
-        AlertDTO updatedAlert = alertService.updateAlert(productId, userId, alertDTO);
+        AlertDTO updatedAlert = alertService.updateAlert(productId, alertDTO);
         
         if (updatedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -145,10 +144,8 @@ public class ControllerAlert {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlertStatus(
             @PathVariable @NotBlank String productId,
-            @RequestParam @Valid Boolean isActive) {
-        UUID userId = getUserIdFromContext();
-        AlertDTO updatedAlert = alertService.updateAlertStatus(productId, userId, isActive);
-        
+            @RequestBody @Valid AlertStatusDTO isActive) {
+        AlertDTO updatedAlert = alertService.updateAlertStatus(productId, isActive.getIsActive());
         if (updatedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

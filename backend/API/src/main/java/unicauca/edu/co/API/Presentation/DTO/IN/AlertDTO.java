@@ -24,8 +24,6 @@ public class AlertDTO {
     private AlertFrequency frequency;
     private LocalDateTime createAt;
     private LocalDateTime deletedAt;
-    private UserDTO user;
-    private NormalizedProductDTO product;
     private List<NotificationDTO> notifications;
     public AlertDTO() {}    
 }

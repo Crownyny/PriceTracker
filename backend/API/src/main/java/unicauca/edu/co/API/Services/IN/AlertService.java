@@ -52,35 +52,31 @@ public class AlertService implements IAlertService {
 
     @Override
     public AlertDTO createAlert(AlertFrequency frequency, String productId) {
-
         UUID userId = getCurrentUserId();
-
         NormalizedProductEntity product = productRepository.findById(productId)
             .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + productId));
-
         validateAlertDoesNotExist(userId, productId);
-
+        validateAlertLimit(userId);
         UserEntity user = userRepository.findById(userId)
             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-
         AlertEntity alert = buildAlertEntity(product, frequency, productId, user);
-
-        AlertEntity savedAlert = alertRepository.saveAndFlush(alert);
-
+        AlertEntity savedAlert = alertRepository.save(alert);
         return alertMapper.toDTO(savedAlert);
     }
 
     @Override
-    public AlertDTO getAlertById(String productId, UUID userId) {
+    public AlertDTO getAlertById(String productId) {
+        UUID userId = getCurrentUserId();
         return alertRepository.findByProductIdAndUserId(productId, userId)
             .map(alertMapper::toDTO)
             .orElseThrow(() -> new EntityNotFoundException(
                 "Alert not found for productId: " + productId + " and userId: " + userId
             ));
     }
-    
+
     @Override
-    public AlertDTO updateAlert(String productId, UUID userId, AlertDTO alertDTO) {
+    public AlertDTO updateAlert(String productId, AlertDTO alertDTO) {
+        UUID userId = getCurrentUserId();
         return alertRepository.findByProductIdAndUserId(productId, userId)
             .map(alertEntity -> {
                 alertEntity.setFrequency(alertDTO.getFrequency());
@@ -93,10 +89,13 @@ public class AlertService implements IAlertService {
     }
 
     @Override
-    public AlertDTO updateAlertStatus(String productId, UUID userId, Boolean isActive) {
+    public AlertDTO updateAlertStatus(String productId ,Boolean isActive) {
+        UUID userId = getCurrentUserId();
+        System.out.println("Updating alert status for productId: " + productId + ", userId: " + userId + ", isActive: " + isActive);
         return alertRepository.findByProductIdAndUserId(productId, userId)
             .map(alertEntity -> {
                 validateStatusChange(alertEntity.getIsActive(), isActive);
+
                 alertEntity.setIsActive(isActive);
                 AlertEntity updatedAlert = alertRepository.save(alertEntity);
                 return alertMapper.toDTO(updatedAlert);
@@ -128,11 +127,6 @@ public class AlertService implements IAlertService {
             .collect(Collectors.toList());
     }
 
-    private void validateStatusChange(Boolean current, Boolean incoming) {
-        if (Objects.equals(current, incoming)) {
-            throw new IllegalStateException("Alert already has this status");
-        }
-    }
     /**
      * Construye una nueva instancia de AlertEntity con los datos proporcionados.
      * @param frequency La frecuencia de la alerta
@@ -140,7 +134,6 @@ public class AlertService implements IAlertService {
      * @param userId El ID del usuario que crea la alerta
      * @return  Una nueva instancia de AlertEntity con los datos proporcionados y valores predeterminados para los campos restantes
      */
-    @Valid
     private AlertEntity buildAlertEntity(NormalizedProductEntity product, AlertFrequency frequency, String productId, UserEntity user) {
         System.out.println("Building AlertEntity");
         AlertEntity alertEntity = new AlertEntity();
@@ -155,6 +148,12 @@ public class AlertService implements IAlertService {
         return alertEntity;
     }
 
+    
+    /**
+     * Obtiene el ID del usuario actualmente autenticado a través del contexto de seguridad de Spring Security.
+     * Si el usuario no está autenticado, se lanza una excepción.
+      * @return El ID del usuario actualmente autenticado
+     */
     private UUID getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext()
             .getAuthentication()
@@ -166,11 +165,41 @@ public class AlertService implements IAlertService {
 
         throw new IllegalStateException("User not authenticated");
     }
+    /**
+     * Valida que el usuario no haya alcanzado el límite de alertas activas permitidas para usuarios con rol "registered". Si el usuario tiene 3 o más alertas activas,
+     * se lanza una excepción indicando que se ha alcanzado el máximo de alertas para usuarios freemium.
+     * @param userId El ID del usuario para el cual se desea validar el límite de alertas
+     */
+    private void validateAlertLimit(UUID userId) {
+        List<AlertDTO> userAlerts = getAllAlerts(userId);
+        if (userAlerts.size() >= 3 && userRepository.getReferenceById(userId).getRole() == UserEntity.UserRole.registered) {
+            throw new IllegalStateException("MAXIMO ALERTAS ALCANZADO POR FREEMIUM");
+        }
+    }
+    /**
+     * Valida que no exista una alerta activa para el mismo producto y usuario. Si ya existe una alerta para el producto y usuario proporcionados
+     * se lanza una excepción indicando que la alerta ya existe.
+     * @param userId
+     * @param productId
+     */
     private void validateAlertDoesNotExist(UUID userId, String productId) {
         boolean exists = alertRepository.existsByUserIdAndProductId(userId, productId);
-
+        System.out.println("Validating alert existence for userId: " + userId + ", productId: " + productId + ", exists: " + exists);
         if (exists) {
             throw new IllegalStateException("Alert already exists for this product and user");
         }
     }
+    /**
+     * Valida que el cambio de estado de la alerta sea diferente al estado actual. Si el estado actual y el estado entrante son iguales, 
+     * se lanza una excepción indicando que la alerta ya tiene este estado.
+     * @param current El estado actual de la alerta
+     * @param incoming El nuevo estado que se desea establecer para la alerta
+     */
+
+    private void validateStatusChange(Boolean current, Boolean incoming) {
+        if (Objects.equals(current, incoming)) {
+            throw new IllegalStateException("Alert already has this status");
+        }
+    }
+
 }

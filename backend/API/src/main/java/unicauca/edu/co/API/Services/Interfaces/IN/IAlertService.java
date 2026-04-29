@@ -20,7 +20,7 @@ public interface IAlertService {
      * @param productId El ID del producto asociado a la alerta a obtener
      * @return El AlertDTO correspondiente al ID proporcionado, o null si no se encuentra la alerta
      */
-    AlertDTO getAlertById(String productId, UUID userID);
+    AlertDTO getAlertById(String productId);
     /**
      * Actualiza una alerta existente para un producto específico. El usuario debe estar autenticado para actualizar una alerta.
      * @param productId El ID del producto asociado a la alerta a actualizar
@@ -28,16 +28,15 @@ public interface IAlertService {
      * @param userId El ID del usuario que intenta actualizar la alerta
      * @return El AlertDTO actualizado, o null si no se encuentra la alerta a actualizar
      */
-    AlertDTO updateAlert(String productId, UUID userId, AlertDTO alertDTO);
+    AlertDTO updateAlert(String productId, AlertDTO alertDTO);
 
     /**
      * Actualiza el estado de una alerta existente para un producto específico. El usuario debe estar autenticado para actualizar el estado de una alerta.
      * @param productId El ID del producto asociado a la alerta a actualizar
      * @param isActive El nuevo estado de la alerta
-     * @param userId El ID del usuario que intenta actualizar el estado de la alerta
      * @return El AlertDTO actualizado, o null si no se encuentra la alerta a actualizar
      */
-    AlertDTO updateAlertStatus(String productId, UUID userId,  Boolean isActive);
+    AlertDTO updateAlertStatus(String productId,  Boolean isActive);
     /**
      * Elimina una alerta por su ID. El usuario debe estar autenticado para eliminar una alerta.
      * @param productId El ID del producto asociado a la alerta a eliminar
