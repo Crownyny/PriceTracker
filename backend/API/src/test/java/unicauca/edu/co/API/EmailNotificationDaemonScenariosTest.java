@@ -182,8 +182,6 @@ class EmailNotificationDaemonScenariosTest extends PostgresScenarioTestBase {
         alert.setId(UUID.randomUUID());
         alert.setUserId(userId);
         alert.setProductId(productId);
-        alert.setTargetPrice(targetPrice);
-        alert.setCondition(condition);
         alert.setIsActive(true);
         alert.setFrequency(AlertEntity.AlertFrequency.instant);
         alert.setCreateAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
