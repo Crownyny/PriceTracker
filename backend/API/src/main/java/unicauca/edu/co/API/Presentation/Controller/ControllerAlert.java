@@ -1,12 +1,10 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,16 +15,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
-import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertStatusDTO;
-import unicauca.edu.co.API.Services.IN.AlertService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
 /**
@@ -44,24 +39,7 @@ public class ControllerAlert {
         this.alertService = alertService;
     }
 
-    /**
-     * Obtiene el userId del usuario autenticado desde el contexto de seguridad.
-     * 
-     * @return UUID del usuario autenticado
-     */
-    private UUID getUserIdFromContext() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // Aquí se obtendría el userId del token JWT o del principal
-        // Por ahora, retornamos un UUID de ejemplo
-        String userIdStr = authentication.getName();
-        try {
-            return UUID.fromString(userIdStr);
-        } catch (IllegalArgumentException e) {
-            // Si el nombre no es un UUID válido, intentar obtenerlo de otra forma
-            // En un caso real, deberías tener un mecanismo robusto para obtener el userId
-            return UUID.fromString("00000000-0000-0000-0000-000000000000");
-        }
-    }
+
 
     /**
      * Crea una nueva alerta de precio.
@@ -122,9 +100,8 @@ public class ControllerAlert {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlert(
             @PathVariable @NotBlank String productId,
-            @RequestBody @Valid AlertDTO alertDTO) {
-        AlertDTO updatedAlert = alertService.updateAlert(productId, alertDTO);
-        
+            @RequestBody @Valid  AlertRequestDTO frequency) {
+        AlertDTO updatedAlert = alertService.updateAlert(productId, frequency);
         if (updatedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

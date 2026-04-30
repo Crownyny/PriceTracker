@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
 
 public interface IAlertService {
     /**
@@ -28,7 +29,7 @@ public interface IAlertService {
      * @param userId El ID del usuario que intenta actualizar la alerta
      * @return El AlertDTO actualizado, o null si no se encuentra la alerta a actualizar
      */
-    AlertDTO updateAlert(String productId, AlertDTO alertDTO);
+    AlertDTO updateAlert(String productId,  AlertRequestDTO frequency);
 
     /**
      * Actualiza el estado de una alerta existente para un producto específico. El usuario debe estar autenticado para actualizar el estado de una alerta.

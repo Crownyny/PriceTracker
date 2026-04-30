@@ -3,7 +3,6 @@ package unicauca.edu.co.API.Services.IN;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 import com.google.firebase.database.annotations.NotNull;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity;
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
@@ -23,6 +21,7 @@ import unicauca.edu.co.API.DataAccess.Repository.AlertRepository;
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.DataAccess.Repository.UserRepository;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
 import unicauca.edu.co.API.Presentation.Mapper.AlertMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
@@ -75,7 +74,7 @@ public class AlertService implements IAlertService {
     }
 
     @Override
-    public AlertDTO updateAlert(String productId, AlertDTO alertDTO) {
+    public AlertDTO updateAlert(String productId, AlertRequestDTO alertDTO) {
         UUID userId = getCurrentUserId();
         return alertRepository.findByProductIdAndUserId(productId, userId)
             .map(alertEntity -> {

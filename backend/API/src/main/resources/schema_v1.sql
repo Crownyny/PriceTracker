@@ -91,7 +91,6 @@ CREATE TABLE IF NOT EXISTS "alert"(
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
     "product_id" VARCHAR(36) NOT NULL,
-    "target_price" DECIMAL(8, 2) NOT NULL,
     "condition" VARCHAR(255) CHECK ("condition" IN('below', 'above', 'any_change')) NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT TRUE,
     "frequency" VARCHAR(255) CHECK ("frequency" IN('instant', 'daily', 'weekly')) NOT NULL,
