@@ -120,7 +120,8 @@ public class AlertService implements IAlertService {
     }
 
     @Override
-    public List<AlertDTO> getAllAlerts(UUID userId) {
+    public List<AlertDTO> getAllAlerts() {
+        UUID userId = getCurrentUserId();
         List<AlertEntity> alerts = alertRepository.findByUserIdAndIsActiveTrue(userId);
         return alerts.stream()
             .map(alertMapper::toDTO)
@@ -171,7 +172,7 @@ public class AlertService implements IAlertService {
      * @param userId El ID del usuario para el cual se desea validar el límite de alertas
      */
     private void validateAlertLimit(UUID userId) {
-        List<AlertDTO> userAlerts = getAllAlerts(userId);
+        List<AlertDTO> userAlerts = getAllAlerts();
         if (userAlerts.size() >= 3 && userRepository.getReferenceById(userId).getRole() == UserEntity.UserRole.registered) {
             throw new IllegalStateException("MAXIMO ALERTAS ALCANZADO POR FREEMIUM");
         }

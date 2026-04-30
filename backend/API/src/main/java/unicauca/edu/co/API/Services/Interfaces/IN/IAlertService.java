@@ -47,5 +47,5 @@ public interface IAlertService {
      * Obtiene todas las alertas existentes. El usuario debe estar autenticado para obtener las alertas.
      * @return Lista de alertas existentes, o una lista vacía si no se encuentran alertas
      */
-    List<AlertDTO> getAllAlerts(UUID userId);
+    List<AlertDTO> getAllAlerts();
 }

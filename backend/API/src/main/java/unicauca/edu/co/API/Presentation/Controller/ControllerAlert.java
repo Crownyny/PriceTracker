@@ -103,11 +103,10 @@ public class ControllerAlert {
      * 
      * @return ResponseEntity con una lista de AlertDTO activos del usuario
      */
-    @GetMapping
+    @GetMapping("/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<AlertDTO>> getAllAlerts() {
-        UUID userId = getUserIdFromContext();
-        List<AlertDTO> alerts = alertService.getAllAlerts(userId);
+        List<AlertDTO> alerts = alertService.getAllAlerts();
         return new ResponseEntity<>(alerts, HttpStatus.OK);
     }
 
