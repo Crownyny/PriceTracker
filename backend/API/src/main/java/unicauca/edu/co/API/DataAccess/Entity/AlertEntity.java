@@ -76,6 +76,11 @@ public class AlertEntity {
     @OneToMany(mappedBy = "alert")
     private List<NotificationEntity> notifications = new ArrayList<>();
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "condition", nullable = false)
+    private AlertCondition condition;
+
     public enum AlertCondition {
         below,
         above,
@@ -99,8 +104,8 @@ public class AlertEntity {
         if (this.isActive == null) {
             this.isActive = true;
         }
-        if (this.deletedAt == null) {
-            this.deletedAt = LocalDateTime.now();
+        if(this.condition == null) {
+            this.condition = AlertCondition.any_change;
         }
     }
 }

@@ -1,6 +1,7 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.google.firebase.database.annotations.NotNull;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
@@ -65,11 +69,11 @@ public class ControllerAlert {
      * @param productId ID del producto asociado a la alerta
      * @return ResponseEntity con el AlertDTO si existe, estado 200 (OK) o 404 (Not Found)
      */
-    @GetMapping("/{productId}/alert")
+    @GetMapping("/{alertId}/alert")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AlertDTO> getAlertById(@PathVariable @NotBlank String productId) {
-        AlertDTO alert = alertService.getAlertById(productId);
-        
+    public ResponseEntity<AlertDTO> getAlertById(@PathVariable @NotNull UUID alertId) {
+        AlertDTO alert = alertService.getAlertById(alertId);
+
         if (alert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -92,16 +96,16 @@ public class ControllerAlert {
      * Actualiza una alerta existente.
      * Valida que la alerta pertenezca al usuario autenticado.
      * 
-     * @param productId ID del producto asociado a la alerta
+     * @param alertId ID de la alerta a actualizar
      * @param alertDTO Datos actualizados de la alerta
      * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
      */
-    @PutMapping("/{productId}/alert")
+    @PutMapping("/{alertId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlert(
-            @PathVariable @NotBlank String productId,
+            @PathVariable @NotNull UUID alertId,
             @RequestBody @Valid  AlertRequestDTO frequency) {
-        AlertDTO updatedAlert = alertService.updateAlert(productId, frequency);
+        AlertDTO updatedAlert = alertService.updateAlert(alertId, frequency);
         if (updatedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -112,16 +116,16 @@ public class ControllerAlert {
      * Actualiza el estado (activa/inactiva) de una alerta.
      * Valida que la alerta pertenezca al usuario autenticado.
      * 
-     * @param productId ID del producto asociado a la alerta
+     * @param alertId ID de la alerta a actualizar
      * @param isActive Nuevo estado de la alerta
      * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
      */
-    @PatchMapping("/{productId}/alert")
+    @PatchMapping("/{alertId}/alert")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<AlertDTO> updateAlertStatus(
-            @PathVariable @NotBlank String productId,
+            @PathVariable @NotNull UUID alertId,
             @RequestBody @Valid AlertStatusDTO isActive) {
-        AlertDTO updatedAlert = alertService.updateAlertStatus(productId, isActive.getIsActive());
+        AlertDTO updatedAlert = alertService.updateAlertStatus(alertId, isActive.getIsActive());
         if (updatedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -135,11 +139,10 @@ public class ControllerAlert {
      * @param productId ID del producto asociado a la alerta
      * @return ResponseEntity con el AlertDTO eliminado, estado 200 (OK) o 404 (Not Found)
      */
-    @DeleteMapping("/{productId}/alert")
+    @DeleteMapping("/{alertId}/alert")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AlertDTO> deleteAlert(@PathVariable @NotBlank String productId) {
-        AlertDTO deletedAlert = alertService.deleteAlert(productId);
-        
+    public ResponseEntity<AlertDTO> deleteAlert(@PathVariable @NotNull UUID alertId) {
+        AlertDTO deletedAlert = alertService.deleteAlert(alertId);
         if (deletedAlert == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

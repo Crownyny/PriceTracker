@@ -18,32 +18,32 @@ public interface IAlertService {
     AlertDTO createAlert(AlertFrequency frequency, String productId);
     /**
      * Obtiene una alerta por su ID. El usuario debe estar autenticado para obtener una alerta.
-     * @param productId El ID del producto asociado a la alerta a obtener
+     * @param alertId El ID de la alerta a obtener
      * @return El AlertDTO correspondiente al ID proporcionado, o null si no se encuentra la alerta
      */
-    AlertDTO getAlertById(String productId);
+    AlertDTO getAlertById(UUID alertId);
     /**
      * Actualiza una alerta existente para un producto específico. El usuario debe estar autenticado para actualizar una alerta.
-     * @param productId El ID del producto asociado a la alerta a actualizar
+     * @param alertId El ID de la alerta a actualizar
      * @param alertDTO Un objeto AlertDTO que contiene la información actualizada de la alerta
      * @param userId El ID del usuario que intenta actualizar la alerta
      * @return El AlertDTO actualizado, o null si no se encuentra la alerta a actualizar
      */
-    AlertDTO updateAlert(String productId,  AlertRequestDTO frequency);
+    AlertDTO updateAlert(UUID alertId,  AlertRequestDTO frequency);
 
     /**
      * Actualiza el estado de una alerta existente para un producto específico. El usuario debe estar autenticado para actualizar el estado de una alerta.
-     * @param productId El ID del producto asociado a la alerta a actualizar
+     * @param alertId El ID de la alerta a actualizar
      * @param isActive El nuevo estado de la alerta
      * @return El AlertDTO actualizado, o null si no se encuentra la alerta a actualizar
      */
-    AlertDTO updateAlertStatus(String productId,  Boolean isActive);
+    AlertDTO updateAlertStatus(UUID alertId,  Boolean isActive);
     /**
      * Elimina una alerta por su ID. El usuario debe estar autenticado para eliminar una alerta.
-     * @param productId El ID del producto asociado a la alerta a eliminar
+     * @param alertId El ID de la alerta a eliminar
      * @return El AlertDTO eliminado, o null si no se encuentra la alerta a eliminar
      */
-    AlertDTO deleteAlert(String productId);
+    AlertDTO deleteAlert(UUID alertId);
     /**
      * Obtiene todas las alertas existentes. El usuario debe estar autenticado para obtener las alertas.
      * @return Lista de alertas existentes, o una lista vacía si no se encuentran alertas

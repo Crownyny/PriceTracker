@@ -64,34 +64,34 @@ public class AlertService implements IAlertService {
     }
 
     @Override
-    public AlertDTO getAlertById(String productId) {
+    public AlertDTO getAlertById(UUID alertId) {
         UUID userId = getCurrentUserId();
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+        return alertRepository.findById(alertId)
             .map(alertMapper::toDTO)
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 
     @Override
-    public AlertDTO updateAlert(String productId, AlertRequestDTO alertDTO) {
+    public AlertDTO updateAlert(UUID alertId, AlertRequestDTO alertDTO) {
         UUID userId = getCurrentUserId();
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+        return alertRepository.findByIdAndDeletedAtIsNull(alertId)
             .map(alertEntity -> {
                 alertEntity.setFrequency(alertDTO.getFrequency());
                 AlertEntity updatedAlert = alertRepository.save(alertEntity);
                 return alertMapper.toDTO(updatedAlert);
             })
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 
     @Override
-    public AlertDTO updateAlertStatus(String productId ,Boolean isActive) {
+    public AlertDTO updateAlertStatus(UUID alertId, Boolean isActive) {
         UUID userId = getCurrentUserId();
-        System.out.println("Updating alert status for productId: " + productId + ", userId: " + userId + ", isActive: " + isActive);
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+        System.out.println("Updating alert status for alertId: " + alertId + ", userId: " + userId + ", isActive: " + isActive);
+        return alertRepository.findById(alertId)
             .map(alertEntity -> {
                 validateStatusChange(alertEntity.getIsActive(), isActive);
 
@@ -100,21 +100,23 @@ public class AlertService implements IAlertService {
                 return alertMapper.toDTO(updatedAlert);
             })
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 
     @Override
-    public AlertDTO deleteAlert(String productId) {
-        UUID userId = getCurrentUserId();   
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+    public AlertDTO deleteAlert(UUID alertId) {
+        UUID userId = getCurrentUserId();
+        return alertRepository.findById(alertId)
             .map(alertEntity -> {
+                alertEntity.setIsActive(false);
+                alertEntity.setDeletedAt(LocalDateTime.now());
                 AlertDTO dto = alertMapper.toDTO(alertEntity);
-                alertRepository.delete(alertEntity);
+                alertRepository.save(alertEntity);
                 return dto;
             })
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 

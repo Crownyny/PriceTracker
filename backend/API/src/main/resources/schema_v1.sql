@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS "alert"(
     "is_active" BOOLEAN NOT NULL DEFAULT TRUE,
     "frequency" VARCHAR(255) CHECK ("frequency" IN('instant', 'daily', 'weekly')) NOT NULL,
     "create_at" TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "deleted_at" TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" TIMESTAMP(0) WITHOUT TIME ZONE NULL,
     CONSTRAINT "alert_pkey" PRIMARY KEY("id"),
     CONSTRAINT "alert_user_id_foreign" FOREIGN KEY("user_id") REFERENCES "user"("id"),
     CONSTRAINT "alert_product_id_foreign" FOREIGN KEY("product_id") REFERENCES "normalized_products"("id")
