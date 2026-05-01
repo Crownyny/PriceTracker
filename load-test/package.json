@@ -1,0 +1,10 @@
+{
+  "name": "pricetracker-load-test",
+  "private": true,
+  "type": "module",
+  "description": "Carga concurrente vía WebSocket/STOMP (similar a prueba.html)",
+  "dependencies": {
+    "@stomp/stompjs": "^7.0.0",
+    "sockjs-client": "^1.6.1"
+  }
+}

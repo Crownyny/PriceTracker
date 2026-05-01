@@ -51,14 +51,13 @@ public class ProductService implements IProductService {
 
     @Override
     public List<NormalizedProductDTO> getProductByProductRef(QueryDTOIN query) {
-        List<NormalizedProductDTO> products = null;
         List<NormalizedProductEntity> entities = productRepository.findByProductRef(query.getProduct_ref());
-        if(entities != null && !entities.isEmpty()) {
-            products = entities.stream()
+        if (entities == null || entities.isEmpty()) {
+            return List.of();
+        }
+        return entities.stream()
                 .map(entity -> mapperProduct.toDTO(entity))
                 .collect(Collectors.toList());
-        }
-        return products;
     }
 
     @Override

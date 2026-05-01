@@ -9,9 +9,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class IntentResponseDTOIN {
     private String input;
-    private String p_buy;
+    /** Coincide con el JSON numérico de microServiceModelProduct (/predict). */
+    private Double p_buy;
     private String label;
-    private String threshold;
+    private Double threshold;
     public IntentResponseDTOIN() {
     }   
 }
