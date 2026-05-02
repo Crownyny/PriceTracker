@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ProductsService } from '../products/services/products.service';
 import { StompWebSocketService } from '../../core/services/stomp-websocket.service';
 import { Product } from '../../shared/models/product.model';
-import { catchError, of, Subject } from 'rxjs';
+import { catchError, merge, of, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ProductSearchResponse } from '../../shared/models/product.model';
 
@@ -26,8 +26,10 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
   searchStatus = ''; // Para mostrar estado de búsqueda
   usingStomp = false; // Indicador visual si se usa STOMP
   stompConnected = false; // Estado de conexión STOMP
+  lastSearchRef = '';
 
   private destroy$ = new Subject<void>();
+  private searchSession$ = new Subject<void>();
 
   constructor(
     private productsService: ProductsService,
@@ -35,6 +37,10 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
+    // Importante: el servicio NO se conecta solo; si no llamamos connect(),
+    // Angular nunca se suscribe a `/user/queue/products` (tu prueba.html sí lo hace).
+    this.stompService.connect();
+
     // Monitorear estado de STOMP
     this.stompService.connected$
       .pipe(takeUntil(this.destroy$))
@@ -64,6 +70,8 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.searchSession$.next();
+    this.searchSession$.complete();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -88,25 +96,56 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
 
   onSearch() {
     this.error = ''; // Limpiar error previo
+    // Cancela streams de una búsqueda anterior
+    this.searchSession$.next();
     
     if (this.searchQuery.trim()) {
       this.searching = true;
       this.searchStatus = 'Buscando productos...';
       this.usingStomp = this.stompConnected; // Mostrar si se usa STOMP
+      const productRef = this.searchQuery.trim().replace(/\s+/g, '');
+      this.lastSearchRef = productRef;
 
-      // Si hay query, buscar en el backend
-      this.productsService.searchProducts(this.searchQuery).pipe(
-        catchError(error => {
-          this.error = 'Error buscando productos';
+      // 1) REST primero: buscar en BD por `product_ref` (más rápido si ya existe/recent).
+      this.productsService.getSearchFromDb(productRef).pipe(
+        catchError((error) => {
           console.error(error);
-          this.searching = false;
-          return of({ productRef: '', products: [], totalResults: 0 });
+          return of({ productRef, products: [], totalResults: 0 } as ProductSearchResponse);
         }),
-        takeUntil(this.destroy$)
-      ).subscribe((response: any) => {
-        this.filteredProducts = response.products || [];
-        this.searching = false;
-        this.searchStatus = '';
+        takeUntil(merge(this.destroy$, this.searchSession$))
+      ).subscribe((dbResponse) => {
+        const dbProducts = dbResponse.products || [];
+        if (dbProducts.length > 0) {
+          this.filteredProducts = dbProducts;
+          this.searching = false;
+          this.searchStatus = '';
+          return;
+        }
+
+        // 2) Si no hay resultados en BD, usar WebSocket (si está conectado).
+        if (!this.stompConnected) {
+          this.error = 'WebSocket desconectado. No hay resultados en BD.';
+          this.searching = false;
+          this.searchStatus = '';
+          return;
+        }
+
+        this.searchStatus = 'Búsqueda en progreso (tiempo real)...';
+        this.filteredProducts = [];
+
+        // Enviar búsqueda (misma destination que `prueba ac.html`)
+        this.stompService.sendSearchCommand(this.searchQuery, productRef);
+
+        // Escuchar productos en tiempo real SOLO para esta búsqueda
+        this.stompService.products$
+          .pipe(takeUntil(merge(this.destroy$, this.searchSession$)))
+          .subscribe((message: any) => {
+            const msgRef = String(message?.productRef ?? message?.product_ref ?? '').trim();
+            if (msgRef && msgRef !== this.lastSearchRef) return;
+
+            const incoming = Array.isArray(message?.products) ? message.products : [];
+            this.filteredProducts = incoming as Product[];
+          });
       });
     } else {
       // Si no hay query, mostrar todos

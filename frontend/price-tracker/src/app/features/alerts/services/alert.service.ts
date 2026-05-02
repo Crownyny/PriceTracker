@@ -15,13 +15,14 @@ import {
 
 /**
  * Alert Service - Gestiona alertas de precios
- * Endpoints:
- * - GET /api/alerts
- * - GET /api/{userId}/alert?productId={productId}
- * - POST /api/{userId}/alert?productId={productId}
- * - PUT /api/{userId}/alert?productId={productId}
- * - PATCH /api/{userId}/alert?productId={productId}
- * - DELETE /api/{userId}/alert?productId={productId}
+ *
+ * Fuente de verdad (Postman / enunciado):
+ * - POST   /api/{userId}/alert?productId={productId}   body: { frequency }
+ * - GET    /api/{alertId}/alert
+ * - GET    /api/alert
+ * - PUT    /api/{alertId}/alert                        body: { frequency }
+ * - PATCH  /api/{alertId}/alert                        body: { isActive }
+ * - DELETE /api/{alertId}/alert
  */
 @Injectable({
   providedIn: 'root'
@@ -48,6 +49,10 @@ export class AlertService {
 
   private buildUserAlertUrl(userId: string): string {
     return `${this.getApiBaseUrl()}/${userId}/alert`;
+  }
+
+  private buildAlertByIdUrl(alertId: string): string {
+    return `${this.getApiBaseUrl()}/${encodeURIComponent(alertId)}/alert`;
   }
 
   private normalizeFrequency(value?: string): AlertFrequency {
@@ -91,42 +96,24 @@ export class AlertService {
   }
 
   /**
-   * Obtiene alertas (si se envía productId, obtiene solo esa alerta)
+   * Obtiene todas las alertas.
+   * Endpoint Postman: GET /api/alert
    */
   getAlerts(productId?: string): Observable<AlertListResponse> {
-    if (!productId) {
-      // GET /api/alerts
-      return this.http.get<any>(`${this.getApiBaseUrl()}/alerts`).pipe(
-        map((response) => {
-          const rawAlerts = Array.isArray(response)
-            ? response
-            : (response?.alerts ? response.alerts : (response ? [response] : []));
-
-          return {
-            alerts: rawAlerts.map((raw: any) => this.toAlert(raw)),
-            total: rawAlerts.length,
-            page: 0,
-            pageSize: rawAlerts.length
-          };
-        })
-      );
-    }
-
-    // GET /api/{userId}/alert?productId={productId}
-    const userId = this.getCurrentUserId();
-    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
-
-    return this.http.get<any>(url).pipe(
+    return this.http.get<any>(`${this.getApiBaseUrl()}/alert`).pipe(
       map((response) => {
         const rawAlerts = Array.isArray(response)
           ? response
           : (response?.alerts ? response.alerts : (response ? [response] : []));
 
+        const mapped: Alert[] = rawAlerts.map((raw: any) => this.toAlert(raw));
+        const filtered = productId ? mapped.filter((a: Alert) => a.productId === productId) : mapped;
+
         return {
-          alerts: rawAlerts.map((raw: any) => this.toAlert(raw)),
-          total: rawAlerts.length,
+          alerts: filtered,
+          total: filtered.length,
           page: 0,
-          pageSize: rawAlerts.length
+          pageSize: filtered.length
         };
       })
     );
@@ -154,15 +141,17 @@ export class AlertService {
 
   /**
    * Obtiene una alerta específica
+   * Endpoint Postman: GET /api/{alertId}/alert
    */
-  getAlert(productId: string, alertId: string): Observable<Alert> {
-    return this.getAlerts(productId).pipe(
-      map((response) => response.alerts.find((alert) => alert.id === alertId) as Alert)
+  getAlert(alertId: string): Observable<Alert> {
+    return this.http.get<any>(this.buildAlertByIdUrl(alertId)).pipe(
+      map((raw) => this.toAlert(raw))
     );
   }
 
   /**
    * Crea una nueva alerta
+   * Endpoint Postman: POST /api/{userId}/alert?productId={productId} body: { frequency }
    */
   createAlert(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
     const userId = this.getCurrentUserId();
@@ -178,37 +167,36 @@ export class AlertService {
 
   /**
    * Actualiza una alerta (edita precio objetivo o frecuencia)
+   * Endpoint Postman: PUT /api/{alertId}/alert
    */
-  updateAlert(productId: string, request: UpdateAlertRequest): Observable<AlertResponse> {
-    const userId = this.getCurrentUserId();
-    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
+  updateAlert(alertId: string, request: UpdateAlertRequest): Observable<AlertResponse> {
+    const body = {
+      frequency: request.frequency
+    };
 
-    return this.http.put<any>(url, request).pipe(
+    return this.http.put<any>(this.buildAlertByIdUrl(alertId), body).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
 
   /**
    * Cambia el estado de una alerta (activa/desactiva)
+   * Endpoint Postman: PATCH /api/{alertId}/alert body: { isActive }
    */
-  updateAlertStatus(productId: string, request: UpdateAlertStatusRequest): Observable<AlertResponse> {
-    const userId = this.getCurrentUserId();
-    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
+  updateAlertStatus(alertId: string, request: UpdateAlertStatusRequest): Observable<AlertResponse> {
     const body = { isActive: request.isActive };
 
-    return this.http.patch<any>(url, body).pipe(
+    return this.http.patch<any>(this.buildAlertByIdUrl(alertId), body).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
 
   /**
    * Elimina una alerta
+   * Endpoint Postman: DELETE /api/{alertId}/alert
    */
-  deleteAlert(productId: string): Observable<AlertResponse> {
-    const userId = this.getCurrentUserId();
-    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
-
-    return this.http.delete<any>(url).pipe(
+  deleteAlert(alertId: string): Observable<AlertResponse> {
+    return this.http.delete<any>(this.buildAlertByIdUrl(alertId)).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -216,14 +204,14 @@ export class AlertService {
   /**
    * Activates an alert
    */
-  activateAlert(productId: string): Observable<AlertResponse> {
-    return this.updateAlertStatus(productId, { isActive: true });
+  activateAlert(alertId: string): Observable<AlertResponse> {
+    return this.updateAlertStatus(alertId, { isActive: true });
   }
 
   /**
    * Deactivates an alert
    */
-  deactivateAlert(productId: string): Observable<AlertResponse> {
-    return this.updateAlertStatus(productId, { isActive: false });
+  deactivateAlert(alertId: string): Observable<AlertResponse> {
+    return this.updateAlertStatus(alertId, { isActive: false });
   }
 }

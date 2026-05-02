@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, Subject } from 'rxjs';
-import { map, switchMap, timeout, take, catchError as rxCatchError } from 'rxjs/operators';
+import { filter, map, switchMap, timeout, take, catchError as rxCatchError } from 'rxjs/operators';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { StompWebSocketService } from '../../../core/services/stomp-websocket.service';
 import { Product, ProductSearchResponse } from '../../../shared/models/product.model';
@@ -66,7 +66,10 @@ export class ProductsService {
   }
 
   /**
-   * Busca productos por query usando STOMP cuando está disponible, REST como fallback
+   * Busca productos.
+   *
+   * Regla (Postman / requerimiento): **REST primero** para resultados en BD por `product_ref`.
+   * Si no hay resultados, usar WebSocket STOMP para obtener productos en tiempo real.
    */
   searchProducts(query: string): Observable<ProductSearchResponse> {
     const productRef = query.trim().replace(/\s+/g, '');
@@ -79,39 +82,47 @@ export class ProductsService {
       });
     }
 
-    // Si STOMP está conectado, usar WebSocket
-    if (this.stompService.isConnectedNow()) {
-      console.log('📡 Usando STOMP para búsqueda');
-      
-      // Enviar comando de búsqueda por STOMP
-      this.stompService.sendSearchCommand(query, productRef);
+    return this.getSearchFromDb(productRef).pipe(
+      switchMap((dbResponse) => {
+        if ((dbResponse.products ?? []).length > 0) {
+          return of(dbResponse);
+        }
 
-      // Escuchar respuesta del backend (con timeout de 30 segundos)
-      return this.stompService.products$.pipe(
-        timeout(30000),
-        take(1),
-        map((message: any) => {
-          const products = (message.products ?? []).map((item: any) => this.mapBackendProduct(item));
-          return {
-            productRef: message.productRef || productRef,
-            products,
-            totalResults: message.totalResults || products.length
-          };
-        }),
-        rxCatchError((error) => {
-          console.warn('⚠️ STOMP timeout o error, usando REST fallback:', error);
-          return this.searchProductsRest(query, productRef);
-        })
-      );
-    } else {
-      // Si STOMP no está conectado, usar REST
-      console.log('🔗 Usando REST para búsqueda (STOMP desconectado)');
-      return this.searchProductsRest(query, productRef);
-    }
+        if (!this.stompService.isConnectedNow()) {
+          // Sin WS y sin resultados en BD => devolver vacío.
+          return of({ productRef, products: [], totalResults: 0 });
+        }
+
+        // WS: enviar y esperar el primer mensaje de productos para este `productRef`
+        this.stompService.sendSearchCommand(query, productRef);
+
+        return this.stompService.products$.pipe(
+          map((message: any) => {
+            const msgRef = String(message?.productRef ?? message?.product_ref ?? '').trim();
+            if (msgRef && msgRef !== productRef) {
+              return null;
+            }
+
+            const products = (message?.products ?? []).map((item: any) => this.mapBackendProduct(item));
+            return {
+              productRef: msgRef || productRef,
+              products,
+              totalResults: message?.totalResults || products.length
+            } as ProductSearchResponse;
+          }),
+          // Ignorar mensajes de otras búsquedas
+          filter((value): value is ProductSearchResponse => Boolean(value)),
+          timeout(30000),
+          take(1),
+          rxCatchError(() => of({ productRef, products: [], totalResults: 0 }))
+        );
+      })
+    );
   }
 
   /**
-   * Búsqueda por REST (fallback)
+   * @deprecated No usar para iniciar scraping. Se deja por compatibilidad si hay pantallas antiguas.
+   * TODO(frontend): confirmar con backend si existe endpoint REST para disparar scraping (no inventar).
    */
   private searchProductsRest(query: string, productRef: string): Observable<ProductSearchResponse> {
     const payload = {
