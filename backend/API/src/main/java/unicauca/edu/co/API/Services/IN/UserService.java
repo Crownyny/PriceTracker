@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
+import unicauca.edu.co.API.Domain.Model.ErrorType;
 import unicauca.edu.co.API.Domain.Validators.Chains.UserValidationChain;
 import unicauca.edu.co.API.Exception.BusinessException;
 import unicauca.edu.co.API.Exception.UserNotFoundException;
@@ -200,26 +201,26 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User updateUserRole(UserRole newRole) {
+    public UserDTO updateUserRole(UserRole newRole) {
         UUID userId = getCurrentUserId();
         if (userId == null) {
-            throw new BusinessException("User id is required");
+            throw new BusinessException("User id is required", ErrorType.MISSING_USER_ID);
         }
 
         if (newRole == null) {
-            throw new BusinessException("User role is required");
+            throw new BusinessException("User role is required", ErrorType.MISSING_USER_ROLE);
         }
 
         User user = userPersistencePort.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (user.getRole() == newRole) {
-            throw new BusinessException("User already has role: " + newRole);
+            throw new BusinessException("User already has role: " + newRole, ErrorType.USER_ALREADY_HAS_ROLE);
         }
 
         user.setRole(newRole);
-
-        return userPersistencePort.save(user);
+        User userSave = userPersistencePort.save(user);
+        return userMapper.toDTO(userSave);
     }
     
     @Override

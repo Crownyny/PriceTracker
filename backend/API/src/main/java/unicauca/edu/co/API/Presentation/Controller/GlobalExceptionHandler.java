@@ -39,6 +39,7 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND.value())
                 .error("Not Found")
                 .message(e.getMessage())
+                .code(e.getErrorCode())
                 .path(request.getRequestURI())
                 .timestamp(System.currentTimeMillis())
                 .build();
@@ -52,6 +53,7 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Business Logic Error")
                 .message(e.getMessage())
+                .code(e.getErrorCode())
                 .path(request.getRequestURI())
                 .timestamp(System.currentTimeMillis())
                 .build();

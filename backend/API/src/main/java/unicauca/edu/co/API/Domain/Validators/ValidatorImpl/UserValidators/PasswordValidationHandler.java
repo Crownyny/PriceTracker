@@ -3,7 +3,9 @@ package unicauca.edu.co.API.Domain.Validators.ValidatorImpl.UserValidators;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import unicauca.edu.co.API.Domain.Model.ErrorType;
 import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.UserValidationHandler;
+import unicauca.edu.co.API.Exception.BusinessException;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import java.util.regex.Pattern;
 
@@ -24,8 +26,9 @@ public class PasswordValidationHandler implements UserValidationHandler {
         String password = request.getPassword();
 
         if (password == null || !PASSWORD_PATTERN.matcher(password).matches()) {
-            throw new IllegalArgumentException(
-                    "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo especial"
+            throw new BusinessException(
+                    "La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un símbolo especial",
+                    ErrorType.INVALID_PASSWORD_FORMAT
             );
         }
     }

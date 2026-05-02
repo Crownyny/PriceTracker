@@ -30,5 +30,5 @@ public interface IUserService {
      * @throws BusinessException Si el userId o newRole son null, o si el usuario ya tiene el rol solicitado.
      * @throws UserNotFoundException Si no se encuentra el usuario con el ID proporcionado.
      */
-    User updateUserRole(UserRole newRole);
+    UserDTO updateUserRole(UserRole newRole);
 }

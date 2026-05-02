@@ -3,7 +3,9 @@ package unicauca.edu.co.API.Domain.Validators.ValidatorImpl.UserValidators;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import unicauca.edu.co.API.Domain.Model.ErrorType;
 import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.UserValidationHandler;
+import unicauca.edu.co.API.Exception.BusinessException;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 
 @Component
@@ -15,7 +17,7 @@ public class EmailFormatValidationHandler implements UserValidationHandler {
         String email = request.getEmail();
 
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("El correo es obligatorio");
+            throw new BusinessException("El correo es obligatorio", ErrorType.INVALID_EMAIL_FORMAT);
         }
 
         // Normalización básica
@@ -23,7 +25,7 @@ public class EmailFormatValidationHandler implements UserValidationHandler {
         request.setEmail(email);
 
         if (!email.contains("@") || !email.contains(".com")) {      
-            throw new IllegalArgumentException("El formato del correo no es válido");
+            throw new BusinessException("El formato del correo no es válido", ErrorType.INVALID_EMAIL_FORMAT);
         }
     }
 }

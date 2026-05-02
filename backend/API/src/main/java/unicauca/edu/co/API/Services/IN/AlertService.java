@@ -20,6 +20,8 @@ import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.DataAccess.Repository.AlertRepository;
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.DataAccess.Repository.UserRepository;
+import unicauca.edu.co.API.Domain.Model.ErrorType;
+import unicauca.edu.co.API.Exception.BusinessException;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
 import unicauca.edu.co.API.Presentation.Mapper.AlertMapper;
@@ -175,34 +177,44 @@ public class AlertService implements IAlertService {
     private void validateAlertLimit(UUID userId) {
         List<AlertDTO> userAlerts = getAllAlerts();
         if (userAlerts.size() >= 3 && userRepository.getReferenceById(userId).getRole() == UserEntity.UserRole.registered) {
-            throw new IllegalStateException("MAXIMO ALERTAS ALCANZADO POR FREEMIUM");
+            throw new BusinessException(
+                "Maximum number of alerts reached for freemium users", 
+                ErrorType.INVALID_PARAMETER
+            );
         }
     }
+
     /**
      * Valida que no exista una alerta activa para el mismo producto y usuario. Si ya existe una alerta para el producto y usuario proporcionados
      * se lanza una excepción indicando que la alerta ya existe.
-     * @param userId
-     * @param productId
+     * @param userId El ID del usuario
+     * @param productId El ID del producto
      */
     private void validateAlertDoesNotExist(UUID userId, String productId) {
-            boolean exists = alertRepository
-        .existsByUserIdAndProductIdAndDeletedAtIsNull(userId, productId);
+        boolean exists = alertRepository
+            .existsByUserIdAndProductIdAndDeletedAtIsNull(userId, productId);
 
         System.out.println("Validating alert existence for userId: " + userId + ", productId: " + productId + ", exists: " + exists);
         if (exists) {
-            throw new IllegalStateException("Alert already exists for this product and user");
+            throw new BusinessException(
+                "Alert already exists for this product and user", 
+                ErrorType.ALERT_ALREADY_EXISTS
+            );
         }
     }
+
     /**
      * Valida que el cambio de estado de la alerta sea diferente al estado actual. Si el estado actual y el estado entrante son iguales, 
      * se lanza una excepción indicando que la alerta ya tiene este estado.
      * @param current El estado actual de la alerta
      * @param incoming El nuevo estado que se desea establecer para la alerta
      */
-
     private void validateStatusChange(Boolean current, Boolean incoming) {
         if (Objects.equals(current, incoming)) {
-            throw new IllegalStateException("Alert already has this status");
+            throw new BusinessException(
+                "Alert already has this status", 
+                ErrorType.INVALID_PARAMETER
+            );
         }
     }
 

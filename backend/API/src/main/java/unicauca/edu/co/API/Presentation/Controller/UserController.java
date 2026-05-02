@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserRoleUpdateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
@@ -49,10 +48,8 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> updateUserRole(
             @RequestBody UserRoleUpdateDTOIN updateRequest) {
-        
-        User updatedUser = userService.updateUserRole( updateRequest.getNewRole());
-        UserDTO userDTO = userMapper.toDTO(updatedUser);
-        
-        return ResponseEntity.ok(userDTO);
+    
+        UserDTO updatedUser = userService.updateUserRole( updateRequest.getNewRole());
+        return ResponseEntity.ok(updatedUser);
     }
 }
