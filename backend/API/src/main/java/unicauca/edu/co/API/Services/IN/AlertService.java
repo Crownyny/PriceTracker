@@ -3,7 +3,6 @@ package unicauca.edu.co.API.Services.IN;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 import com.google.firebase.database.annotations.NotNull;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity;
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
@@ -23,6 +21,7 @@ import unicauca.edu.co.API.DataAccess.Repository.AlertRepository;
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.DataAccess.Repository.UserRepository;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
 import unicauca.edu.co.API.Presentation.Mapper.AlertMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
@@ -65,34 +64,34 @@ public class AlertService implements IAlertService {
     }
 
     @Override
-    public AlertDTO getAlertById(String productId) {
+    public AlertDTO getAlertById(UUID alertId) {
         UUID userId = getCurrentUserId();
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+        return alertRepository.findById(alertId)
             .map(alertMapper::toDTO)
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 
     @Override
-    public AlertDTO updateAlert(String productId, AlertDTO alertDTO) {
+    public AlertDTO updateAlert(UUID alertId, AlertRequestDTO alertDTO) {
         UUID userId = getCurrentUserId();
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+        return alertRepository.findByIdAndDeletedAtIsNull(alertId)
             .map(alertEntity -> {
                 alertEntity.setFrequency(alertDTO.getFrequency());
                 AlertEntity updatedAlert = alertRepository.save(alertEntity);
                 return alertMapper.toDTO(updatedAlert);
             })
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 
     @Override
-    public AlertDTO updateAlertStatus(String productId ,Boolean isActive) {
+    public AlertDTO updateAlertStatus(UUID alertId, Boolean isActive) {
         UUID userId = getCurrentUserId();
-        System.out.println("Updating alert status for productId: " + productId + ", userId: " + userId + ", isActive: " + isActive);
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+        System.out.println("Updating alert status for alertId: " + alertId + ", userId: " + userId + ", isActive: " + isActive);
+        return alertRepository.findById(alertId)
             .map(alertEntity -> {
                 validateStatusChange(alertEntity.getIsActive(), isActive);
 
@@ -101,26 +100,29 @@ public class AlertService implements IAlertService {
                 return alertMapper.toDTO(updatedAlert);
             })
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 
     @Override
-    public AlertDTO deleteAlert(String productId) {
-        UUID userId = getCurrentUserId();   
-        return alertRepository.findByProductIdAndUserId(productId, userId)
+    public AlertDTO deleteAlert(UUID alertId) {
+        UUID userId = getCurrentUserId();
+        return alertRepository.findById(alertId)
             .map(alertEntity -> {
+                alertEntity.setIsActive(false);
+                alertEntity.setDeletedAt(LocalDateTime.now());
                 AlertDTO dto = alertMapper.toDTO(alertEntity);
-                alertRepository.delete(alertEntity);
+                alertRepository.save(alertEntity);
                 return dto;
             })
             .orElseThrow(() -> new EntityNotFoundException(
-                "Alert not found for productId: " + productId + " and userId: " + userId
+                "Alert not found for alertId: " + alertId + " and userId: " + userId
             ));
     }
 
     @Override
-    public List<AlertDTO> getAllAlerts(UUID userId) {
+    public List<AlertDTO> getAllAlerts() {
+        UUID userId = getCurrentUserId();
         List<AlertEntity> alerts = alertRepository.findByUserIdAndIsActiveTrue(userId);
         return alerts.stream()
             .map(alertMapper::toDTO)
@@ -171,7 +173,7 @@ public class AlertService implements IAlertService {
      * @param userId El ID del usuario para el cual se desea validar el límite de alertas
      */
     private void validateAlertLimit(UUID userId) {
-        List<AlertDTO> userAlerts = getAllAlerts(userId);
+        List<AlertDTO> userAlerts = getAllAlerts();
         if (userAlerts.size() >= 3 && userRepository.getReferenceById(userId).getRole() == UserEntity.UserRole.registered) {
             throw new IllegalStateException("MAXIMO ALERTAS ALCANZADO POR FREEMIUM");
         }
