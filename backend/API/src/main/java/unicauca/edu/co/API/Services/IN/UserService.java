@@ -8,8 +8,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
+import unicauca.edu.co.API.Domain.Validators.Chains.UserValidationChain;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
+import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
+import unicauca.edu.co.API.Presentation.Mapper.UserMapper;
+import unicauca.edu.co.API.Services.Interfaces.IN.IFirebaseAuth;
 import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IUserPersistencePort;
 
@@ -18,40 +22,50 @@ import unicauca.edu.co.API.Services.Interfaces.OUT.IUserPersistencePort;
 public class UserService implements IUserService {
 
     private final IUserPersistencePort userPersistencePort;
+    private final IFirebaseAuth firebaseAuthPort;
+    private final UserMapper userMapper;
+    private final UserValidationChain userValidationChain;
 
-    public UserService(IUserPersistencePort userPersistencePort) {
+    public UserService(
+        IUserPersistencePort userPersistencePort,
+        IFirebaseAuth firebaseAuthPort,
+        UserMapper userMapper,
+        UserValidationChain userValidationChain
+    ) {
         this.userPersistencePort = userPersistencePort;
+        this.firebaseAuthPort = firebaseAuthPort;
+        this.userMapper = userMapper;  
+        this.userValidationChain = userValidationChain; 
+    }
+    @Override
+    public UserDTO createUser(UserCreateDTOIN createRequest) {
+        userValidationChain.validate(createRequest);
+        String firebaseUid = null;
+        try {
+            firebaseUid = firebaseAuthPort.createUser(
+                    createRequest.getEmail(),
+                    createRequest.getPassword()
+            );
+            User userSaved = saveUserBD(createRequest, firebaseUid);
+            return userMapper.toDTO(userSaved);
+        } catch (Exception e) {
+            if (firebaseUid != null) {
+                try {
+                    firebaseAuthPort.deleteUser(firebaseUid);
+                } catch (Exception ex) {
+                    
+                }
+            }
+            throw e;
+        }
     }
 
-    @Override
-    public User createUser(UserCreateDTOIN createRequest) {
-        if (createRequest == null) {
-            throw new IllegalArgumentException("Los datos del usuario son obligatorios");
-        }
-
-        String normalizedUid = normalizeAndValidateUid(createRequest.getUid());
-        String normalizedEmail = normalizeAndValidateEmail(createRequest.getEmail());
-
-        if (userPersistencePort.existsByEmailIgnoreCase(normalizedEmail)) {
-            throw new IllegalArgumentException("El correo ya se encuentra registrado");
-        }
-
-        if (userPersistencePort.findByFirebaseUid(normalizedUid).isPresent()) {
-            throw new IllegalArgumentException("El uid de Firebase ya se encuentra registrado");
-        }
-
-        User user = User.builder()
-            .id(UUID.randomUUID())
-            .firebaseUid(normalizedUid)
-            .email(normalizedEmail)
-            .imageProfile(hasText(createRequest.getPicture()) ? createRequest.getPicture().trim() : "")
-            .role(createRequest.getRole() != null ? createRequest.getRole() : UserRole.registered)
-            .createdAt(LocalDateTime.now())
-            .build();
-
+    @Transactional
+    private User saveUserBD(UserCreateDTOIN userSave, String firebaseUid) {
+        User user = builderUserDomain(userSave, firebaseUid);
         return userPersistencePort.save(user);
     }
-
+    
     @Override
     public User updateUser(UserUpdateDTOIN updateRequest) {
         if (updateRequest == null) {
@@ -109,10 +123,10 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User findOrCreateUserFromToken(String uid, String email, String picture) {
+    public User findOrCreateUserFromToken(String uid, String email) {
         String normalizedUid = normalizeOptionalValue(uid);
         String normalizedEmail = normalizeOptionalEmail(email);
-        String normalizedPicture = normalizeOptionalValue(picture);
+
 
         if (!hasText(normalizedUid) && !hasText(normalizedEmail)) {
             throw new IllegalArgumentException("El token no contiene uid ni correo del usuario");
@@ -121,24 +135,21 @@ public class UserService implements IUserService {
         if (hasText(normalizedUid)) {
             User userByUid = userPersistencePort.findByFirebaseUid(normalizedUid).orElse(null);
             if (userByUid != null) {
-                return updateUserWithTokenData(userByUid, normalizedUid, normalizedEmail, normalizedPicture);
+                return updateUserWithTokenData(userByUid, normalizedUid, normalizedEmail);
             }
         }
 
         if (hasText(normalizedEmail)) {
             User userByEmail = userPersistencePort.findByEmail(normalizedEmail).orElse(null);
             if (userByEmail != null) {
-                return updateUserWithTokenData(userByEmail, normalizedUid, normalizedEmail, normalizedPicture);
+                return updateUserWithTokenData(userByEmail, normalizedUid, normalizedEmail);
             }
         }
 
         UserCreateDTOIN createRequest = new UserCreateDTOIN();
-        createRequest.setUid(resolveUidForCreation(normalizedUid, normalizedEmail));
         createRequest.setEmail(resolveEmailForCreation(normalizedEmail, normalizedUid));
-        createRequest.setPicture(hasText(normalizedPicture) ? normalizedPicture : "");
-        createRequest.setRole(UserRole.registered);
-
-        return createUser(createRequest);
+        User createdUser = saveUserBD(createRequest, uid);
+        return createdUser;
     }
 
     private String normalizeAndValidateUid(String uid) {
@@ -148,14 +159,14 @@ public class UserService implements IUserService {
         return uid.trim();
     }
 
-    private String normalizeAndValidateEmail(String email) {
-        if (!hasText(email)) {
-            throw new IllegalArgumentException("El correo del usuario es obligatorio");
+        private String normalizeAndValidateEmail(String email) {
+            if (!hasText(email)) {
+                throw new IllegalArgumentException("El correo del usuario es obligatorio");
+            }
+            return email.trim().toLowerCase();
         }
-        return email.trim().toLowerCase();
-    }
 
-    private User updateUserWithTokenData(User existingUser, String uid, String email, String picture) {
+    private User updateUserWithTokenData(User existingUser, String uid, String email) {
         boolean changed = false;
 
         if (hasText(uid) && !uid.equals(existingUser.getFirebaseUid())) {
@@ -179,10 +190,7 @@ public class UserService implements IUserService {
             }
         }
 
-        if (hasText(picture) && !picture.equals(existingUser.getImageProfile())) {
-            existingUser.setImageProfile(picture);
-            changed = true;
-        }
+        
 
         return changed ? userPersistencePort.save(existingUser) : existingUser;
     }
@@ -253,5 +261,21 @@ public class UserService implements IUserService {
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    /**
+     * Construye un objeto User a partir de un UserCreateDTOIN y un firebaseId.
+     * @param createUser inforamcion a crear del dto
+     * @param firebaseid firebaseID desde firebase
+     * @return user creado
+     */
+    private User builderUserDomain(UserCreateDTOIN createUser, String firebaseid) {
+        return User.builder()
+                .id(UUID.randomUUID())
+                .firebaseUid(firebaseid)
+                .email(createUser.getEmail())
+                .role(UserRole.registered)
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 }

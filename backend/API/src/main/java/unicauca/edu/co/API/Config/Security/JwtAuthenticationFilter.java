@@ -63,8 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             User user = userService.findOrCreateUserFromToken(
                 tokenDTO.getUid(),
-                tokenDTO.getEmail(),
-                tokenDTO.getPicture()
+                tokenDTO.getEmail()
             );
 
             AuthenticatedUserPrincipal principal = new AuthenticatedUserPrincipal(

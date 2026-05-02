@@ -9,10 +9,8 @@ import unicauca.edu.co.API.Domain.Model.UserRole;
 @Setter
 @AllArgsConstructor
 public class UserCreateDTOIN {
-    private String uid;
     private String email;
-    private String picture;
-    private UserRole role;
+    private String password;
 
     public UserCreateDTOIN() {
     }
