@@ -130,11 +130,12 @@ export class StompWebSocketService {
       return;
     }
 
+    // Nota: `prueba ac.html` funciona enviando `{ query }` a `/app/search`.
+    // Mantenemos `product_ref/search_id` solo como metadata opcional (si backend lo ignora, no afecta).
     const payload = {
-      search_id: productRef,
       query,
       product_ref: productRef,
-      timestamp: new Date().toISOString()
+      search_id: productRef
     };
 
     this.client.publish({

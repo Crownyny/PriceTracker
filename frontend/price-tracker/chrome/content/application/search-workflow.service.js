@@ -96,10 +96,9 @@
           headers.Authorization = `Bearer ${authToken}`;
         }
         
-        // Timeout de 6 segundos para dar tiempo a la API
-        const controller = new AbortController();
-        const INTENT_TIMEOUT_MS = 6000; // 6 segundo timeout
-        const timeoutId = setTimeout(() => controller.abort(), INTENT_TIMEOUT_MS);
+        // Timeout: el relay ocurre en background, así que AbortController aquí NO corta el fetch real.
+        // Importante: evitar Promises que rechazan tarde (unhandled rejection) porque puede romper el flujo WS.
+        const INTENT_TIMEOUT_MS = 12000; // 12s (el background ya aborta a los 10s)
         
         try {
           // Usar API Relay para bypasear CORS
@@ -116,13 +115,23 @@
             body: { query },
           });
 
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error(`Intent relay timeout after ${INTENT_TIMEOUT_MS}ms`)), INTENT_TIMEOUT_MS);
+          let timeoutHandle = null;
+          const timeoutPromise = new Promise((resolve) => {
+            timeoutHandle = setTimeout(() => resolve({ __timedOut: true }), INTENT_TIMEOUT_MS);
           });
 
-          const response = await Promise.race([relayRequest, timeoutPromise]);
-          
-          clearTimeout(timeoutId);
+          const raced = await Promise.race([relayRequest, timeoutPromise]);
+          if (timeoutHandle) {
+            clearTimeout(timeoutHandle);
+            timeoutHandle = null;
+          }
+
+          if (raced && raced.__timedOut) {
+            console.warn(`${constants.LOG_PREFIX} [INTENT] TIMEOUT (>${INTENT_TIMEOUT_MS}ms) - Intent API no respondió a tiempo - Falling back to NOT_BUY`);
+            return false;
+          }
+
+          const response = raced;
           
           console.log(`${constants.LOG_PREFIX} [INTENT] Response OK: ${response.ok}, Status: ${response.status}`);
           
@@ -147,15 +156,8 @@
             return false;
           }
         } catch (err) {
-          clearTimeout(timeoutId);
-          
-          if (err.name === 'AbortError') {
-            console.warn(`${constants.LOG_PREFIX} [INTENT] TIMEOUT (>${INTENT_TIMEOUT_MS}ms) - Intent API no respondió a tiempo - Falling back to NOT_BUY`);
-            return false;
-          } else {
-            console.warn(`${constants.LOG_PREFIX} [INTENT] Error: ${err.message} - Falling back to NOT_BUY`);
-            return false;
-          }
+          console.warn(`${constants.LOG_PREFIX} [INTENT] Error: ${err.message} - Falling back to NOT_BUY`);
+          return false;
         }
       } catch (error) {
         console.warn(`${constants.LOG_PREFIX} [INTENT] Unexpected error - Falling back to NOT_BUY:`, error.message);

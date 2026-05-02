@@ -174,6 +174,7 @@ export class AlertsComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
+    // Postman: GET /api/alert (sin filtro). Filtramos por `productId` en frontend.
     this.alertService.getAlerts(this.selectedProductId).subscribe({
       next: (response) => {
         this.alerts = response.alerts;
@@ -243,7 +244,7 @@ export class AlertsComponent implements OnInit {
   }
 
   toggleAlertStatus(alert: Alert): void {
-    this.alertService.updateAlertStatus(alert.productId, {
+    this.alertService.updateAlertStatus(alert.id, {
       isActive: !alert.isActive
     }).subscribe({
       next: () => {
@@ -256,7 +257,7 @@ export class AlertsComponent implements OnInit {
   }
 
   editAlert(alert: Alert): void {
-    this.alertService.updateAlert(alert.productId, {
+    this.alertService.updateAlert(alert.id, {
       frequency: alert.frequency
     }).subscribe({
       next: () => {
@@ -270,7 +271,7 @@ export class AlertsComponent implements OnInit {
 
   deleteAlert(alertId: string, productId: string): void {
     if (confirm('¿Estás seguro de que deseas eliminar esta alerta?')) {
-      this.alertService.deleteAlert(productId).subscribe({
+      this.alertService.deleteAlert(alertId).subscribe({
         next: () => {
           this.alerts = this.alerts.filter(a => a.id !== alertId);
         },
