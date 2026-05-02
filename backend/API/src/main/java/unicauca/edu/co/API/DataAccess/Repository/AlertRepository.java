@@ -76,4 +76,11 @@ public interface AlertRepository extends JpaRepository<AlertEntity, UUID> {
      * @return Optional con la alerta si existe y no está eliminada, o un Optional vacío si no se encuentra o está eliminada
      */
     Optional<AlertEntity> findByIdAndDeletedAtIsNull(UUID id);
+    /**
+     * Verifica si existe una alerta para un producto específico y un usuario específico que no esté marcada como eliminada (deletedAt is null).
+     * @param userId ID del usuario propietario
+     * @param productId ID del producto
+     * @return true si existe una alerta para el producto y usuario que no esté eliminada, false en caso contrario
+     */
+    boolean existsByUserIdAndProductIdAndDeletedAtIsNotNull(UUID userId, String productId);
 }

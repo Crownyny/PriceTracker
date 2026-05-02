@@ -185,7 +185,7 @@ public class AlertService implements IAlertService {
      * @param productId
      */
     private void validateAlertDoesNotExist(UUID userId, String productId) {
-        boolean exists = alertRepository.existsByUserIdAndProductId(userId, productId);
+        boolean exists = alertRepository.existsByUserIdAndProductIdAndDeletedAtIsNotNull(userId, productId);
         System.out.println("Validating alert existence for userId: " + userId + ", productId: " + productId + ", exists: " + exists);
         if (exists) {
             throw new IllegalStateException("Alert already exists for this product and user");
