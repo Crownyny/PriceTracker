@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.Presentation.DTO.IN;
 
+import java.util.List;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -16,8 +17,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductPriceHistoryDTO {
-    private String productRef;
     private String productId;
     private String category;
-    private PriceHistoryDTO[] history;
+    private List<PriceHistoryDTO> history;
 }

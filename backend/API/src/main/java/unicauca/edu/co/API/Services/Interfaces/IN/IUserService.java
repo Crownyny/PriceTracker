@@ -18,7 +18,7 @@ public interface IUserService {
     /**
      * Busca un usuario por su ID.
      * @param userId El ID del usuario a buscar.
-     * @return El usuario encontrado o null si no existe.   
+     * @return USER El usuario encontrado o null si no existe.   
      */
     User findById(UUID userId);
     /**

@@ -29,13 +29,12 @@ public class HistoryPriceMapper {
 
         var dto = new ProductPriceHistoryDTO();
         dto.setProductId(first.getProductId());
-        dto.setProductRef(first.getProductRef());
         dto.setCategory(range.name());
-
+        
         dto.setHistory(
                 entities.stream()
                         .map(productSnapShotMapper::toDTO)
-                        .toArray(PriceHistoryDTO[]::new)
+                        .toList()
         );
 
         return dto;

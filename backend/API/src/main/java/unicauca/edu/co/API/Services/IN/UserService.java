@@ -227,7 +227,7 @@ public class UserService implements IUserService {
         user.setRole(UserRole.registered);
         return userPersistencePort.save(user);
     }
-
+    
     @Override
     public User findById(UUID userId) {
         if (userId == null) {
