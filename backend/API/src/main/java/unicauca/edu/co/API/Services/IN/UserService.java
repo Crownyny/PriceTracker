@@ -3,12 +3,16 @@ package unicauca.edu.co.API.Services.IN;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
 import unicauca.edu.co.API.Domain.Validators.Chains.UserValidationChain;
+import unicauca.edu.co.API.Exception.BusinessException;
+import unicauca.edu.co.API.Exception.UserNotFoundException;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
@@ -196,35 +200,25 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User upgradeToPremium(UUID userId) {
+    public User updateUserRole(UserRole newRole) {
+        UUID userId = getCurrentUserId();
         if (userId == null) {
-            throw new IllegalArgumentException("El id del usuario es obligatorio");
+            throw new BusinessException("User id is required");
+        }
+
+        if (newRole == null) {
+            throw new BusinessException("User role is required");
         }
 
         User user = userPersistencePort.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (user.getRole() == UserRole.premium) {
-            return user; // ya es premium
+        if (user.getRole() == newRole) {
+            throw new BusinessException("User already has role: " + newRole);
         }
 
-        user.setRole(UserRole.premium);
-        return userPersistencePort.save(user);
-    }
-    @Override
-    public User downgradeToFreemium(UUID userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("El id del usuario es obligatorio");
-        }
+        user.setRole(newRole);
 
-        User user = userPersistencePort.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-
-        if (user.getRole() == UserRole.registered) {
-            return user; // ya es freemium
-        }
-
-        user.setRole(UserRole.registered);
         return userPersistencePort.save(user);
     }
     
@@ -243,13 +237,6 @@ public class UserService implements IUserService {
 
     private String normalizeOptionalEmail(String email) {
         return hasText(email) ? email.trim().toLowerCase() : null;
-    }
-
-    private String resolveUidForCreation(String uid, String email) {
-        if (hasText(uid)) {
-            return uid;
-        }
-        return "email:" + email;
     }
 
     private String resolveEmailForCreation(String email, String uid) {
@@ -277,5 +264,16 @@ public class UserService implements IUserService {
                 .role(UserRole.registered)
                 .createdAt(LocalDateTime.now())
                 .build();
+    }
+    private UUID getCurrentUserId() {
+        Object principal = SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getPrincipal();
+
+        if (principal instanceof AuthenticatedUserPrincipal user) {
+            return user.id(); 
+        }
+
+        throw new IllegalStateException("User not authenticated");
     }
 }
