@@ -5,14 +5,15 @@ import java.util.UUID;
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
+import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
 
 public interface IUserService {
 
-    User createUser(UserCreateDTOIN createRequest);
+    UserDTO createUser(UserCreateDTOIN createRequest);
 
     User updateUser(UserUpdateDTOIN updateRequest);
 
-    User findOrCreateUserFromToken(String uid, String email, String picture);
+    User findOrCreateUserFromToken(String uid, String email);
 
     /**
      * Busca un usuario por su ID.

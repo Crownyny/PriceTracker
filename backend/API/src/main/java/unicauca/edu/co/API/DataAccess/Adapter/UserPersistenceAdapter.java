@@ -104,4 +104,16 @@ public class UserPersistenceAdapter implements IUserPersistencePort {
             case premium -> UserEntity.UserRole.premium;
         };
     }
+
+    @Override
+    public Optional<User> delete(UUID id) {
+        Optional<UserEntity> entityOpt = userRepository.findById(id);
+        if (entityOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        UserEntity entity = entityOpt.get();
+        userRepository.delete(entity);
+        return Optional.of(toDomain(entity));
+     
+    }
 }
