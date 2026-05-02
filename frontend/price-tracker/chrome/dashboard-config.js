@@ -70,4 +70,4 @@
   };
 
   PriceTracker.dashboardUrl = DEFAULT_DASHBOARD_URL;
-})(window);
+})(globalThis);
