@@ -123,7 +123,7 @@ public class AlertService implements IAlertService {
     @Override
     public List<AlertDTO> getAllAlerts() {
         UUID userId = getCurrentUserId();
-        List<AlertEntity> alerts = alertRepository.findByUserIdAndIsActiveTrue(userId);
+        List<AlertEntity> alerts = alertRepository.findByUserIdAndDeletedAtIsNull(userId);
         return alerts.stream()
             .map(alertMapper::toDTO)
             .collect(Collectors.toList());
@@ -185,7 +185,9 @@ public class AlertService implements IAlertService {
      * @param productId
      */
     private void validateAlertDoesNotExist(UUID userId, String productId) {
-        boolean exists = alertRepository.existsByUserIdAndProductIdAndDeletedAtIsNotNull(userId, productId);
+            boolean exists = alertRepository
+        .existsByUserIdAndProductIdAndDeletedAtIsNull(userId, productId);
+
         System.out.println("Validating alert existence for userId: " + userId + ", productId: " + productId + ", exists: " + exists);
         if (exists) {
             throw new IllegalStateException("Alert already exists for this product and user");

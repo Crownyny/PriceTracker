@@ -12,7 +12,7 @@ public class PasswordValidationHandler implements UserValidationHandler {
 
     @Override
     public void validate(UserCreateDTOIN request) {
-        if (request.getPassword() == null || request.getPassword().length() < 6) {
+        if (request.getPassword() == null || request.getPassword().length() < 8) {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
     }
