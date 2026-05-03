@@ -56,8 +56,7 @@ public class AuthorizationService implements IAuthorizationService {
 
         return userService.findOrCreateUserFromToken(
             tokenDTO.getUid(),
-            tokenDTO.getEmail(),
-            tokenDTO.getPicture()
+            tokenDTO.getEmail()
         );
     }
 

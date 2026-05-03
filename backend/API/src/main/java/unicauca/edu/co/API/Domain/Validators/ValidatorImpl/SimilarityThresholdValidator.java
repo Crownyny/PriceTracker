@@ -40,12 +40,14 @@ public class SimilarityThresholdValidator extends AbstractProductValidator {
             return next(request);
         }
         String productName = request.getCanonicalName() != null ? request.getCanonicalName() : "";
+        /**
         double similarity = computeSimilarity(normalizeForComparison(searchQuery), normalizeForComparison(productName));
         if (similarity < similarityThreshold) {
             logger.info("Producto descartado por similitud insuficiente ({} < {}): productRef={}, canonicalName={}",
                 String.format("%.2f", similarity), similarityThreshold, request.getProductRef(), request.getCanonicalName());
             return false;
         }
+        */
         return next(request);
     }
 

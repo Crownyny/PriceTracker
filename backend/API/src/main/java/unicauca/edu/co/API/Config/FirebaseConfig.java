@@ -22,7 +22,6 @@ public class FirebaseConfig {
     private String configPath;
 
     @Bean
-    @Lazy
     public FirebaseApp firebaseApp() throws IOException {
         System.out.println("[FIREBASE] Initializing FirebaseApp...");
         

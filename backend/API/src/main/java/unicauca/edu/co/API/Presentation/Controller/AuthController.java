@@ -2,8 +2,15 @@ package unicauca.edu.co.API.Presentation.Controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.FirebaseTokenDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
+import unicauca.edu.co.API.Services.IN.UserService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAuthService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 /**
  * Controlador para gestionar la autenticación con Firebase.
@@ -14,7 +21,7 @@ public class AuthController {
 
     private final IAuthService authService;
 
-    public AuthController(IAuthService authService) {
+    public AuthController(IAuthService authService ) {
         this.authService = authService;
     }
 
@@ -41,4 +48,8 @@ public class AuthController {
         authService.invalidateTokenCache(token);
         return ResponseEntity.ok().build();
     }
+
+
+
+
 }

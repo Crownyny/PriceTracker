@@ -1,5 +1,7 @@
 package unicauca.edu.co.API.Presentation.DTO.IN;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,9 +14,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PriceHistoryDTO {
-    private String price;
+    private Double  price;
     private String currency;
-    private String availability;
-    private String updateAt; 
+    private LocalDateTime recordedAt; 
     public PriceHistoryDTO() {}
 }
