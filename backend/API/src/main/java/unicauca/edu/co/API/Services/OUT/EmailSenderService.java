@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import unicauca.edu.co.API.Services.Interfaces.OUT.IEmailSenderService;
@@ -30,8 +32,14 @@ public class EmailSenderService implements IEmailSenderService {
 
     /**
      * Construye un mensaje MIME y lo envia al servidor SMTP configurado.
+     * Reintenta hasta 3 veces con delay exponencial en caso de fallos.
      */
     @Override
+    @Retryable(
+        retryFor = Exception.class,
+        maxAttempts = 3,
+        backoff = @Backoff(delay = 5000, multiplier = 2.0)
+    )
     public void sendHtml(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
