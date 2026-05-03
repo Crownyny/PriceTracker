@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import unicauca.edu.co.API.Presentation.DTO.IN.GoogleSignInDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserRoleUpdateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
@@ -32,6 +33,22 @@ public class UserController {
     public ResponseEntity<UserDTO> createUser(@RequestBody UserCreateDTOIN createRequest) {
         UserDTO createdUser = userService.createUser(createRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
+    /**
+     * Endpoint para crear o autenticar usuario a través de Google Sign-In.
+     * El cliente envía el token de ID de Google, y este endpoint:
+     * 1. Verifica el token con Firebase
+     * 2. Si el usuario existe (por Firebase UID o email), lo retorna
+     * 3. Si no existe, crea un nuevo usuario en la BD con datos de Google
+     * 
+     * @param googleSignIn DTO con el token de Google desde el cliente
+     * @return UserDTO del usuario creado o encontrado
+     */
+    @PostMapping("/google-signin")
+    public ResponseEntity<UserDTO> googleSignIn(@RequestBody GoogleSignInDTOIN googleSignIn) {
+        UserDTO user = userService.createUserFromGoogle(googleSignIn);
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     /**

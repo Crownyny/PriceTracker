@@ -14,13 +14,17 @@ import unicauca.edu.co.API.Domain.Model.ErrorType;
 import unicauca.edu.co.API.Domain.Validators.Chains.UserValidationChain;
 import unicauca.edu.co.API.Exception.BusinessException;
 import unicauca.edu.co.API.Exception.UserNotFoundException;
+import unicauca.edu.co.API.Presentation.DTO.IN.GoogleSignInDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
+import unicauca.edu.co.API.Presentation.DTO.OUT.GoogleUserInfoDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
 import unicauca.edu.co.API.Presentation.Mapper.UserMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IFirebaseAuth;
 import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IUserPersistencePort;
+
+import com.google.firebase.auth.FirebaseToken;
 
 @Service
 @Transactional
@@ -63,6 +67,89 @@ public class UserService implements IUserService {
             }
             throw e;
         }
+    }
+
+    /**
+     * Crea o encuentra un usuario a través de Google Sign-In.
+     * Si el usuario ya existe (por email o Firebase UID), lo actualiza.
+     * Si no existe, lo crea automáticamente en la BD.
+     * 
+     * @param googleSignIn DTO con el token de Google
+     * @return UserDTO del usuario creado o encontrado
+     */
+    @Override
+    @Transactional
+    public UserDTO createUserFromGoogle(GoogleSignInDTOIN googleSignIn) {
+        if (googleSignIn == null || googleSignIn.getIdToken() == null || googleSignIn.getIdToken().isEmpty()) {
+            throw new BusinessException("El token de Google es obligatorio", ErrorType.INVALID_PARAMETER);
+        }
+
+        try {
+            // Verificar el token de Google con Firebase
+            FirebaseToken decodedToken = firebaseAuthPort.verifyIdToken(googleSignIn.getIdToken());
+            GoogleUserInfoDTO googleUserInfo = extractGoogleUserInfo(decodedToken);
+
+            // Buscar si el usuario ya existe
+            User existingUser = userPersistencePort.findByFirebaseUid(googleUserInfo.getFirebaseUid())
+                .orElse(null);
+
+            if (existingUser != null) {
+                // El usuario ya existe, actualizar información si es necesario
+                boolean updated = false;
+
+                if (googleUserInfo.getEmail() != null && !googleUserInfo.getEmail().equalsIgnoreCase(existingUser.getEmail())) {
+                    existingUser.setEmail(googleUserInfo.getEmail());
+                    updated = true;
+                }
+
+                if (googleUserInfo.getProfilePicture() != null && !googleUserInfo.getProfilePicture().equals(existingUser.getImageProfile())) {
+                    existingUser.setImageProfile(googleUserInfo.getProfilePicture());
+                    updated = true;
+                }
+
+                if (updated) {
+                    userPersistencePort.save(existingUser);
+                }
+
+                return userMapper.toDTO(existingUser);
+            }
+
+            // El usuario no existe, crear uno nuevo
+            User newUser = buildUserFromGoogle(googleUserInfo);
+            User savedUser = userPersistencePort.save(newUser);
+
+            return userMapper.toDTO(savedUser);
+
+        } catch (Exception e) {
+            throw new BusinessException("Error al verificar token de Google: " + e.getMessage(), ErrorType.BUSINESS_ERROR);
+        }
+    }
+
+    /**
+     * Extrae la información del usuario desde el token de Firebase de Google.
+     */
+    private GoogleUserInfoDTO extractGoogleUserInfo(FirebaseToken decodedToken) {
+        return GoogleUserInfoDTO.builder()
+                .firebaseUid(decodedToken.getUid())
+                .email(decodedToken.getEmail())
+                .name((String) decodedToken.getClaims().get("name"))
+                .profilePicture((String) decodedToken.getClaims().get("picture"))
+                .provider("google")
+                .build();
+    }
+
+    /**
+     * Construye un nuevo usuario desde la información de Google.
+     */
+    private User buildUserFromGoogle(GoogleUserInfoDTO googleUserInfo) {
+        return User.builder()
+                .id(UUID.randomUUID())
+                .firebaseUid(googleUserInfo.getFirebaseUid())
+                .email(googleUserInfo.getEmail())
+                .imageProfile(googleUserInfo.getProfilePicture())
+                .role(UserRole.registered)
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 
     @Transactional

@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
+import unicauca.edu.co.API.Presentation.DTO.IN.GoogleSignInDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
@@ -11,6 +12,13 @@ import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
 public interface IUserService {
 
     UserDTO createUser(UserCreateDTOIN createRequest);
+    
+    /**
+     * Crea o encuentra un usuario a través de Google Sign-In.
+     * @param googleSignIn DTO con el token de Google desde el cliente
+     * @return UserDTO del usuario creado o encontrado
+     */
+    UserDTO createUserFromGoogle(GoogleSignInDTOIN googleSignIn);
 
     User updateUser(UserUpdateDTOIN updateRequest);
 
