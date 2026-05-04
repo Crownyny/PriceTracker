@@ -5,19 +5,20 @@ export interface PriceHistoryPoint {
   updatedAt: Date | string;
   price: number;
   currency: string;
-  availability: boolean;
   source?: string;
+  sourceName?: string;
+}
+
+export interface PriceHistory {
+  productId: string;
+  category: PriceHistoryRange;
+  history: PriceHistoryPoint[];
 }
 
 /**
  * Respuesta del historial de precios desde el backend
  */
-export interface PriceHistoryResponse {
-  productRef: string;
-  productId: string;
-  category: PriceHistoryRange;
-  history: PriceHistoryPoint[];
-}
+export interface PriceHistoryResponse extends PriceHistory {}
 
 /**
  * Análisis de tendencia de precios

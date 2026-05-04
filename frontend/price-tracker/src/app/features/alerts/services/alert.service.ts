@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, map, of, catchError } from 'rxjs';
+import { Observable, forkJoin, map, of, catchError, switchMap, throwError } from 'rxjs';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { TokenService } from '../../../core/services/token.service';
 import {
@@ -151,17 +151,50 @@ export class AlertService {
 
   /**
    * Crea una nueva alerta
-   * Endpoint Postman: POST /api/{userId}/alert?productId={productId} body: { frequency }
+   * Endpoint: POST /api/{productId}/alert body: { frequency }
    */
   createAlert(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
-    const userId = this.getCurrentUserId();
-    const url = `${this.buildUserAlertUrl(userId)}?productId=${encodeURIComponent(productId)}`;
+    const url = `${this.getApiBaseUrl()}/${encodeURIComponent(productId)}/alert`;
     const body = {
       frequency: request.frequency
     };
 
     return this.http.post<any>(url, body).pipe(
       map((response) => this.toAlertResponse(response))
+    );
+  }
+
+  findAlertByProductId(productId: string): Observable<Alert | null> {
+    return this.getAlerts(productId).pipe(
+      map((response) => {
+        const found = response.alerts.find((alert) => alert.productId === productId) ?? null;
+        return found;
+      })
+    );
+  }
+
+  createAlertWithoutDuplicate(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
+    return this.findAlertByProductId(productId).pipe(
+      switchMap((existing) => {
+        if (existing) {
+          return of({
+            alert: existing,
+            message: 'ALERT_ALREADY_EXISTS'
+          });
+        }
+        return this.createAlert(productId, request);
+      }),
+      catchError((err) => {
+        if (err?.status === 409) {
+          return this.findAlertByProductId(productId).pipe(
+            map((existing) => ({
+              alert: existing ?? undefined,
+              message: 'ALERT_ALREADY_EXISTS'
+            }))
+          );
+        }
+        return throwError(() => err);
+      })
     );
   }
 

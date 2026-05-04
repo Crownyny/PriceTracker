@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, from, map, switchMap } from 'rxjs';
+import { Observable, from, map, switchMap, catchError, of } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import {
   Auth,
   AuthProvider,
@@ -18,6 +19,8 @@ import { AuthCredentials, AuthResponse } from '../../shared/models/auth.model';
 import { TokenService } from './token.service';
 import { RuntimeConfigService } from '../config/runtime-config.service';
 import { ExtensionAuthBridgeService } from './extension-auth-bridge.service';
+import { HttpConfigService } from './http-config.service';
+import { UserRoleService } from './user-role.service';
 
 @Injectable({
   providedIn: 'root'
@@ -28,9 +31,12 @@ export class AuthService {
   private readonly googleProvider: AuthProvider;
 
   constructor(
+    private http: HttpClient,
+    private httpConfig: HttpConfigService,
     private tokenService: TokenService,
     private runtimeConfig: RuntimeConfigService,
-    private extensionAuthBridge: ExtensionAuthBridgeService
+    private extensionAuthBridge: ExtensionAuthBridgeService,
+    private userRoleService: UserRoleService
   ) {
     const firebaseConfig = this.runtimeConfig.getFirebaseConfig();
     this.app = getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -71,12 +77,25 @@ export class AuthService {
     return from(createUserWithEmailAndPassword(this.auth, credentials.email, credentials.password)).pipe(
       switchMap((credential) =>
         from(credential.user.getIdToken()).pipe(
-          map((token) => {
+          switchMap((token) => {
             const response = this.toAuthResponse(credential.user, token);
             this.tokenService.setTokens(response.accessToken);
             this.tokenService.setUserProfile(response.user);
             this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
-            return response;
+
+            // Crea usuario en backend (endpoint existente) y guarda rol base.
+            return this.userRoleService.createUser({
+              email: response.user.email,
+              name: credentials.displayName
+            }).pipe(
+              map((created) => {
+                if (created.role) {
+                  this.tokenService.setUserRole(created.role);
+                }
+                return response;
+              }),
+              catchError(() => of(response))
+            );
           })
         )
       )
@@ -87,12 +106,24 @@ export class AuthService {
     return from(signInWithPopup(this.auth, this.googleProvider)).pipe(
       switchMap((credential) =>
         from(credential.user.getIdToken()).pipe(
-          map((token) => {
+          switchMap((token) => {
             const response = this.toAuthResponse(credential.user, token);
             this.tokenService.setTokens(response.accessToken);
             this.tokenService.setUserProfile(response.user);
             this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
-            return response;
+
+            return this.userRoleService.createUser({
+              email: response.user.email,
+              name: response.user.name
+            }).pipe(
+              map((created) => {
+                if (created.role) {
+                  this.tokenService.setUserRole(created.role);
+                }
+                return response;
+              }),
+              catchError(() => of(response))
+            );
           })
         )
       )
@@ -105,11 +136,40 @@ export class AuthService {
 
   async logout(): Promise<void> {
     try {
+      const token = this.tokenService.getToken();
+      if (token) {
+        // Endpoint existente: invalidación de token/sesión backend.
+        this.invalidateToken(token).subscribe({
+          error: (err) => console.warn('Token invalidate failed:', err)
+        });
+      }
       await signOut(this.auth);
     } finally {
       this.tokenService.clearTokens();
       this.extensionAuthBridge.publishLogout();
     }
+  }
+
+  validateToken(token?: string): Observable<{ valid: boolean; message?: string }> {
+    const accessToken = token || this.tokenService.getToken() || '';
+    const url = `${this.httpConfig.getApiBaseUrl()}/auth/validate`;
+    return this.http.post<any>(url, { token: accessToken }).pipe(
+      map((response) => ({
+        valid: Boolean(response?.valid ?? response?.isValid ?? response?.success),
+        message: response?.message
+      }))
+    );
+  }
+
+  invalidateToken(token?: string): Observable<{ success: boolean; message?: string }> {
+    const accessToken = token || this.tokenService.getToken() || '';
+    const url = `${this.httpConfig.getApiBaseUrl()}/auth/invalidate`;
+    return this.http.post<any>(url, { token: accessToken }).pipe(
+      map((response) => ({
+        success: Boolean(response?.success ?? true),
+        message: response?.message
+      }))
+    );
   }
 
   private toAuthResponse(user: User, accessToken: string): AuthResponse {
@@ -127,7 +187,8 @@ export class AuthService {
       email: user.email ?? '',
       name: user.displayName ?? undefined,
       avatar: user.photoURL ?? undefined,
-      createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime) : new Date()
+      createdAt: user.metadata.creationTime ? new Date(user.metadata.creationTime) : new Date(),
+      role: this.userRoleService.getCurrentRole()
     };
   }
 }

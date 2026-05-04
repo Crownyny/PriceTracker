@@ -31,6 +31,35 @@ header p {
   flex-wrap: wrap;
 }
 
+.alerts-products-section,
+.saved-products-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alerts-products-section label,
+.saved-products-section label {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.product-select {
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  min-width: 250px;
+}
+
+.product-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .search-section {
   display: flex;
   gap: 0.5rem;
@@ -65,6 +94,37 @@ header p {
 
 .search-btn:hover {
   background: #5568d3;
+}
+
+.create-alert-section {
+  display: flex;
+  align-items: center;
+}
+
+.create-alert-btn {
+  padding: 0.75rem 1.5rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.create-alert-btn:hover {
+  background: #059669;
+}
+
+.action-btn {
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .filter-section {
@@ -188,6 +248,27 @@ tr:hover {
 .empty-state {
   background: #f9f9f9;
   color: #666;
+}
+
+.empty-state.no-alerts {
+  background: linear-gradient(135deg, #667eea15 0%, #10b98115 100%);
+  padding: 3rem;
+  border: 2px dashed #667eea;
+}
+
+.empty-state.no-alerts h3 {
+  margin: 0 0 1rem 0;
+  color: #1a1a1a;
+  font-size: 1.5rem;
+}
+
+.empty-state.no-alerts p {
+  margin: 0 0 1.5rem 0;
+  color: #666;
+}
+
+.empty-state h3 {
+  margin: 0;
 }
 
 .loading {

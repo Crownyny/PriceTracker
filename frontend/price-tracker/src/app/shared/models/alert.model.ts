@@ -59,6 +59,11 @@ export interface UpdateAlertStatusRequest {
   isActive: boolean;
 }
 
+export interface AlertRequest {
+  frequency?: AlertFrequency;
+  isActive?: boolean;
+}
+
 /**
  * Respuesta de alerta
  */

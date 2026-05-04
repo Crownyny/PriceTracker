@@ -5,302 +5,347 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 import { AlertService } from '../services/alert.service';
 import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
+import { UserRoleService } from '../../../core/services/user-role.service';
+import { ProductsService } from '../../products/services/products.service';
+import { Product } from '../../../shared/models/product.model';
+import { catchError, debounceTime, distinctUntilChanged, Subject, switchMap, of } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="alerts-container">
-      <header>
-        <h2>Gestionar Alertas de Precios</h2>
-        <p>Recibe notificaciones cuando los precios bajen</p>
-      </header>
-
-      <div class="form-group filter-group">
-        <label>Producto a consultar:</label>
-        <div class="filter-row">
-          <input [(ngModel)]="selectedProductId" name="selectedProductId" placeholder="Ingresa productId" />
-          <button class="btn-secondary" (click)="loadAlerts()">Listar alertas</button>
-        </div>
-      </div>
-
-      <!-- Create Alert Button -->
-      <button (click)="toggleCreateForm()" class="btn-primary">
-        {{ showCreateForm ? 'Cancelar' : '+ Crear Nueva Alerta' }}
-      </button>
-
-      <!-- Create Alert Form -->
-      <div *ngIf="showCreateForm" class="alert-form">
-        <h3>Nueva Alerta</h3>
-        <form (ngSubmit)="createAlert()">
-          <div class="form-group">
-            <label>ID del Producto:</label>
-            <input [(ngModel)]="newAlert.productId" name="productId" placeholder="Ingresa el ID del producto" />
-          </div>
-
-          <div class="form-group">
-            <label>Precio Objetivo:</label>
-            <input type="number" [(ngModel)]="newAlert.targetPrice" name="targetPrice" placeholder="Ingresa el precio" />
-          </div>
-
-          <div class="form-group">
-            <label>Moneda:</label>
-            <select [(ngModel)]="newAlert.currency" name="currency">
-              <option value="USD">USD</option>
-              <option value="MXN">MXN</option>
-              <option value="COP">COP</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Frecuencia:</label>
-            <select [(ngModel)]="newAlert.frequency" name="frequency">
-              <option value="instant">Inmediata</option>
-              <option value="daily">Diaria</option>
-              <option value="weekly">Semanal</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Método de Notificación:</label>
-            <select [(ngModel)]="newAlert.notificationMethod" name="notificationMethod">
-              <option value="email">Email</option>
-              <option value="push">Push</option>
-              <option value="both">Ambos</option>
-            </select>
-          </div>
-
-          <button type="submit" class="btn-primary" [disabled]="submitting">
-            {{ submitting ? 'Creando...' : 'Crear Alerta' }}
-          </button>
-        </form>
-      </div>
-
-      <!-- Alerts List -->
-      <div class="alerts-list">
-        <h3>Mis Alertas ({{ alerts.length }})</h3>
-
-        <div *ngIf="alerts.length === 0" class="empty-state">
-          <p>No tienes alertas creadas. ¡Crea una para empezar!</p>
-        </div>
-
-        <div *ngFor="let alert of alerts" class="alert-card" [class.inactive]="!alert.isActive">
-          <div class="alert-header">
-            <div class="alert-info">
-              <h4>{{ alert.productRef }}</h4>
-              <p class="alert-target">Precio objetivo: {{ alert.targetPrice | currency: alert.currency }}</p>
-            </div>
-            <div class="alert-status">
-              <span [class]="alert.isActive ? 'badge-active' : 'badge-inactive'">
-                {{ alert.isActive ? '🔔 Activa' : '🔕 Inactiva' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="alert-details">
-            <span>Frecuencia: <strong>{{ getFrequencyLabel(alert.frequency) }}</strong></span>
-            <span>Notificación: <strong>{{ alert.notificationMethod }}</strong></span>
-            <span *ngIf="alert.lastNotified">Última: {{ alert.lastNotified | date: 'short' }}</span>
-          </div>
-
-          <div class="alert-actions">
-            <button 
-              (click)="toggleAlertStatus(alert)"
-              [class.btn-danger]="alert.isActive"
-              [class.btn-success]="!alert.isActive"
-            >
-              {{ alert.isActive ? 'Desactivar' : 'Activar' }}
-            </button>
-            <button (click)="editAlert(alert)" class="btn-secondary">
-              Editar
-            </button>
-            <button (click)="deleteAlert(alert.id, alert.productId)" class="btn-danger">
-              Eliminar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading -->
-      <div *ngIf="loading" class="loading">
-        Cargando alertas...
-      </div>
-
-      <!-- Error -->
-      <div *ngIf="error" class="error">
-        {{ error }}
-      </div>
-    </div>
-  `,
+  templateUrl: './alerts.component.html',
   styleUrl: './alerts.component.css'
 })
 export class AlertsComponent implements OnInit {
-  alerts: Alert[] = [];
-  selectedProductId: string = '';
-  showCreateForm: boolean = false;
-  loading: boolean = true;
-  error: string | null = null;
-  submitting: boolean = false;
 
-  newAlert = {
-    productId: '',
-    targetPrice: 0,
-    currency: 'USD',
-    frequency: 'daily' as AlertFrequency,
-    notificationMethod: 'email' as const
-  };
+  // ── Estado de alertas ──────────────────────────────────────────────────────
+  alerts: Alert[] = [];
+  loading = false;
+  error: string | null = null;
+  isPremium = false;
+
+  // ── Modal crear/gestionar alerta ───────────────────────────────────────────
+  modalOpen = false;
+  modalMode: 'create' | 'manage' = 'create';
+  modalProduct: Product | null = null;
+  modalExistingAlert: Alert | null = null;
+  modalFrequency: AlertFrequency = 'instant';
+  modalSubmitting = false;
+  modalError: string | null = null;
+  modalSuccess: string | null = null;
+
+  // ── Búsqueda de productos (para crear alerta) ─────────────────────────────
+  productSearchQuery = '';
+  productSearchResults: Product[] = [];
+  productSearchLoading = false;
+  productSearchError: string | null = null;
+  productSearchDone = false;
+
+  private searchSubject = new Subject<string>();
 
   constructor(
     private alertService: AlertService,
+    private userRoleService: UserRoleService,
+    private productsService: ProductsService,
     private route: ActivatedRoute
-  ) {}
+  ) {
+    // Debounce de búsqueda de productos
+    this.searchSubject.pipe(
+      debounceTime(350),
+      distinctUntilChanged(),
+      switchMap((query) => {
+        const q = query.trim().replace(/\s+/g, '').toLowerCase();
+        if (!q) {
+          this.productSearchResults = [];
+          this.productSearchDone = false;
+          return of({ productRef: '', products: [], totalResults: 0 });
+        }
+        this.productSearchLoading = true;
+        this.productSearchError = null;
+        return this.productsService.getSearchFromDb(q).pipe(
+          catchError(() => {
+            this.productSearchError = 'Error buscando productos. Intenta de nuevo.';
+            return of({ productRef: q, products: [], totalResults: 0 });
+          })
+        );
+      }),
+      takeUntilDestroyed()
+    ).subscribe((response) => {
+      this.productSearchResults = response.products;
+      this.productSearchLoading = false;
+      this.productSearchDone = true;
+    });
+  }
 
   ngOnInit(): void {
-    this.loading = false;
-    const fromQuery = this.route.snapshot.queryParamMap.get('productId');
-    if (fromQuery) {
-      this.selectedProductId = fromQuery;
-      this.loadAlerts();
+    this.isPremium = this.userRoleService.canUsePremiumFeatures();
+    this.loadAlerts();
+
+    // Si viene ?productId=... desde otra pantalla, pre-seleccionar ese producto
+    const preselectedId = this.route.snapshot.queryParamMap.get('productId');
+    if (preselectedId) {
+      this.openCreateModalWithProductId(preselectedId);
     }
   }
 
-  loadAlerts(): void {
-    if (!this.selectedProductId.trim()) {
-      this.error = 'Debes indicar un productId para listar alertas';
-      return;
-    }
+  // ── Carga de alertas ───────────────────────────────────────────────────────
 
+  loadAlerts(): void {
     this.loading = true;
     this.error = null;
-
-    // Postman: GET /api/alert (sin filtro). Filtramos por `productId` en frontend.
-    this.alertService.getAlerts(this.selectedProductId).subscribe({
+    this.alertService.getAlerts().subscribe({
       next: (response) => {
         this.alerts = response.alerts;
+        this.loading = false;
       },
-      error: (err) => {
-        console.error('Error cargando alertas:', err);
-        this.error = 'Error al cargar las alertas';
-      },
-      complete: () => {
+      error: () => {
+        this.error = 'Error al cargar las alertas.';
         this.loading = false;
       }
     });
   }
 
-  toggleCreateForm(): void {
-    this.showCreateForm = !this.showCreateForm;
-    if (!this.showCreateForm) {
-      this.resetForm();
-    }
+  // ── Apertura del modal ─────────────────────────────────────────────────────
+
+  openCreateModal(): void {
+    this.modalMode = 'create';
+    this.modalProduct = null;
+    this.modalExistingAlert = null;
+    this.modalFrequency = 'instant';
+    this.modalError = null;
+    this.modalSuccess = null;
+    this.productSearchQuery = '';
+    this.productSearchResults = [];
+    this.productSearchDone = false;
+    this.modalOpen = true;
   }
 
-  createAlert(): void {
-    if (!this.newAlert.productId || this.newAlert.targetPrice <= 0) {
-      this.error = 'Completa todos los campos';
+  openManageModal(alert: Alert): void {
+    // Construir un Product mínimo desde la alerta para mostrar en el modal
+    this.modalProduct = {
+      id: alert.productId,
+      productRef: alert.productRef ?? alert.productId,
+      name: alert.productRef ?? alert.productId,
+      currentPrice: alert.targetPrice ?? 0,
+      currency: alert.currency ?? 'COP',
+      availability: true
+    };
+    this.modalExistingAlert = alert;
+    this.modalFrequency = alert.frequency;
+    this.modalMode = 'manage';
+    this.modalError = null;
+    this.modalSuccess = null;
+    this.modalOpen = true;
+  }
+
+  /** Cuando viene un productId por queryParam (flujo desde Dashboard / ProductDetail) */
+  private openCreateModalWithProductId(productId: string): void {
+    this.productsService.getProduct(productId).pipe(
+      catchError(() => of(null))
+    ).subscribe((product) => {
+      if (!product) {
+        // Si no se puede resolver el producto, abrir modal vacío con búsqueda
+        this.openCreateModal();
+        return;
+      }
+      // Ver si ya existe alerta para ese producto
+      this.alertService.findAlertByProductId(productId).pipe(
+        catchError(() => of(null))
+      ).subscribe((existing) => {
+        if (existing) {
+          this.openManageModal(existing);
+        } else {
+          this.selectProduct(product);
+          this.modalOpen = true;
+        }
+      });
+    });
+  }
+
+  closeModal(): void {
+    this.modalOpen = false;
+    this.modalProduct = null;
+    this.modalExistingAlert = null;
+    this.modalError = null;
+    this.modalSuccess = null;
+    this.productSearchQuery = '';
+    this.productSearchResults = [];
+    this.productSearchDone = false;
+  }
+
+  // ── Búsqueda de productos en el modal ─────────────────────────────────────
+
+  onProductSearch(): void {
+    this.searchSubject.next(this.productSearchQuery);
+  }
+
+  selectProduct(product: Product): void {
+    this.modalProduct = product;
+    this.modalMode = 'create';
+    this.modalFrequency = 'instant';
+    this.modalError = null;
+    this.modalSuccess = null;
+    this.productSearchQuery = '';
+    this.productSearchResults = [];
+    this.productSearchDone = false;
+
+    // Verificar si ya existe alerta para este producto
+    this.alertService.findAlertByProductId(product.id).pipe(
+      catchError(() => of(null))
+    ).subscribe((existing) => {
+      if (existing) {
+        this.modalExistingAlert = existing;
+        this.modalMode = 'manage';
+        this.modalFrequency = existing.frequency;
+      }
+    });
+  }
+
+  clearSelectedProduct(): void {
+    this.modalProduct = null;
+    this.modalExistingAlert = null;
+    this.modalMode = 'create';
+    this.productSearchQuery = '';
+    this.productSearchResults = [];
+    this.productSearchDone = false;
+  }
+
+  // ── Crear alerta ───────────────────────────────────────────────────────────
+
+  submitCreateAlert(): void {
+    if (!this.modalProduct?.id) {
+      this.modalError = 'Selecciona un producto primero.';
       return;
     }
 
-    this.submitting = true;
+    if (this.modalFrequency === 'weekly' && !this.isPremium) {
+      this.modalError = 'La frecuencia semanal requiere plan Premium.';
+      return;
+    }
 
-    // El backend (Postman) solo pide frequency para crear.
-    this.alertService.createAlert(this.newAlert.productId, {
-      productId: this.newAlert.productId,
-      targetPrice: this.newAlert.targetPrice,
-      currency: this.newAlert.currency,
-      frequency: this.newAlert.frequency,
-      notificationMethod: this.newAlert.notificationMethod
+    this.modalSubmitting = true;
+    this.modalError = null;
+
+    this.alertService.createAlertWithoutDuplicate(this.modalProduct.id, {
+      frequency: this.modalFrequency
     }).subscribe({
       next: (response) => {
-        this.selectedProductId = this.newAlert.productId;
-        if (response.alert) {
-          this.alerts = [response.alert, ...this.alerts];
+        this.modalSubmitting = false;
+        if (response.message === 'ALERT_ALREADY_EXISTS') {
+          this.modalSuccess = 'Ya tenías una alerta para este producto.';
+          if (response.alert) {
+            this.modalExistingAlert = response.alert;
+            this.modalMode = 'manage';
+            this.modalFrequency = response.alert.frequency;
+            this.syncAlertInList(response.alert);
+          }
         } else {
-          // Re-sync
-          this.loadAlerts();
+          this.modalSuccess = '¡Alerta creada exitosamente!';
+          if (response.alert) {
+            this.alerts = [response.alert, ...this.alerts];
+            this.modalExistingAlert = response.alert;
+            this.modalMode = 'manage';
+          }
         }
-        this.resetForm();
-        this.showCreateForm = false;
-        this.error = null;
       },
       error: (err: HttpErrorResponse) => {
+        this.modalSubmitting = false;
         if (err.status === 409) {
-          this.error = 'ALERT_ALREADY_EXISTS: Ya existe una alerta activa para este producto';
-          return;
+          this.modalError = 'Ya existe una alerta para este producto.';
+        } else if (err.status === 403) {
+          this.modalError = 'Límite de alertas alcanzado para tu plan actual.';
+        } else {
+          this.modalError = 'Error al crear la alerta. Intenta de nuevo.';
         }
-
-        if (err.status === 403) {
-          this.error = 'ALERT_LIMIT_REACHED: Alcanzaste el limite de alertas para tu plan';
-          return;
-        }
-
-        this.error = 'Error al crear la alerta';
-      },
-      complete: () => {
-        this.submitting = false;
       }
     });
   }
 
-  toggleAlertStatus(alert: Alert): void {
-    this.alertService.updateAlertStatus(alert.id, {
-      isActive: !alert.isActive
+  // ── Gestionar alerta existente ─────────────────────────────────────────────
+
+  toggleAlertStatus(): void {
+    if (!this.modalExistingAlert) return;
+    const newStatus = !this.modalExistingAlert.isActive;
+    this.alertService.updateAlertStatus(this.modalExistingAlert.id, { isActive: newStatus }).subscribe({
+      next: () => {
+        this.modalExistingAlert!.isActive = newStatus;
+        this.syncAlertInList(this.modalExistingAlert!);
+        this.modalSuccess = newStatus ? 'Alerta activada.' : 'Alerta pausada.';
+        this.modalError = null;
+      },
+      error: () => { this.modalError = 'Error al cambiar estado de la alerta.'; }
+    });
+  }
+
+  updateFrequency(): void {
+    if (!this.modalExistingAlert) return;
+    if (this.modalFrequency === 'weekly' && !this.isPremium) {
+      this.modalError = 'La frecuencia semanal requiere plan Premium.';
+      return;
+    }
+    this.alertService.updateAlert(this.modalExistingAlert.id, {
+      frequency: this.modalFrequency
     }).subscribe({
       next: () => {
-        alert.isActive = !alert.isActive;
+        this.modalExistingAlert!.frequency = this.modalFrequency;
+        this.syncAlertInList(this.modalExistingAlert!);
+        this.modalSuccess = 'Frecuencia actualizada.';
+        this.modalError = null;
       },
-      error: (err) => {
-        this.error = 'Error al cambiar estado de la alerta';
-      }
+      error: () => { this.modalError = 'Error al actualizar la frecuencia.'; }
     });
   }
 
-  editAlert(alert: Alert): void {
-    this.alertService.updateAlert(alert.id, {
-      frequency: alert.frequency
-    }).subscribe({
+  deleteAlert(): void {
+    if (!this.modalExistingAlert || !confirm('¿Eliminar esta alerta?')) return;
+    this.alertService.deleteAlert(this.modalExistingAlert.id).subscribe({
       next: () => {
-        this.error = null;
+        this.alerts = this.alerts.filter(a => a.id !== this.modalExistingAlert!.id);
+        this.modalSuccess = 'Alerta eliminada.';
+        setTimeout(() => this.closeModal(), 900);
       },
-      error: () => {
-        this.error = 'Error al editar la alerta';
-      }
+      error: () => { this.modalError = 'Error al eliminar la alerta.'; }
     });
   }
 
-  deleteAlert(alertId: string, productId: string): void {
-    if (confirm('¿Estás seguro de que deseas eliminar esta alerta?')) {
-      this.alertService.deleteAlert(alertId).subscribe({
-        next: () => {
-          this.alerts = this.alerts.filter(a => a.id !== alertId);
-        },
-        error: (err) => {
-          this.error = 'Error al eliminar la alerta';
-        }
-      });
+  // ── Acciones directas en la lista (fuera del modal) ───────────────────────
+
+  toggleAlertInList(alert: Alert): void {
+    this.alertService.updateAlertStatus(alert.id, { isActive: !alert.isActive }).subscribe({
+      next: () => { alert.isActive = !alert.isActive; },
+      error: () => { this.error = 'Error al cambiar estado.'; }
+    });
+  }
+
+  deleteAlertInList(alertId: string): void {
+    if (!confirm('¿Eliminar esta alerta?')) return;
+    this.alertService.deleteAlert(alertId).subscribe({
+      next: () => { this.alerts = this.alerts.filter(a => a.id !== alertId); },
+      error: () => { this.error = 'Error al eliminar la alerta.'; }
+    });
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  getFrequencyLabel(frequency: string): string {
+    const labels: Record<string, string> = {
+      instant: 'Inmediata', daily: 'Diaria', weekly: 'Semanal'
+    };
+    return labels[frequency] ?? frequency;
+  }
+
+  setModalFrequency(value: string): void {
+    if (value === 'instant' || value === 'daily' || value === 'weekly') {
+      this.modalFrequency = value;
     }
   }
 
-  getFrequencyLabel(frequency: string): string {
-    const labels: { [key: string]: string } = {
-      'D1': 'Diaria',
-      'W1': 'Semanal',
-      'ALL': 'Cada cambio',
-      'instant': 'Inmediata',
-      'daily': 'Diaria',
-      'weekly': 'Semanal'
-    };
-    return labels[frequency] || frequency;
-  }
-
-  private resetForm(): void {
-    this.newAlert = {
-      productId: '',
-      targetPrice: 0,
-      currency: 'USD',
-      frequency: 'daily',
-      notificationMethod: 'email'
-    };
+  private syncAlertInList(alert: Alert): void {
+    const idx = this.alerts.findIndex(a => a.id === alert.id);
+    if (idx !== -1) {
+      this.alerts[idx] = { ...alert };
+    }
   }
 }

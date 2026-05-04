@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { ProductsService } from '../products/services/products.service';
 import { StompWebSocketService } from '../../core/services/stomp-websocket.service';
 import { Product } from '../../shared/models/product.model';
@@ -27,14 +27,16 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
   usingStomp = false; // Indicador visual si se usa STOMP
   stompConnected = false; // Estado de conexión STOMP
   lastSearchRef = '';
+  uiState: 'idle' | 'loading' | 'in-progress' | 'found' | 'empty' | 'error' = 'idle';
 
   private destroy$ = new Subject<void>();
   private searchSession$ = new Subject<void>();
 
-  constructor(
-    private productsService: ProductsService,
-    private stompService: StompWebSocketService
-  ) {}
+    constructor(
+      private productsService: ProductsService,
+      private stompService: StompWebSocketService,
+      private router: Router
+    ) {}
 
   ngOnInit() {
     // Importante: el servicio NO se conecta solo; si no llamamos connect(),
@@ -78,6 +80,7 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
 
   loadProducts() {
     this.loading = true;
+    this.uiState = 'loading';
     // Buscar todos los productos con query vacía
     this.productsService.searchProducts('').pipe(
       catchError(error => {
@@ -91,6 +94,7 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
       this.filteredProducts = this.products;
       this.loading = false;
       this.usingStomp = this.stompConnected;
+      this.uiState = this.filteredProducts.length > 0 ? 'found' : 'idle';
     });
   }
 
@@ -103,7 +107,8 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
       this.searching = true;
       this.searchStatus = 'Buscando productos...';
       this.usingStomp = this.stompConnected; // Mostrar si se usa STOMP
-      const productRef = this.searchQuery.trim().replace(/\s+/g, '');
+      this.uiState = 'loading';
+      const productRef = this.searchQuery.trim().replace(/\s+/g, '').toLowerCase();
       this.lastSearchRef = productRef;
 
       // 1) REST primero: buscar en BD por `product_ref` (más rápido si ya existe/recent).
@@ -119,6 +124,7 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
           this.filteredProducts = dbProducts;
           this.searching = false;
           this.searchStatus = '';
+          this.uiState = 'found';
           return;
         }
 
@@ -127,11 +133,13 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
           this.error = 'WebSocket desconectado. No hay resultados en BD.';
           this.searching = false;
           this.searchStatus = '';
+          this.uiState = 'error';
           return;
         }
 
         this.searchStatus = 'Búsqueda en progreso (tiempo real)...';
         this.filteredProducts = [];
+        this.uiState = 'in-progress';
 
         // Enviar búsqueda (misma destination que `prueba ac.html`)
         this.stompService.sendSearchCommand(this.searchQuery, productRef);
@@ -145,6 +153,7 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
 
             const incoming = Array.isArray(message?.products) ? message.products : [];
             this.filteredProducts = incoming as Product[];
+            this.uiState = this.filteredProducts.length > 0 ? 'found' : 'in-progress';
           });
       });
     } else {
@@ -152,6 +161,7 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
       this.filteredProducts = this.products;
       this.searching = false;
       this.searchStatus = '';
+      this.uiState = this.filteredProducts.length > 0 ? 'found' : 'idle';
     }
   }
 
@@ -160,10 +170,14 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
     this.filteredProducts = this.products;
     this.searchStatus = '';
     this.error = '';
+    this.uiState = this.filteredProducts.length > 0 ? 'found' : 'idle';
   }
 
   saveProduct(product: Product) {
-    console.log('Producto guardado:', product.name);
-    // Aquí irá la lógica de backend para guardar producto
+    this.router.navigate(['/alerts'], {
+      queryParams: { productId: product.id }
+    });
   }
 }
+
+

@@ -7,6 +7,7 @@ export interface UserProfile {
   name?: string;
   avatar?: string;
   createdAt?: string | Date;
+  role?: 'registered' | 'premium';
 }
 
 /**
@@ -26,7 +27,7 @@ export class TokenService {
    * Obtiene el token de acceso
    */
   getToken(): string | null {
-    return sessionStorage.getItem(this.TOKEN_KEY);
+    return localStorage.getItem(this.TOKEN_KEY);
   }
 
   /**
@@ -40,7 +41,7 @@ export class TokenService {
    * Guarda los tokens
    */
   setTokens(accessToken: string, refreshToken?: string): void {
-    sessionStorage.setItem(this.TOKEN_KEY, accessToken);
+    localStorage.setItem(this.TOKEN_KEY, accessToken);
     this.authStateSubject.next(true);
   }
 
@@ -48,15 +49,43 @@ export class TokenService {
    * Guarda el perfil del usuario
    */
   setUserProfile(user: UserProfile): void {
-    sessionStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
   /**
    * Obtiene el perfil del usuario
    */
   getUserProfile(): UserProfile | null {
-    const user = sessionStorage.getItem(this.USER_KEY);
-    return user ? JSON.parse(user) : null;
+    const user = localStorage.getItem(this.USER_KEY);
+    if (!user) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(user) as UserProfile;
+    } catch {
+      return null;
+    }
+  }
+
+  setUserRole(role: 'registered' | 'premium'): void {
+    const profile = this.getUserProfile();
+    if (!profile) {
+      return;
+    }
+
+    this.setUserProfile({
+      ...profile,
+      role
+    });
+  }
+
+  getUserRole(): 'registered' | 'premium' {
+    return this.getUserProfile()?.role === 'premium' ? 'premium' : 'registered';
+  }
+
+  isPremiumUser(): boolean {
+    return this.getUserRole() === 'premium';
   }
 
   /**
@@ -70,8 +99,8 @@ export class TokenService {
    * Limpia todos los tokens y datos de usuario
    */
   clearTokens(): void {
-    sessionStorage.removeItem(this.TOKEN_KEY);
-    sessionStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
     this.authStateSubject.next(false);
   }
 
@@ -114,6 +143,6 @@ export class TokenService {
   }
 
   private hasStoredSession(): boolean {
-    return !!sessionStorage.getItem(this.TOKEN_KEY) && !!sessionStorage.getItem(this.USER_KEY);
+    return !!localStorage.getItem(this.TOKEN_KEY) && !!localStorage.getItem(this.USER_KEY);
   }
 }
