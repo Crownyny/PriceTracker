@@ -26,6 +26,7 @@ export class ProductDetailComponent implements OnInit {
   alertCreated = false;
   premiumBlocked = false;
   private productId = '';
+  private productRef = '';
 
   constructor(
     private productsService: ProductsService,
@@ -38,13 +39,35 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit() {
     this.route.params.subscribe(params => {
       this.productId = params['id'];
+      this.productRef = this.route.snapshot.queryParamMap.get('productRef') || '';
+
+      const navigationProduct = (history.state?.product as Product | undefined) ?? null;
+      if (navigationProduct?.id === this.productId) {
+        this.product = navigationProduct;
+        this.loading = false;
+        if (navigationProduct?.id) {
+          this.refreshAlertState(navigationProduct.id);
+        }
+        return;
+      }
+
       this.loadProduct();
     });
   }
 
   loadProduct() {
     this.loading = true;
-    this.productsService.getProduct(this.productId).pipe(
+    const productFromDb$ = this.productRef
+      ? this.productsService.getSearchFromDb(this.productRef).pipe(
+          catchError(error => {
+            this.error = 'Error cargando producto';
+            console.error(error);
+            return of({ productRef: this.productRef, products: [], totalResults: 0 });
+          })
+        )
+      : of({ productRef: '', products: [], totalResults: 0 });
+
+    productFromDb$.pipe(
       catchError(error => {
         this.error = 'Error cargando producto';
         console.error(error);
@@ -53,9 +76,19 @@ export class ProductDetailComponent implements OnInit {
       finalize(() => {
         this.loading = false;
       })
-    ).subscribe((product: Product | null) => {
+    ).subscribe((response: any) => {
+      const product = response?.products?.find((item: Product) => item.id === this.productId)
+        || response?.products?.[0]
+        || null;
+
+      if (!product) {
+        this.error = 'No pudimos resolver el detalle del producto desde la búsqueda guardada.';
+        this.product = null;
+        return;
+      }
+
       this.product = product;
-      if (product?.id) {
+      if (product.id) {
         this.refreshAlertState(product.id);
       }
     });

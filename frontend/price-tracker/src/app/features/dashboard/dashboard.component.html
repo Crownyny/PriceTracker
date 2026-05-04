@@ -76,7 +76,7 @@
 
     <div *ngIf="bestDeals.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <ng-container *ngFor="let product of bestDeals">
-        <a [routerLink]="['/product', product.id]" class="group">
+        <a [routerLink]="['/product', product.id]" [queryParams]="{ productRef: product.productRef }" class="group">
           <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
             <!-- Product Image -->
             <div class="aspect-square relative overflow-hidden bg-gray-100">
@@ -171,7 +171,7 @@
               </td>
               <td class="py-3 px-4 text-right">
                 <div class="flex items-center justify-end gap-3">
-                  <a [routerLink]="['/product', row.product.id]" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                  <a [routerLink]="['/product', row.product.id]" [queryParams]="{ productRef: row.product.productRef }" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
                     Ver detalles
                   </a>
                   <button

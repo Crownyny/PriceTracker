@@ -74,10 +74,24 @@ export class TokenService {
       return;
     }
 
-    this.setUserProfile({
+    const updated = {
       ...profile,
       role
-    });
+    };
+
+    this.setUserProfile(updated);
+    try {
+      console.info('[TokenService] setUserRole -> updated role to', role, 'for user', profile.id);
+    } catch (e) {
+      // noop
+    }
+
+    // Notify any subscribers that auth/profile state may have changed
+    try {
+      this.authStateSubject.next(this.hasStoredSession());
+    } catch (e) {
+      // noop
+    }
   }
 
   getUserRole(): 'registered' | 'premium' {
