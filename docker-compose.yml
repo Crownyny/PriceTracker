@@ -158,8 +158,10 @@ services:
       # Server Configuration
       SERVER_PORT: 8080
       JAVA_OPTS: "-Xmx512m -Xms256m"
+      
       # Model Product Configuration
       MODEL_PRODUCT_URL: http://model-product:8015
+      #SPRING_PROFILES_ACTIVE: dev
     ports:
       - "8080:8080"   # API REST
     healthcheck:

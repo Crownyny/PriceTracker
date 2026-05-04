@@ -25,4 +25,11 @@ public interface INormalizerProductService {
      * @param product El producto normalizado que se enviará al WebSocket del usuario. El método consulta el sessionID del usuario correspondiente al productRef del producto normalizado y envía el producto al WebSocket privado del usuario utilizando ese sessionID.
      */
     void sendNormalizedProductToWebSocket(NormalizedProductDTO product);
+
+    /**
+     * Obtiene un producto normalizado por su ID. Este método se utiliza para consultar el producto normalizado almacenado en la base de datos utilizando su ID.
+     * @param productId El ID del producto normalizado que se desea obtener. El método consulta la base de datos utilizando el productId 
+     * @return El producto normalizado correspondiente al ID proporcionado. 
+     */
+    NormalizedProductDTO getNormalizedProductById(String productId);
 }

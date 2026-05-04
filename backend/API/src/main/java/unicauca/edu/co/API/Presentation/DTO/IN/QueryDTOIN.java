@@ -1,5 +1,7 @@
 package unicauca.edu.co.API.Presentation.DTO.IN;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -22,7 +24,9 @@ import lombok.Setter;
 public class QueryDTOIN {
     private String sessionId; // Para identificar la conexión WebSocket del usuario
     private String query;
+    @JsonProperty("search_id")
     private String search_id;
+    @JsonProperty("product_ref")
     private String product_ref;
     private String sources;
     public QueryDTOIN() {
