@@ -20,6 +20,18 @@ export interface UserProfile {
   name?: string;
   avatar?: string;
   createdAt: Date;
+  role?: UserRole;
+}
+
+export type UserRole = 'registered' | 'premium';
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  avatar?: string;
+  createdAt?: Date | string;
+  role: UserRole;
 }
 
 export interface TokenPayload {

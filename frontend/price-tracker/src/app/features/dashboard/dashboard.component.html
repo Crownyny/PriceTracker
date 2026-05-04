@@ -3,6 +3,11 @@
   <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white">
     <h2 class="text-4xl font-bold mb-2">¡Bienvenido de vuelta!</h2>
     <p class="text-blue-100 text-lg">Compara precios en tiempo real y ahorra en cada compra</p>
+    <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm">
+      <span>Plan actual: {{ userRoleLabel }}</span>
+      <span *ngIf="premiumLocked">• Premium bloqueado</span>
+      <span *ngIf="!premiumLocked">• Premium activo</span>
+    </div>
   </div>
 
   <!-- Stats Grid -->
@@ -165,9 +170,23 @@
                 </ng-template>
               </td>
               <td class="py-3 px-4 text-right">
-                <a [routerLink]="['/product', row.product.id]" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                  Ver detalles
-                </a>
+                <div class="flex items-center justify-end gap-3">
+                  <a [routerLink]="['/product', row.product.id]" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                    Ver detalles
+                  </a>
+                  <button
+                    (click)="openAlertModal(row.product)"
+                    class="text-sm px-3 py-1 rounded hover:opacity-90 font-medium transition-colors"
+                    [class.bg-red-500]="!alertsByProductId[row.product.id]"
+                    [class.text-white]="!alertsByProductId[row.product.id]"
+                    [class.bg-green-100]="alertsByProductId[row.product.id]"
+                    [class.text-green-700]="alertsByProductId[row.product.id]"
+                    [class.border]="alertsByProductId[row.product.id]"
+                    [class.border-green-400]="alertsByProductId[row.product.id]"
+                  >
+                    {{ alertsByProductId[row.product.id] ? '🔔 Gestionar Alerta' : ' Crear Alerta' }}
+                  </button>
+                </div>
               </td>
             </tr>
           </ng-container>
@@ -181,7 +200,85 @@
     </div>
   </div>
 
-  <!-- Quick Actions -->
+<!-- Alert Modal Inline -->
+<div *ngIf="alertModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="closeAlertModal()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5 z-10" (click)="$event.stopPropagation()">
+
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-bold text-gray-900">
+        {{ alertModalExisting ? '🔔 Gestionar Alerta' : ' Crear Alerta' }}
+      </h2>
+      <button (click)="closeAlertModal()" class="p-2 rounded-lg hover:bg-gray-100">
+        <span class="text-gray-500 text-lg leading-none">✕</span>
+      </button>
+    </div>
+
+    <!-- Product info -->
+    <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+      <img *ngIf="alertModalProduct?.image" [src]="alertModalProduct!.image" [alt]="alertModalProduct!.name"
+        class="w-12 h-12 rounded object-cover" />
+      <div>
+        <p class="font-semibold text-gray-900 line-clamp-2 text-sm">{{ alertModalProduct?.name }}</p>
+        <p class="text-xs text-gray-500">Precio actual: ${{ alertModalProduct?.currentPrice | number }}</p>
+      </div>
+    </div>
+
+    <!-- Existing alert actions -->
+    <ng-container *ngIf="alertModalExisting">
+      <div class="flex items-center justify-between p-3 rounded-lg bg-green-50 border border-green-200">
+        <span class="text-green-800 text-sm font-medium">
+          {{ alertModalExisting.isActive ? '🔔 Activa' : '🔕 Pausada' }}
+          — {{ getFrequencyLabel(alertModalExisting.frequency) }}
+        </span>
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <button (click)="toggleExistingAlert()" class="col-span-1 text-sm py-2 px-3 rounded border border-gray-300 hover:bg-gray-50">
+          {{ alertModalExisting.isActive ? 'Pausar' : 'Activar' }}
+        </button>
+        <select class="col-span-1 text-sm border border-gray-300 rounded px-2 py-2"
+                [(ngModel)]="alertModalFrequency" (change)="updateExistingAlertFrequency()">
+          <option value="instant">Inmediata</option>
+          <option value="daily">Diaria</option>
+          <option value="weekly">Semanal</option>
+        </select>
+        <button (click)="deleteExistingAlert()" class="col-span-1 text-sm py-2 px-3 rounded border border-red-300 text-red-600 hover:bg-red-50">
+          Eliminar
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Create alert form -->
+    <ng-container *ngIf="!alertModalExisting">
+      <div class="space-y-3">
+        <div>
+          <label class="text-sm font-medium text-gray-700 block mb-1">Frecuencia</label>
+          <select class="w-full text-sm border border-gray-300 rounded px-3 py-2"
+                  [(ngModel)]="alertModalFrequency">
+            <option value="instant">Inmediata</option>
+            <option value="daily">Diaria</option>
+            <option value="weekly" [disabled]="!isPremium">Semanal {{ !isPremium ? '(Premium)' : '' }}</option>
+          </select>
+        </div>
+      </div>
+      <button (click)="submitCreateAlert()"
+        [disabled]="alertModalSubmitting"
+        class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors">
+        {{ alertModalSubmitting ? 'Creando...' : 'Crear Alerta' }}
+      </button>
+    </ng-container>
+
+    <!-- Feedback messages -->
+    <div *ngIf="alertModalError" class="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">
+      {{ alertModalError }}
+    </div>
+    <div *ngIf="alertModalSuccess" class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-700">
+      {{ alertModalSuccess }}
+    </div>
+  </div>
+</div>
+
+   <!-- Quick Actions -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <a routerLink="/search" class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white hover:shadow-lg transition-shadow cursor-pointer">
       <div class="text-4xl mb-3">🔍</div>

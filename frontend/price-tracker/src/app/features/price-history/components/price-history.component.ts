@@ -1,10 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PriceHistoryService } from '../services/price-history.service';
+import { HttpConfigService } from '../../../core/services/http-config.service';
 import { ProductsService } from '../../products/services/products.service';
 import { TokenService } from '../../../core/services/token.service';
+import { AlertService } from '../../alerts/services/alert.service';
 import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/price-history.model';
+import { Product } from '../../../shared/models/product.model';
+import { Alert } from '../../../shared/models/alert.model';
 
 @Component({
   selector: 'app-price-history',
@@ -14,26 +19,28 @@ import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/
     <div class="price-history-container">
       <header>
         <h2>Historial de Precios</h2>
-        <p>Analiza tendencias y encuentra el mejor momento para comprar</p>
+        <p>Analiza tendencias de los productos con alertas activadas</p>
       </header>
 
       <!-- Controls -->
       <div class="controls">
-        <div class="search-section">
-          <input 
-            type="text" 
-            placeholder="Buscar producto..."
-            [(ngModel)]="searchQuery"
-            (keyup.enter)="searchProduct()"
-            class="search-input"
-          />
-          <button (click)="searchProduct()" class="search-btn">Buscar</button>
+        <!-- Selector de productos con alertas -->
+        <div class="alerts-products-section">
+          <label>Productos con Alertas:</label>
+          <select [(ngModel)]="selectedProductId" (change)="onProductChange()" class="product-select">
+            <option value="">-- Selecciona un producto --</option>
+            <option *ngFor="let p of productsWithAlerts" [value]="p.id">{{ p.productName }}</option>
+          </select>
+        </div>
+
+        <!-- Link a crear alertas -->
+        <div class="create-alert-section">
+          <button (click)="goToAlerts()" class="create-alert-btn">+ Crear Alerta</button>
         </div>
 
         <div class="filter-section">
           <label>Rango:</label>
           <select [(ngModel)]="selectedRange" (change)="onRangeChange()">
-            <option value="W1">Última Semana</option>
             <option value="W3">3 Semanas</option>
             <option value="W12">3 Meses</option>
             <option value="ALL">Todo el Historial</option>
@@ -70,27 +77,28 @@ import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/
                 <th>Fecha</th>
                 <th>Precio</th>
                 <th>Tienda</th>
-                <th>Disponibilidad</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let point of priceData.history.slice(0, 20)">
                 <td>{{ point.updatedAt | date: 'short' }}</td>
                 <td>{{ point.price | currency }}</td>
-                <td>{{ point.source || '-' }}</td>
-                <td>
-                  <span [class.available]="point.availability" [class.unavailable]="!point.availability">
-                    {{ point.availability ? 'Disponible' : 'No disponible' }}
-                  </span>
-                </td>
+                <td>{{ point.sourceName || point.source || '-' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="!priceData && !loading" class="empty-state">
+      <!-- Empty State - Sin alertas -->
+      <div *ngIf="!loading && productsWithAlerts.length === 0" class="empty-state no-alerts">
+        <h3>No tienes alertas de precios activadas</h3>
+        <p>Crea alertas para monitorear productos y ver su historial de precios</p>
+        <button (click)="goToAlerts()" class="action-btn">Crear tu primera alerta</button>
+      </div>
+
+      <!-- Empty State - Sin producto seleccionado -->
+      <div *ngIf="!priceData && !loading && productsWithAlerts.length > 0" class="empty-state">
         <p>Selecciona un producto para ver su historial de precios</p>
       </div>
 
@@ -108,53 +116,96 @@ import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/
   styleUrl: './price-history.component.css'
 })
 export class PriceHistoryComponent implements OnInit {
-  searchQuery: string = '';
-  selectedRange: PriceHistoryRange = 'W1';
+  selectedRange: PriceHistoryRange = 'W3';
+  selectedProductId: string = '';
   priceData: PriceHistoryResponse | null = null;
   loading: boolean = false;
   error: string | null = null;
+  productsWithAlerts: any[] = []; // Array con info de productos que tienen alertas
+  alerts: Alert[] = [];
 
   constructor(
     private priceHistoryService: PriceHistoryService,
     private productsService: ProductsService,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private alertService: AlertService,
+    private router: Router,
+    private httpConfig: HttpConfigService
   ) {}
 
   ngOnInit(): void {
-    // Podría cargar datos iniciales
+    this.loadAlertsWithProducts();
   }
 
-  searchProduct(): void {
-    if (!this.searchQuery.trim()) {
-      this.error = 'Ingresa un término de búsqueda';
-      return;
-    }
-
+  loadAlertsWithProducts(): void {
     this.loading = true;
-    this.error = null;
-
-    this.productsService.searchProducts(this.searchQuery).subscribe({
+    this.alertService.getAlerts().subscribe({
       next: (response) => {
-        if (response.products.length > 0) {
-          this.loadPriceHistory(response.products[0].id);
-        } else {
-          this.error = 'No se encontraron productos';
+        this.alerts = response.alerts;
+        // Filtrar solo alertas activas
+        const activeAlerts = this.alerts.filter(a => a.isActive !== false);
+        
+        // Convertir alertas a formato para mostrar en el dropdown
+        this.productsWithAlerts = activeAlerts.map(alert => ({
+          id: alert.productId,
+          productName: alert.productRef || alert.productId,
+          alertId: alert.id
+        }));
+
+        // Auto-seleccionar el primer producto si hay alertas
+        if (this.productsWithAlerts.length > 0) {
+          this.selectedProductId = this.productsWithAlerts[0].id;
+          this.loadPriceHistory(this.selectedProductId);
         }
+        this.loading = false;
       },
       error: (err) => {
-        this.error = 'Error al buscar productos';
+        console.error('Error cargando alertas:', err);
         this.loading = false;
       }
     });
   }
 
+  private getCurrentUserId(): string {
+    const profile = this.tokenService.getUserProfile();
+    return profile?.id || localStorage.getItem('userId') || 'default-user';
+  }
+
+  onProductChange(): void {
+    if (this.selectedProductId) {
+      this.priceData = null;
+      this.error = null;
+      this.loadPriceHistory(this.selectedProductId);
+    }
+  }
+
   private loadPriceHistory(productId: string): void {
+    console.log(`[PriceHistory] Cargando historial para productId=${productId}, range=${this.selectedRange}`);
+    this.loading = true;
     this.priceHistoryService.getPriceHistory(productId, this.selectedRange).subscribe({
       next: (response) => {
+        console.log('[PriceHistory] Datos recibidos:', response);
         this.priceData = response;
       },
-      error: (err) => {
-        this.error = 'Error al cargar historial de precios';
+      error: (err: any) => {
+        console.error('[PriceHistory] Error completo:', {
+          status: err?.status,
+          statusText: err?.statusText,
+          url: err?.url,
+          headers: err?.headers,
+          body: err?.error,
+          message: err?.error?.message
+        });
+
+        // Si recibimos 500, intentar obtener el body crudo con fetch para diagnóstico
+        if (err?.status === 500) {
+          this.debugFetchPriceHistory(productId).catch((fetchErr) => {
+            console.error('[PriceHistory] Debug fetch failed:', fetchErr);
+          });
+        }
+
+        const msg = err?.error?.message || err?.statusText || 'Error desconocido del servidor';
+        this.error = `Error (${err?.status}): ${msg}`;
       },
       complete: () => {
         this.loading = false;
@@ -163,8 +214,21 @@ export class PriceHistoryComponent implements OnInit {
   }
 
   onRangeChange(): void {
-    if (this.priceData) {
-      this.loadPriceHistory(this.priceData.productId);
+    if (this.selectedProductId) {
+      this.loadPriceHistory(this.selectedProductId);
+    }
+  }
+
+  private async debugFetchPriceHistory(productId: string): Promise<void> {
+    try {
+      const url = `${this.httpConfig.getApiUrl()}/products/${productId}/priceHistory`;
+      console.log(`[PriceHistory][debugFetch] fetching raw: ${url}`);
+      const resp = await fetch(url, { method: 'GET', credentials: 'include' });
+      const text = await resp.text();
+      console.log('[PriceHistory][debugFetch] status:', resp.status, 'body:', text);
+    } catch (err) {
+      console.error('[PriceHistory][debugFetch] error:', err);
+      throw err;
     }
   }
 
@@ -182,5 +246,9 @@ export class PriceHistoryComponent implements OnInit {
     if (!this.priceData) return 0;
     const sum = this.priceData.history.reduce((acc, h) => acc + h.price, 0);
     return sum / this.priceData.history.length;
+  }
+
+  goToAlerts(): void {
+    this.router.navigate(['/alerts']);
   }
 }

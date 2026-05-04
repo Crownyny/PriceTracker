@@ -6,6 +6,7 @@ import { Product } from '../../../shared/models/product.model';
 import { catchError, finalize, of } from 'rxjs';
 import { AlertService } from '../../alerts/services/alert.service';
 import { AlertFrequency } from '../../../shared/models/alert.model';
+import { UserRoleService } from '../../../core/services/user-role.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -22,11 +23,14 @@ export class ProductDetailComponent implements OnInit {
   alertError: string | null = null;
   alertLoading = false;
   hasAlert = false;
+  alertCreated = false;
+  premiumBlocked = false;
   private productId = '';
 
   constructor(
     private productsService: ProductsService,
     private alertService: AlertService,
+    private userRoleService: UserRoleService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
@@ -75,11 +79,20 @@ export class ProductDetailComponent implements OnInit {
       return;
     }
 
+    if (!this.userRoleService.canUsePremiumFeatures()) {
+      // TODO(frontend): confirmar con backend qué capacidades exactas son premium por plan.
+      this.premiumBlocked = true;
+      this.alertError = 'Función premium bloqueada para tu plan actual';
+      return;
+    }
+
+    this.premiumBlocked = false;
+
     this.alertLoading = true;
     this.alertError = null;
 
     const frequency: AlertFrequency = 'instant';
-    this.alertService.createAlert(this.product.id, {
+    this.alertService.createAlertWithoutDuplicate(this.product.id, {
       productId: this.product.id,
       targetPrice: 0,
       currency: 'COP',
@@ -106,7 +119,17 @@ export class ProductDetailComponent implements OnInit {
       if (!response) {
         return;
       }
+
+      if (response.message === 'ALERT_ALREADY_EXISTS') {
+        this.hasAlert = true;
+        this.alertCreated = false;
+        this.alertError = null;
+        return;
+      }
+
       this.hasAlert = true;
+      this.alertCreated = true;
+      this.alertError = null;
     });
   }
 

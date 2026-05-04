@@ -19,6 +19,10 @@ export interface Product {
   savingsPercent?: number;
 }
 
+export interface ProductSearchRequest {
+  product_ref: string;
+}
+
 /**
  * Product Source - Para comparación entre tiendas
  */

@@ -108,6 +108,15 @@
           <div *ngIf="alertError" class="mt-4 text-sm text-red-700 bg-red-50 border border-red-100 rounded-lg p-3">
             {{ alertError }}
           </div>
+          <div *ngIf="alertCreated" class="mt-4 text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg p-3">
+            Alerta creada correctamente.
+          </div>
+          <div *ngIf="hasAlert && !alertCreated && !alertError" class="mt-4 text-sm text-blue-700 bg-blue-50 border border-blue-100 rounded-lg p-3">
+            Alerta existente para este producto. Puedes gestionarla.
+          </div>
+          <div *ngIf="premiumBlocked" class="mt-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            Esta función está disponible para cuentas premium.
+          </div>
         </div>
       </div>
 

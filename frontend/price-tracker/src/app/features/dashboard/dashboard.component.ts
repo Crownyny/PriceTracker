@@ -7,11 +7,14 @@ import { Product } from '../../shared/models/product.model';
 import { PriceHistoryService } from '../price-history/services/price-history.service';
 import { PriceTrendAnalysis } from '../../shared/models/price-history.model';
 import { catchError, finalize, forkJoin, of, switchMap } from 'rxjs';
+import { AlertService } from '../alerts/services/alert.service';
+import { UserRoleService } from '../../core/services/user-role.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -22,13 +25,28 @@ export class DashboardComponent implements OnInit {
   itemsCompared = 0;
   savedProducts: Product[] = [];
   alertCount = 0;
+  userRoleLabel = 'registered';
+  premiumLocked = true;
   bestDeals: Product[] = [];
   comparativeRows: Array<{ product: Product; trend: PriceTrendAnalysis['trend'] | null; percentageChange: number | null }> = [];
+  
+  // Modal inline de alerta
+  alertModalOpen = false;
+  alertModalProduct: Product | null = null;
+  alertModalExisting: import('../../shared/models/alert.model').Alert | null = null;
+  alertModalFrequency: import('../../shared/models/alert.model').AlertFrequency = 'instant';
+  alertModalSubmitting = false;
+  alertModalError: string | null = null;
+  alertModalSuccess: string | null = null;
+  alertsByProductId: Record<string, import('../../shared/models/alert.model').Alert> = {};
+  isPremium = false;
 
   constructor(
     private productsService: ProductsService,
     private priceHistoryService: PriceHistoryService,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    private alertService: AlertService,
+    private userRoleService: UserRoleService
   ) {}
 
   ngOnInit() {
@@ -38,6 +56,8 @@ export class DashboardComponent implements OnInit {
   loadDashboardData() {
     this.loading = true;
     this.error = '';
+    this.userRoleLabel = this.userRoleService.getCurrentRole();
+    this.premiumLocked = !this.userRoleService.canUsePremiumFeatures();
 
     const userId = this.getCurrentUserId();
 
@@ -78,7 +98,25 @@ export class DashboardComponent implements OnInit {
 
             this.bestDeals = this.buildBestDeals(this.savedProducts);
             this.totalSavings = this.computeTotalSavings(this.savedProducts);
-            return of(null);
+
+            return this.alertService.getAlerts().pipe(
+              catchError(() => of({ alerts: [], total: 0, page: 0, pageSize: 0 })),
+              switchMap((alertsResponse) => {
+                const activeAlerts = (alertsResponse.alerts || []).filter(a => Boolean(a.isActive));
+                this.alertCount = activeAlerts.length;
+
+                // Construir mapa productId -> Alert para el modal inline
+                this.alertsByProductId = {};
+                for (const a of alertsResponse.alerts ?? []) {
+                  if (a.productId) this.alertsByProductId[a.productId] = a;
+                }
+
+                // Flag premium
+                this.isPremium = this.userRoleService.canUsePremiumFeatures();
+
+                return of(null);
+              })
+            );
           })
         );
       }),
@@ -135,5 +173,117 @@ export class DashboardComponent implements OnInit {
       return Math.round((savings / current) * 100);
     }
     return 0;
+  }
+
+  
+  openAlertModal(product: Product): void {
+    this.alertModalProduct = product;
+    this.alertModalError = null;
+    this.alertModalSuccess = null;
+    this.alertModalSubmitting = false;
+
+    const existing = this.alertsByProductId[product.id] ?? null;
+    this.alertModalExisting = existing;
+    this.alertModalFrequency = existing?.frequency ?? 'instant';
+    this.alertModalOpen = true;
+  }
+
+  closeAlertModal(): void {
+    this.alertModalOpen = false;
+    this.alertModalProduct = null;
+    this.alertModalExisting = null;
+    this.alertModalError = null;
+    this.alertModalSuccess = null;
+  }
+
+  submitCreateAlert(): void {
+    if (!this.alertModalProduct) return;
+
+    if (this.alertModalFrequency === 'weekly' && !this.isPremium) {
+      this.alertModalError = 'La frecuencia semanal es una función Premium.';
+      return;
+    }
+
+    this.alertModalSubmitting = true;
+    this.alertModalError = null;
+
+    this.alertService.createAlertWithoutDuplicate(this.alertModalProduct.id, {
+      frequency: this.alertModalFrequency
+    }).subscribe({
+      next: (response) => {
+        if (response.message === 'ALERT_ALREADY_EXISTS') {
+          this.alertModalSuccess = 'Ya tenías una alerta para este producto.';
+          if (response.alert) {
+            this.alertsByProductId[this.alertModalProduct!.id] = response.alert;
+            this.alertModalExisting = response.alert;
+          }
+        } else {
+          this.alertModalSuccess = '¡Alerta creada exitosamente!';
+          if (response.alert) {
+            this.alertsByProductId[this.alertModalProduct!.id] = response.alert;
+            this.alertModalExisting = response.alert;
+            this.alertCount++;
+          }
+        }
+      },
+      error: (err) => {
+        if (err?.status === 403) {
+          this.alertModalError = 'Límite de alertas alcanzado para tu plan actual.';
+        } else if (err?.status === 409) {
+          this.alertModalError = 'Ya existe una alerta para este producto.';
+        } else {
+          this.alertModalError = 'Error al crear la alerta. Intenta de nuevo.';
+        }
+      },
+      complete: () => { this.alertModalSubmitting = false; }
+    });
+  }
+
+  toggleExistingAlert(): void {
+    if (!this.alertModalExisting) return;
+    const newStatus = !this.alertModalExisting.isActive;
+    this.alertService.updateAlertStatus(this.alertModalExisting.id, { isActive: newStatus }).subscribe({
+      next: () => {
+        this.alertModalExisting!.isActive = newStatus;
+        this.alertsByProductId[this.alertModalProduct!.id] = { ...this.alertModalExisting! };
+        this.alertModalSuccess = newStatus ? 'Alerta activada.' : 'Alerta pausada.';
+      },
+      error: () => { this.alertModalError = 'Error al cambiar estado.'; }
+    });
+  }
+
+  updateExistingAlertFrequency(): void {
+    if (!this.alertModalExisting) return;
+    this.alertService.updateAlert(this.alertModalExisting.id, {
+      frequency: this.alertModalFrequency
+    }).subscribe({
+      next: () => {
+        this.alertModalExisting!.frequency = this.alertModalFrequency;
+        this.alertsByProductId[this.alertModalProduct!.id] = { ...this.alertModalExisting! };
+        this.alertModalSuccess = 'Frecuencia actualizada.';
+      },
+      error: () => { this.alertModalError = 'Error al actualizar frecuencia.'; }
+    });
+  }
+
+  deleteExistingAlert(): void {
+    if (!this.alertModalExisting || !confirm('¿Eliminar esta alerta?')) return;
+    this.alertService.deleteAlert(this.alertModalExisting.id).subscribe({
+      next: () => {
+        delete this.alertsByProductId[this.alertModalProduct!.id];
+        this.alertCount = Math.max(0, this.alertCount - 1);
+        this.alertModalExisting = null;
+        this.alertModalSuccess = 'Alerta eliminada.';
+        setTimeout(() => this.closeAlertModal(), 1200);
+      },
+      error: () => { this.alertModalError = 'Error al eliminar la alerta.'; }
+    });
+  }
+
+  getFrequencyLabel(frequency: string): string {
+    const map: Record<string, string> = {
+      instant: 'Inmediata', daily: 'Diaria', weekly: 'Semanal'
+    };
+    return map[frequency] ?? frequency;
   }
 }

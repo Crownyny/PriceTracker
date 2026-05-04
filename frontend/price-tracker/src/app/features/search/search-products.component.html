@@ -10,7 +10,7 @@
   <!-- Main Content -->
   <div class="max-w-7xl mx-auto px-8 py-12">
     <!-- Connection & Status Bar -->
-    <div *ngIf="usingStomp || searching || searchStatus" class="mb-6 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+    <div *ngIf="usingStomp || searching || searchStatus || uiState === 'found' || uiState === 'empty' || uiState === 'error'" class="mb-6 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
       <div class="flex items-center gap-2 text-sm text-blue-800">
         <span *ngIf="usingStomp" class="inline-block">
           🟢 <strong>Usando WebSocket en tiempo real</strong>
@@ -20,6 +20,15 @@
         </span>
         <span *ngIf="searching" class="inline-block">
           ⏳ {{ searchStatus || 'Procesando búsqueda...' }}
+        </span>
+        <span *ngIf="uiState === 'found' && !searching" class="inline-block">
+          ✅ Producto encontrado
+        </span>
+        <span *ngIf="uiState === 'empty' && !searching" class="inline-block">
+          ⚪ Sin resultados
+        </span>
+        <span *ngIf="uiState === 'error' && !searching" class="inline-block">
+          ❌ Error en la búsqueda
         </span>
       </div>
     </div>
@@ -159,10 +168,10 @@
                 🤍 Guardar
               </button>
               <a 
-                [routerLink]="['/product', product.id]" 
+                [routerLink]="['/price-history']" 
                 class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors text-center"
               >
-                Ver →
+                Historial →
               </a>
             </div>
           </div>

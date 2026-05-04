@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { filter, map, switchMap, timeout, take, catchError as rxCatchError } from 'rxjs/operators';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { StompWebSocketService } from '../../../core/services/stomp-websocket.service';
@@ -17,6 +17,7 @@ import { Product, ProductSearchResponse } from '../../../shared/models/product.m
 })
 export class ProductsService {
   private readonly SAVED_PRODUCTS_KEY_PREFIX = 'saved_products_';
+  private readonly SEARCHED_REFS_KEY_PREFIX = 'searched_product_refs_';
 
   constructor(
     private http: HttpClient,
@@ -26,7 +27,7 @@ export class ProductsService {
 
   private mapBackendProduct(raw: any): Product {
     return {
-      id: raw.id,
+      id: String(raw.id ?? raw.product_id ?? raw.productId ?? ''),
       productRef: raw.product_ref ?? raw.productRef ?? '',
       name: raw.canonical_name ?? raw.name ?? '',
       category: raw.category,
@@ -41,6 +42,54 @@ export class ProductsService {
       savings: raw.savings,
       savingsPercent: raw.savings_percent ?? raw.savingsPercent
     };
+  }
+
+  private getSearchedRefsKey(userId: string): string {
+    return `${this.SEARCHED_REFS_KEY_PREFIX}${userId}`;
+  }
+
+  private readSearchedRefs(userId: string): string[] {
+    const raw = localStorage.getItem(this.getSearchedRefsKey(userId));
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      return parsed.filter((item) => typeof item === 'string' && item.trim().length > 0);
+    } catch {
+      return [];
+    }
+  }
+
+  private trackProductRef(userId: string, productRef: string): void {
+    const ref = String(productRef || '').trim();
+    if (!ref) {
+      return;
+    }
+
+    const current = this.readSearchedRefs(userId).filter((item) => item !== ref);
+    const next = [ref, ...current].slice(0, 60);
+    localStorage.setItem(this.getSearchedRefsKey(userId), JSON.stringify(next));
+  }
+
+  private getCurrentUserId(): string {
+    const raw = localStorage.getItem('user_profile');
+    if (raw) {
+      try {
+        const profile = JSON.parse(raw) as { id?: string };
+        if (profile?.id) {
+          return profile.id;
+        }
+      } catch {
+        // no-op
+      }
+    }
+
+    return localStorage.getItem('userId') || 'default-user';
   }
 
   private getSavedProductsKey(userId: string): string {
@@ -72,7 +121,7 @@ export class ProductsService {
    * Si no hay resultados, usar WebSocket STOMP para obtener productos en tiempo real.
    */
   searchProducts(query: string): Observable<ProductSearchResponse> {
-    const productRef = query.trim().replace(/\s+/g, '');
+    const productRef = query.trim().replace(/\s+/g, '').toLowerCase();
 
     if (!productRef) {
       return of({
@@ -85,6 +134,7 @@ export class ProductsService {
     return this.getSearchFromDb(productRef).pipe(
       switchMap((dbResponse) => {
         if ((dbResponse.products ?? []).length > 0) {
+          this.trackProductRef(this.getCurrentUserId(), productRef);
           return of(dbResponse);
         }
 
@@ -114,7 +164,13 @@ export class ProductsService {
           filter((value): value is ProductSearchResponse => Boolean(value)),
           timeout(30000),
           take(1),
-          rxCatchError(() => of({ productRef, products: [], totalResults: 0 }))
+          rxCatchError(() => of({ productRef, products: [], totalResults: 0 })),
+          map((response) => {
+            if ((response.products ?? []).length > 0) {
+              this.trackProductRef(this.getCurrentUserId(), response.productRef || productRef);
+            }
+            return response;
+          })
         );
       })
     );
@@ -148,7 +204,7 @@ export class ProductsService {
    * Endpoint (Postman): POST /api/products/search { product_ref }
    */
   getSearchFromDb(productRef: string): Observable<ProductSearchResponse> {
-    const ref = String(productRef || '').trim();
+    const ref = String(productRef || '').trim().toLowerCase();
     if (!ref) {
       return of({ productRef: '', products: [], totalResults: 0 });
     }
@@ -156,6 +212,9 @@ export class ProductsService {
     return this.http.post<any[]>(`${this.httpConfig.getApiBaseUrl()}/products/search`, { product_ref: ref }).pipe(
       map((response) => {
         const products = (response ?? []).map((item) => this.mapBackendProduct(item));
+        if (products.length > 0) {
+          this.trackProductRef(this.getCurrentUserId(), ref);
+        }
         return {
           productRef: ref,
           products,
@@ -169,7 +228,7 @@ export class ProductsService {
    * Obtiene un producto por ID
    */
   getProduct(productId: string): Observable<Product> {
-    return this.httpConfig.get<Product>(`/products/${productId}`);
+    return this.httpConfig.get<Product>(`/products/${productId}/product`);
   }
 
   /**
@@ -183,15 +242,36 @@ export class ProductsService {
    * Obtiene productos guardados del usuario
    */
   getSavedProducts(userId: string, page: number = 0, pageSize: number = 10): Observable<ProductSearchResponse> {
-    const products = this.readSavedProducts(userId);
-    const start = page * pageSize;
-    const paged = products.slice(start, start + pageSize);
+    const refs = this.readSearchedRefs(userId);
+    if (!refs.length) {
+      return of({
+        productRef: '',
+        products: [],
+        totalResults: 0
+      });
+    }
 
-    return of({
-      productRef: '',
-      products: paged,
-      totalResults: products.length
-    });
+    const requests = refs.map((ref) => this.getSearchFromDb(ref).pipe(
+      rxCatchError(() => of({ productRef: ref, products: [], totalResults: 0 }))
+    ));
+
+    return forkJoin(requests).pipe(
+      map((responses) => {
+        const merged = responses
+          .flatMap((response) => response.products)
+          .filter((product) => Boolean(product?.id));
+
+        const uniqueById = Array.from(new Map(merged.map((product) => [product.id, product])).values());
+        const start = page * pageSize;
+        const paged = uniqueById.slice(start, start + pageSize);
+
+        return {
+          productRef: '',
+          products: paged,
+          totalResults: uniqueById.length
+        };
+      })
+    );
   }
 
   /**

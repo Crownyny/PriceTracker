@@ -16,6 +16,8 @@ import {
  * Requerido por la entrega: `alerts.service.ts`.
  * Mantiene compatibilidad con el `AlertService` existente.
  */
+export type AlertFrequency = 'immediate' | 'daily' | 'weekly';
+
 @Injectable({ providedIn: 'root' })
 export class AlertsService {
   constructor(private readonly inner: AlertService) {}
