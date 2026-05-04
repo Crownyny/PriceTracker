@@ -21,6 +21,12 @@ import java.util.UUID;
 public interface ProductRepository extends JpaRepository<NormalizedProductEntity, String> {
 
     /**
+     * Encuentra un producto normalizado por su ID.
+     * @param id El ID del producto normalizado a buscar.
+     * @return El producto normalizado correspondiente al ID proporcionado, o null si no se encuentra.
+     */
+    Optional<NormalizedProductEntity> findById(String id);
+    /**
      * Encuentra productos por referencia.
      */
     List<NormalizedProductEntity> findByProductRef(String productRef);

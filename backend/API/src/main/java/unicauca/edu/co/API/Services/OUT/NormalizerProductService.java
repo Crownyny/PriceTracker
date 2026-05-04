@@ -5,15 +5,21 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+
 import unicauca.edu.co.API.Config.WebSocketConfig;
+import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
+import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.Domain.Validators.InterfacesValidators.IProductValidator;
 import unicauca.edu.co.API.Presentation.DTO.Enum.ProcessStatus;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormlaizedProductEventDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ProcessStatusDTO;
+import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Services.Events.NormalizedProductReceivedEvent;
 import unicauca.edu.co.API.Services.Events.NormlaizedProductFinalizedEvent;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IMessengerService;
@@ -35,17 +41,23 @@ public class NormalizerProductService implements INormalizerProductService {
     private final IMessengerService messengerService;
     private final IProductValidator productValidationChain;
     private final WebSocketConfig webSocketConfig;
+    private final ProductRepository productRepository;
+    private final NormalizedProductMapper normalizedProductMapper;
     private static final Logger logger = LoggerFactory.getLogger(MessengerService.class);
 
 
     public NormalizerProductService(
         IMessengerService messengerService,
         IProductValidator productValidationChain,
-        WebSocketConfig webSocketConfig
+        WebSocketConfig webSocketConfig,
+        ProductRepository productRepository,
+        NormalizedProductMapper normalizedProductMapper
     ) {
         this.messengerService = messengerService;
         this.productValidationChain = productValidationChain;
         this.webSocketConfig = webSocketConfig;
+        this.productRepository = productRepository;
+        this.normalizedProductMapper = normalizedProductMapper;
     }
 
     @Async
@@ -98,6 +110,19 @@ public class NormalizerProductService implements INormalizerProductService {
         messengerService.sendProcessStatus(status, product.getProductRef());
         messengerService.sendToWebSocket(product.getProductRef(), WEBSOCKET_PRODUCTS, product);
      }
-    
 
+     @Override
+     public NormalizedProductDTO getNormalizedProductById(String productId) {
+        Optional<NormalizedProductEntity> productEntity = productRepository.findById(productId);
+        return productEntity.map(this::convertToDTO).orElse(null);
+     }
+
+     /**
+      * Convierte una entidad NormalizedProductEntity a DTO usando el mapper.
+      * @param entity la entidad a convertir
+      * @return el DTO correspondiente
+      */
+     private NormalizedProductDTO convertToDTO(NormalizedProductEntity entity) {
+        return normalizedProductMapper.toDTO(entity);
+     }
 }
