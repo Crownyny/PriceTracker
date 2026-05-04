@@ -248,8 +248,11 @@ public class EmailNotificationDaemon {
         Optional<NotificationEntity> lastNotification = notificationRepository
             .findTopByAlertIdOrderBySentAtDesc(alert.getId());
 
-        if (lastNotification.isPresent() && !lastNotification.get().getSentAt().isBefore(latest.getRecordedAt())) {
-            return Optional.empty();
+        if (lastNotification.isPresent()) {
+            double lastTriggeredPrice = lastNotification.get().getTriggeredPrice().doubleValue();
+            if (samePrice(lastTriggeredPrice, latest.getPrice())) {
+                return Optional.empty();
+            }
         }
 
         return buildProductItem(alert, previous.getPrice(), latest.getPrice(), latest.getRecordedAt());

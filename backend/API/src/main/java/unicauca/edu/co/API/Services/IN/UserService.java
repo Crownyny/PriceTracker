@@ -3,19 +3,28 @@ package unicauca.edu.co.API.Services.IN;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
+import unicauca.edu.co.API.Domain.Model.ErrorType;
 import unicauca.edu.co.API.Domain.Validators.Chains.UserValidationChain;
+import unicauca.edu.co.API.Exception.BusinessException;
+import unicauca.edu.co.API.Exception.UserNotFoundException;
+import unicauca.edu.co.API.Presentation.DTO.IN.GoogleSignInDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
+import unicauca.edu.co.API.Presentation.DTO.OUT.GoogleUserInfoDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
 import unicauca.edu.co.API.Presentation.Mapper.UserMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IFirebaseAuth;
 import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IUserPersistencePort;
+
+import com.google.firebase.auth.FirebaseToken;
 
 @Service
 @Transactional
@@ -58,6 +67,89 @@ public class UserService implements IUserService {
             }
             throw e;
         }
+    }
+
+    /**
+     * Crea o encuentra un usuario a través de Google Sign-In.
+     * Si el usuario ya existe (por email o Firebase UID), lo actualiza.
+     * Si no existe, lo crea automáticamente en la BD.
+     * 
+     * @param googleSignIn DTO con el token de Google
+     * @return UserDTO del usuario creado o encontrado
+     */
+    @Override
+    @Transactional
+    public UserDTO createUserFromGoogle(GoogleSignInDTOIN googleSignIn) {
+        if (googleSignIn == null || googleSignIn.getIdToken() == null || googleSignIn.getIdToken().isEmpty()) {
+            throw new BusinessException("El token de Google es obligatorio", ErrorType.INVALID_PARAMETER);
+        }
+
+        try {
+            // Verificar el token de Google con Firebase
+            FirebaseToken decodedToken = firebaseAuthPort.verifyIdToken(googleSignIn.getIdToken());
+            GoogleUserInfoDTO googleUserInfo = extractGoogleUserInfo(decodedToken);
+
+            // Buscar si el usuario ya existe
+            User existingUser = userPersistencePort.findByFirebaseUid(googleUserInfo.getFirebaseUid())
+                .orElse(null);
+
+            if (existingUser != null) {
+                // El usuario ya existe, actualizar información si es necesario
+                boolean updated = false;
+
+                if (googleUserInfo.getEmail() != null && !googleUserInfo.getEmail().equalsIgnoreCase(existingUser.getEmail())) {
+                    existingUser.setEmail(googleUserInfo.getEmail());
+                    updated = true;
+                }
+
+                if (googleUserInfo.getProfilePicture() != null && !googleUserInfo.getProfilePicture().equals(existingUser.getImageProfile())) {
+                    existingUser.setImageProfile(googleUserInfo.getProfilePicture());
+                    updated = true;
+                }
+
+                if (updated) {
+                    userPersistencePort.save(existingUser);
+                }
+
+                return userMapper.toDTO(existingUser);
+            }
+
+            // El usuario no existe, crear uno nuevo
+            User newUser = buildUserFromGoogle(googleUserInfo);
+            User savedUser = userPersistencePort.save(newUser);
+
+            return userMapper.toDTO(savedUser);
+
+        } catch (Exception e) {
+            throw new BusinessException("Error al verificar token de Google: " + e.getMessage(), ErrorType.BUSINESS_ERROR);
+        }
+    }
+
+    /**
+     * Extrae la información del usuario desde el token de Firebase de Google.
+     */
+    private GoogleUserInfoDTO extractGoogleUserInfo(FirebaseToken decodedToken) {
+        return GoogleUserInfoDTO.builder()
+                .firebaseUid(decodedToken.getUid())
+                .email(decodedToken.getEmail())
+                .name((String) decodedToken.getClaims().get("name"))
+                .profilePicture((String) decodedToken.getClaims().get("picture"))
+                .provider("google")
+                .build();
+    }
+
+    /**
+     * Construye un nuevo usuario desde la información de Google.
+     */
+    private User buildUserFromGoogle(GoogleUserInfoDTO googleUserInfo) {
+        return User.builder()
+                .id(UUID.randomUUID())
+                .firebaseUid(googleUserInfo.getFirebaseUid())
+                .email(googleUserInfo.getEmail())
+                .imageProfile(googleUserInfo.getProfilePicture())
+                .role(UserRole.registered)
+                .createdAt(LocalDateTime.now())
+                .build();
     }
 
     @Transactional
@@ -196,38 +288,28 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public User upgradeToPremium(UUID userId) {
+    public UserDTO updateUserRole(UserRole newRole) {
+        UUID userId = getCurrentUserId();
         if (userId == null) {
-            throw new IllegalArgumentException("El id del usuario es obligatorio");
+            throw new BusinessException("User id is required", ErrorType.MISSING_USER_ID);
+        }
+
+        if (newRole == null) {
+            throw new BusinessException("User role is required", ErrorType.MISSING_USER_ROLE);
         }
 
         User user = userPersistencePort.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
-        if (user.getRole() == UserRole.premium) {
-            return user; // ya es premium
+        if (user.getRole() == newRole) {
+            throw new BusinessException("User already has role: " + newRole, ErrorType.USER_ALREADY_HAS_ROLE);
         }
 
-        user.setRole(UserRole.premium);
-        return userPersistencePort.save(user);
+        user.setRole(newRole);
+        User userSave = userPersistencePort.save(user);
+        return userMapper.toDTO(userSave);
     }
-    @Override
-    public User downgradeToFreemium(UUID userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("El id del usuario es obligatorio");
-        }
-
-        User user = userPersistencePort.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-
-        if (user.getRole() == UserRole.registered) {
-            return user; // ya es freemium
-        }
-
-        user.setRole(UserRole.registered);
-        return userPersistencePort.save(user);
-    }
-
+    
     @Override
     public User findById(UUID userId) {
         if (userId == null) {
@@ -243,13 +325,6 @@ public class UserService implements IUserService {
 
     private String normalizeOptionalEmail(String email) {
         return hasText(email) ? email.trim().toLowerCase() : null;
-    }
-
-    private String resolveUidForCreation(String uid, String email) {
-        if (hasText(uid)) {
-            return uid;
-        }
-        return "email:" + email;
     }
 
     private String resolveEmailForCreation(String email, String uid) {
@@ -277,5 +352,16 @@ public class UserService implements IUserService {
                 .role(UserRole.registered)
                 .createdAt(LocalDateTime.now())
                 .build();
+    }
+    private UUID getCurrentUserId() {
+        Object principal = SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getPrincipal();
+
+        if (principal instanceof AuthenticatedUserPrincipal user) {
+            return user.id(); 
+        }
+
+        throw new IllegalStateException("User not authenticated");
     }
 }

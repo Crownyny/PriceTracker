@@ -20,11 +20,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class AuthController {
 
     private final IAuthService authService;
-    private final UserService userService;
 
-    public AuthController(IAuthService authService, UserService userService ) {
+    public AuthController(IAuthService authService ) {
         this.authService = authService;
-        this.userService = userService;
     }
 
     @PostMapping("/validate")
@@ -51,9 +49,7 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/user")
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserCreateDTOIN createRequest) {
-        UserDTO createdUser = userService.createUser(createRequest);
-        return ResponseEntity.ok(createdUser);
-    }
+
+
+
 }

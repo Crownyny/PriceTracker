@@ -7,6 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import unicauca.edu.co.API.Exception.BusinessException;
+import unicauca.edu.co.API.Exception.UserNotFoundException;
 import unicauca.edu.co.API.Presentation.DTO.OUT.ApiErrorDTO;
 
 /**
@@ -28,6 +31,34 @@ public class GlobalExceptionHandler {
                 .build();
         
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorDTO);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorDTO> handleUserNotFoundException(UserNotFoundException e, HttpServletRequest request) {
+        ApiErrorDTO errorDTO = ApiErrorDTO.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Not Found")
+                .message(e.getMessage())
+                .code(e.getErrorCode())
+                .path(request.getRequestURI())
+                .timestamp(System.currentTimeMillis())
+                .build();
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorDTO);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiErrorDTO> handleBusinessException(BusinessException e, HttpServletRequest request) {
+        ApiErrorDTO errorDTO = ApiErrorDTO.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Business Logic Error")
+                .message(e.getMessage())
+                .code(e.getErrorCode())
+                .path(request.getRequestURI())
+                .timestamp(System.currentTimeMillis())
+                .build();
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -55,7 +86,8 @@ public class GlobalExceptionHandler {
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorDTO);
     }
-   @ExceptionHandler(IllegalStateException.class)
+   
+    @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiErrorDTO> handleInvalidAlertState(
         IllegalStateException e,
         HttpServletRequest request) {
@@ -70,6 +102,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
     }
+
     private String mapFirebaseError(FirebaseAuthException e) {
         AuthErrorCode code = e.getAuthErrorCode();
         if (code == null) return "Authentication failed: " + e.getMessage();

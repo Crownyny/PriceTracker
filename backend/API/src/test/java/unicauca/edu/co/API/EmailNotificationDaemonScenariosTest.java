@@ -192,10 +192,8 @@ class EmailNotificationDaemonScenariosTest extends PostgresScenarioTestBase {
     private void savePriceHistory(NormalizedProductEntity product, double price, LocalDateTime recordedAt, String jobId) {
         PriceHistoryEntity history = new PriceHistoryEntity();
         history.setProductId(product.getId());
-        history.setProductRef(product.getProductRef());
         history.setPrice(price);
         history.setCurrency(product.getCurrency());
-        history.setAvailability(true);
         history.setRecordedAt(recordedAt);
         history.setJobId(jobId);
         priceHistoryRepository.save(history);

@@ -46,21 +46,15 @@ public class PriceHistoryEntity {
     @Column(name = "product_id", nullable = false, length = 36)
     private String productId;
 
-    @Column(name = "product_ref", nullable = false, length = 100)
-    private String productRef;
-
     @Column(nullable = false)
     private Double price;
     
     @Column(nullable = false)
     private String currency;
-
-    @Column(nullable = false)
-    private Boolean availability;
     
-    @Column(nullable = false)
+    @Column(name = "recorded_at", nullable = false)
     private LocalDateTime recordedAt;
-    
-    @Column(nullable = false)
+
+    @Column(name = "job_id", nullable = false)
     private String jobId;
 }

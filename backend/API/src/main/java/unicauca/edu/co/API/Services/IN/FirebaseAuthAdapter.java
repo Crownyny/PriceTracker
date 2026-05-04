@@ -58,6 +58,11 @@ public class FirebaseAuthAdapter implements IFirebaseAuth {
         }
     }
 
+    @Override
+    public FirebaseToken verifyIdToken(String idToken) throws FirebaseAuthException {
+        return FirebaseAuth.getInstance().verifyIdToken(idToken);
+    }
+
     private void handleException(FirebaseAuthException e) {
         if (e.getAuthErrorCode() == AuthErrorCode.EMAIL_ALREADY_EXISTS) {
             throw new IllegalArgumentException("El correo ya está registrado en Firebase");
