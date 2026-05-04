@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TokenService } from '../../core/services/token.service';
+import { UserRole } from '../../shared/models/auth.model';
 
 interface UserProfile {
   id: string;
@@ -19,6 +20,20 @@ interface UserProfile {
       <h2>Mi Cuenta</h2>
 
       <div *ngIf="userProfile" class="account-form">
+        <div class="form-group">
+          <label>Rol temporal</label>
+          <select
+            [(ngModel)]="selectedRole"
+            class="input-field"
+          >
+            <option value="registered">Freemium / Registered</option>
+            <option value="premium">Premium</option>
+          </select>
+          <small class="helper-text">
+            Este cambio es temporal y solo afecta esta sesión/navegador.
+          </small>
+        </div>
+
         <div class="form-group">
           <label>Email</label>
           <input 
@@ -50,6 +65,9 @@ interface UserProfile {
         </div>
 
         <div class="form-actions">
+          <button (click)="applyTemporaryRole()" class="role-btn">
+            Aplicar rol temporal
+          </button>
           <button (click)="updateProfile()" class="save-btn">
             Guardar Cambios
           </button>
@@ -113,10 +131,21 @@ interface UserProfile {
       color: white;
       flex: 1;
     }
+    .role-btn {
+      background: #0d6efd;
+      color: white;
+      flex: 1;
+    }
     .logout-btn {
       background: #dc3545;
       color: white;
       flex: 1;
+    }
+    .helper-text {
+      display: block;
+      margin-top: 6px;
+      color: #6b7280;
+      font-size: 12px;
     }
     .success-message, .error-message {
       padding: 15px;
@@ -139,6 +168,7 @@ export class AccountComponent implements OnInit {
   userProfile: UserProfile | null = null;
   message = '';
   error = '';
+  selectedRole: UserRole = 'registered';
 
   constructor(private tokenService: TokenService) {}
 
@@ -147,14 +177,28 @@ export class AccountComponent implements OnInit {
   }
 
   loadUserProfile() {
-    // Aquí iría la lógica para cargar el perfil del usuario
-    // Por ahora usamos un mock
-    this.userProfile = {
-      id: '123',
-      email: 'usuario@example.com',
-      name: 'Juan Pérez',
-      avatar: ''
-    };
+    const storedProfile = this.tokenService.getUserProfile();
+    this.selectedRole = this.tokenService.getUserRole();
+
+    this.userProfile = storedProfile
+      ? {
+          id: storedProfile.id,
+          email: storedProfile.email,
+          name: storedProfile.name,
+          avatar: storedProfile.avatar
+        }
+      : {
+          id: '123',
+          email: 'usuario@example.com',
+          name: 'Juan Pérez',
+          avatar: ''
+        };
+  }
+
+  applyTemporaryRole() {
+    this.tokenService.setUserRole(this.selectedRole);
+    this.message = `Rol temporal aplicado: ${this.selectedRole}`;
+    setTimeout(() => this.message = '', 3000);
   }
 
   updateProfile() {

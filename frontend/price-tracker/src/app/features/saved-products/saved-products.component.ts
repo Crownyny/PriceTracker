@@ -25,7 +25,7 @@ import { catchError, of } from 'rxjs';
             <p class="category">{{ product.category }}</p>
           </div>
           <div class="actions">
-            <a [routerLink]="['/product', product.id]" class="view-btn">
+            <a [routerLink]="['/product', product.id]" [queryParams]="{ productRef: product.productRef }" class="view-btn">
               Ver detalles
             </a>
             <button (click)="removeProduct(product.id)" class="remove-btn">

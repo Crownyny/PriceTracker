@@ -2,10 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { PriceHistoryService } from '../services/price-history.service';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { ProductsService } from '../../products/services/products.service';
 import { TokenService } from '../../../core/services/token.service';
+import { UserRoleService } from '../../../core/services/user-role.service';
 import { AlertService } from '../../alerts/services/alert.service';
 import { PriceHistoryResponse, PriceHistoryRange } from '../../../shared/models/price-history.model';
 import { Product } from '../../../shared/models/product.model';
@@ -128,12 +131,15 @@ export class PriceHistoryComponent implements OnInit {
     private priceHistoryService: PriceHistoryService,
     private productsService: ProductsService,
     private tokenService: TokenService,
+    private userRoleService: UserRoleService,
     private alertService: AlertService,
     private router: Router,
     private httpConfig: HttpConfigService
   ) {}
 
   ngOnInit(): void {
+    // Ajustar rango por defecto según rol (Freemium solo puede usar W1)
+    this.selectedRange = this.userRoleService?.canUsePremiumFeatures() ? 'W3' : 'W1';
     this.loadAlertsWithProducts();
   }
 
@@ -145,19 +151,68 @@ export class PriceHistoryComponent implements OnInit {
         // Filtrar solo alertas activas
         const activeAlerts = this.alerts.filter(a => a.isActive !== false);
         
-        // Convertir alertas a formato para mostrar en el dropdown
-        this.productsWithAlerts = activeAlerts.map(alert => ({
-          id: alert.productId,
-          productName: alert.productRef || alert.productId,
-          alertId: alert.id
-        }));
-
-        // Auto-seleccionar el primer producto si hay alertas
-        if (this.productsWithAlerts.length > 0) {
-          this.selectedProductId = this.productsWithAlerts[0].id;
-          this.loadPriceHistory(this.selectedProductId);
+        if (activeAlerts.length === 0) {
+          this.productsWithAlerts = [];
+          this.loading = false;
+          return;
         }
-        this.loading = false;
+
+        const requests = activeAlerts.map((alert) => {
+          const searchRef = String(alert.productRef || '').trim();
+
+          if (!searchRef) {
+            return of({
+              id: alert.productId,
+              productName: alert.productId,
+              alertId: alert.id
+            });
+          }
+
+          return this.productsService.getSearchFromDb(searchRef).pipe(
+            map((response) => {
+              const matchedProduct = response.products.find((product) => product.id === alert.productId) ?? response.products[0];
+              return {
+                id: alert.productId,
+                productName: matchedProduct?.name || searchRef || alert.productId,
+                alertId: alert.id
+              };
+            }),
+            catchError(() => of({
+              id: alert.productId,
+              productName: searchRef || alert.productId,
+              alertId: alert.id
+            }))
+          );
+        });
+
+        forkJoin(requests).subscribe({
+          next: (items) => {
+            this.productsWithAlerts = items;
+
+            // Auto-seleccionar el primer producto si hay alertas
+            if (this.productsWithAlerts.length > 0) {
+              this.selectedProductId = this.productsWithAlerts[0].id;
+              this.loadPriceHistory(this.selectedProductId);
+            }
+
+            this.loading = false;
+          },
+          error: () => {
+            // Fallback simple sin romper la pantalla
+            this.productsWithAlerts = activeAlerts.map(alert => ({
+              id: alert.productId,
+              productName: alert.productRef || alert.productId,
+              alertId: alert.id
+            }));
+
+            if (this.productsWithAlerts.length > 0) {
+              this.selectedProductId = this.productsWithAlerts[0].id;
+              this.loadPriceHistory(this.selectedProductId);
+            }
+
+            this.loading = false;
+          }
+        });
       },
       error: (err) => {
         console.error('Error cargando alertas:', err);

@@ -29,7 +29,7 @@ export class ProductsService {
     return {
       id: String(raw.id ?? raw.product_id ?? raw.productId ?? ''),
       productRef: raw.product_ref ?? raw.productRef ?? '',
-      name: raw.canonical_name ?? raw.name ?? '',
+      name: raw.canonical_name ?? raw.canonicalName ?? raw.name ?? '',
       category: raw.category,
       image: raw.image_url ?? raw.image,
       description: raw.description,

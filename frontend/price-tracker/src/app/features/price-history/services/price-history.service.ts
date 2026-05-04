@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, forkJoin, map, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { HttpConfigService } from '../../../core/services/http-config.service';
+import { UserRoleService } from '../../../core/services/user-role.service';
 import {
   PriceHistoryResponse,
   PriceTrendAnalysis,
@@ -18,7 +19,8 @@ import {
 })
 export class PriceHistoryService {
   constructor(
-    private httpConfig: HttpConfigService
+    private httpConfig: HttpConfigService,
+    private userRoleService: UserRoleService
   ) {}
 
   /**
@@ -30,25 +32,11 @@ export class PriceHistoryService {
     const endpointWithRange = `/products/${productId}/priceHistory?range=${range}`;
 
     return this.httpConfig.get<PriceHistoryResponse>(endpointWithRange).pipe(
-      // Si el backend devuelve 400 por binding de enum u otro problema,
-      // reintentar sin el query param `range` para ser tolerantes.
+      // Si el backend rechaza rangos premium para usuarios freemium,
+      // reintentar con W1 (nunca sin `range`, porque es obligatorio en backend).
       catchError((err: any) => {
-        if (err?.status === 400) {
-          // Hacer un fetch crudo para capturar el body y headers del 400 para diagnóstico
-          try {
-            const debugUrl = `${this.httpConfig.getApiUrl()}/products/${productId}/priceHistory?range=${range}`;
-            // not awaiting - fire-and-log
-            fetch(debugUrl, { method: 'GET', credentials: 'include' })
-              .then(async (resp) => {
-                const text = await resp.text();
-                console.warn('[PriceHistoryService][debugFetch] 400 body:', { status: resp.status, statusText: resp.statusText, body: text });
-              })
-              .catch((fetchErr) => console.warn('[PriceHistoryService][debugFetch] fetch error:', fetchErr));
-          } catch (e) {
-            console.warn('[PriceHistoryService][debugFetch] unexpected error:', e);
-          }
-
-          return this.httpConfig.get<PriceHistoryResponse>(`/products/${productId}/priceHistory`);
+        if (err?.status === 400 && range !== 'W1') {
+          return this.httpConfig.get<PriceHistoryResponse>(`/products/${productId}/priceHistory?range=W1`);
         }
         return throwError(() => err);
       })
@@ -59,7 +47,9 @@ export class PriceHistoryService {
    * Obtiene análisis de tendencia de precios
    */
   getTrendAnalysis(productId: string): Observable<PriceTrendAnalysis> {
-    return this.getPriceHistory(productId, 'W3').pipe(
+    const range: PriceHistoryRange = this.userRoleService.canUsePremiumFeatures() ? 'W3' : 'W1';
+
+    return this.getPriceHistory(productId, range).pipe(
       map((response) => {
         const points = [...response.history].sort((a, b) => Number(new Date(a.updatedAt)) - Number(new Date(b.updatedAt)));
         const prices = points.map((point) => Number(point.price || 0)).filter((value) => Number.isFinite(value) && value > 0);

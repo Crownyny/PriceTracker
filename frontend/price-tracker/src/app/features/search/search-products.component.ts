@@ -178,6 +178,13 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
       queryParams: { productId: product.id }
     });
   }
+
+  openProductDetail(product: Product): void {
+    this.router.navigate(['/product', product.id], {
+      queryParams: { productRef: product.productRef || product.id },
+      state: { product }
+    });
+  }
 }
 
 
