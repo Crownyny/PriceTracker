@@ -18,13 +18,13 @@ import { UserRoleService } from '../../../core/services/user-role.service';
 export class ProductDetailComponent implements OnInit {
   product: Product | null = null;
   isSaved = false;
+  savingProduct = false;
   loading = false;
   error = '';
   alertError: string | null = null;
   alertLoading = false;
   hasAlert = false;
   alertCreated = false;
-  premiumBlocked = false;
   private productId = '';
   private productRef = '';
 
@@ -41,13 +41,12 @@ export class ProductDetailComponent implements OnInit {
       this.productId = params['id'];
       this.productRef = this.route.snapshot.queryParamMap.get('productRef') || '';
 
+      // Si el router pasó el objeto por state (navegación desde búsqueda) lo usamos
       const navigationProduct = (history.state?.product as Product | undefined) ?? null;
       if (navigationProduct?.id === this.productId) {
         this.product = navigationProduct;
         this.loading = false;
-        if (navigationProduct?.id) {
-          this.refreshAlertState(navigationProduct.id);
-        }
+        this.refreshAlertState(navigationProduct.id);
         return;
       }
 
@@ -57,124 +56,131 @@ export class ProductDetailComponent implements OnInit {
 
   loadProduct() {
     this.loading = true;
-    const productFromDb$ = this.productRef
+    this.error = '';
+
+    const search$ = this.productRef
       ? this.productsService.getSearchFromDb(this.productRef).pipe(
-          catchError(error => {
-            this.error = 'Error cargando producto';
-            console.error(error);
-            return of({ productRef: this.productRef, products: [], totalResults: 0 });
-          })
+          catchError(() => of({ productRef: this.productRef, products: [], totalResults: 0 }))
         )
       : of({ productRef: '', products: [], totalResults: 0 });
 
-    productFromDb$.pipe(
-      catchError(error => {
-        this.error = 'Error cargando producto';
-        console.error(error);
-        return of(null);
-      }),
-      finalize(() => {
-        this.loading = false;
-      })
+    search$.pipe(
+      finalize(() => { this.loading = false; })
     ).subscribe((response: any) => {
-      const product = response?.products?.find((item: Product) => item.id === this.productId)
-        || response?.products?.[0]
-        || null;
+      const product =
+        response?.products?.find((item: Product) => item.id === this.productId) ||
+        response?.products?.[0] ||
+        null;
 
       if (!product) {
-        this.error = 'No pudimos resolver el detalle del producto desde la búsqueda guardada.';
-        this.product = null;
+        this.error = 'No pudimos cargar el detalle del producto.';
         return;
       }
 
       this.product = product;
-      if (product.id) {
-        this.refreshAlertState(product.id);
-      }
+      this.refreshAlertState(product.id);
     });
   }
 
+  // ── Guardar producto ──────────────────────────────────────────────────────
+
   saveProduct() {
-    if (this.product) {
-      this.isSaved = !this.isSaved;
-      // Aquí irá la lógica para guardar en backend
+    if (!this.product?.id || this.savingProduct) return;
+
+    this.savingProduct = true;
+
+    if (this.isSaved) {
+      // Ya guardado → quitar
+      this.productsService.unsaveProduct(this.product.id).pipe(
+        finalize(() => { this.savingProduct = false; })
+      ).subscribe({
+        next: () => { this.isSaved = false; },
+        error: () => { /* mantener estado visual */ this.isSaved = true; }
+      });
+    } else {
+      // No guardado → guardar
+      this.productsService.saveProduct(this.product.id).pipe(
+        finalize(() => { this.savingProduct = false; })
+      ).subscribe({
+        next: () => { this.isSaved = true; },
+        error: (err) => {
+          // El endpoint puede retornar 4xx si ya está guardado; lo tratamos como éxito visual
+          if (err?.status === 409 || err?.status === 400) {
+            this.isSaved = true;
+          }
+          // En otros errores el botón queda en el estado previo
+        }
+      });
     }
   }
 
+  // ── Crear / gestionar alerta ───────────────────────────────────────────────
+
   createAlert() {
-    if (!this.product?.id) {
-      return;
-    }
+    if (!this.product?.id) return;
 
-    // Si ya existe, manda al panel central para gestionarla.
+    // Si ya existe alerta, redirigir al panel de alertas en modo gestión
     if (this.hasAlert) {
-      this.router.navigate(['/alerts'], { queryParams: { productId: this.product.id } });
+      this.router.navigate(['/alerts'], {
+        queryParams: { productId: this.product.id }
+      });
       return;
     }
-
-    if (!this.userRoleService.canUsePremiumFeatures()) {
-      // TODO(frontend): confirmar con backend qué capacidades exactas son premium por plan.
-      this.premiumBlocked = true;
-      this.alertError = 'Función premium bloqueada para tu plan actual';
-      return;
-    }
-
-    this.premiumBlocked = false;
 
     this.alertLoading = true;
     this.alertError = null;
+    this.alertCreated = false;
 
+    // NOTA: Crear alertas NO es una función premium-only.
+    // El backend devuelve 403 si el usuario alcanzó el límite de su plan.
     const frequency: AlertFrequency = 'instant';
-    this.alertService.createAlertWithoutDuplicate(this.product.id, {
-      productId: this.product.id,
-      targetPrice: 0,
-      currency: 'COP',
-      frequency,
-      notificationMethod: 'email'
-    }).pipe(
-      catchError((err) => {
-        if (err?.status === 409) {
+
+    this.alertService
+      .createAlertWithoutDuplicate(this.product.id, { frequency })
+      .pipe(
+        catchError((err) => {
+          if (err?.status === 409) {
+            // El backend dice que ya existe → marcar como existente
+            this.hasAlert = true;
+            this.alertError = null;
+          } else if (err?.status === 403) {
+            this.alertError =
+              'Alcanzaste el límite de alertas para tu plan actual. ' +
+              (this.userRoleService.canUsePremiumFeatures()
+                ? 'Contacta soporte.'
+                : 'Mejora a Premium para crear más alertas.');
+          } else {
+            this.alertError = 'No fue posible crear la alerta. Intenta de nuevo.';
+          }
+          return of(null);
+        }),
+        finalize(() => { this.alertLoading = false; })
+      )
+      .subscribe((response) => {
+        if (!response) return;
+
+        if (response.message === 'ALERT_ALREADY_EXISTS') {
           this.hasAlert = true;
-          return of(null);
+          this.alertCreated = false;
+          this.alertError = null;
+          return;
         }
-        if (err?.status === 403) {
-          this.alertError = 'ALERT_LIMIT_REACHED: Alcanzaste el límite de alertas para tu plan';
-          return of(null);
-        }
-        this.alertError = 'No fue posible crear la alerta';
-        console.error('Create alert error:', err);
-        return of(null);
-      }),
-      finalize(() => {
-        this.alertLoading = false;
-      })
-    ).subscribe((response) => {
-      if (!response) {
-        return;
-      }
 
-      if (response.message === 'ALERT_ALREADY_EXISTS') {
         this.hasAlert = true;
-        this.alertCreated = false;
+        this.alertCreated = true;
         this.alertError = null;
-        return;
-      }
-
-      this.hasAlert = true;
-      this.alertCreated = true;
-      this.alertError = null;
-    });
+      });
   }
 
   private refreshAlertState(productId: string): void {
-    this.alertService.getAlerts(productId).pipe(
-      catchError((err) => {
-        // No bloquear la vista por esto; solo dejar el estado como "sin alerta".
-        console.warn('Error consultando alertas:', err);
-        return of({ alerts: [], total: 0, page: 0, pageSize: 0 });
-      })
-    ).subscribe((response) => {
-      this.hasAlert = Array.isArray(response.alerts) && response.alerts.length > 0;
-    });
+    this.alertService
+      .getAlerts(productId)
+      .pipe(
+        catchError(() => of({ alerts: [], total: 0, page: 0, pageSize: 0 }))
+      )
+      .subscribe((response) => {
+        this.hasAlert =
+          Array.isArray(response.alerts) && response.alerts.length > 0;
+      });
   }
 }
