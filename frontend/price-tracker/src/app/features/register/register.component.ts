@@ -10,184 +10,170 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
-    <div class="register-container">
-      <div class="register-card">
-        <h2>Crear Cuenta</h2>
-        
+    <section class="login-shell">
+      <article class="login-card">
+        <h2>Crear cuenta</h2>
+        <p>Regístrate para comenzar a rastrear precios.</p>
+
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-          <div class="form-group">
-            <label for="name">Nombre Completo</label>
-            <input
-              id="name"
-              type="text"
-              formControlName="name"
-              placeholder="Tu nombre"
-              class="input-field"
-            />
-          </div>
+          <label>
+            Nombre (opcional)
+            <input type="text" formControlName="name" placeholder="Tu nombre" autocomplete="name" />
+          </label>
 
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              formControlName="email"
-              placeholder="tu@email.com"
-              class="input-field"
-              required
-            />
-          </div>
+          <label>
+            Email
+            <input type="email" formControlName="email" placeholder="tu@email.com" autocomplete="email" />
+            <span class="field-error"
+              *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['required']">
+              El email es obligatorio.
+            </span>
+            <span class="field-error"
+              *ngIf="form.get('email')?.touched && form.get('email')?.errors?.['email']">
+              Formato de email no válido.
+            </span>
+          </label>
 
-          <div class="form-group">
-            <label for="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              formControlName="password"
-              placeholder="••••••••"
-              class="input-field"
-              required
-            />
-            <small class="hint">Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.</small>
-          </div>
+          <label>
+            Contraseña
+            <input type="password" formControlName="password" placeholder="Mín. 8 caracteres" autocomplete="new-password" />
+            <span class="hint">Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo.</span>
+            <span class="field-error"
+              *ngIf="form.get('password')?.touched && form.get('password')?.errors?.['minlength']">
+              Mínimo 8 caracteres.
+            </span>
+            <span class="field-error"
+              *ngIf="form.get('password')?.touched && form.get('password')?.errors?.['passwordPolicy']">
+              Debe incluir 1 mayúscula, 1 número y 1 símbolo.
+            </span>
+          </label>
 
-          <div class="form-group">
-            <label for="confirmPassword">Confirmar Contraseña</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              formControlName="confirmPassword"
-              placeholder="••••••••"
-              class="input-field"
-              required
-            />
-          </div>
+          <label>
+            Confirmar contraseña
+            <input type="password" formControlName="confirmPassword" placeholder="Repite tu contraseña" autocomplete="new-password" />
+            <span class="field-error"
+              *ngIf="form.errors?.['passwordMismatch'] && form.get('confirmPassword')?.touched">
+              Las contraseñas no coinciden.
+            </span>
+          </label>
 
-          <button type="submit" class="submit-btn" [disabled]="form.invalid || loading">
-            {{ loading ? 'Registrando...' : 'Registrarse' }}
+          <p *ngIf="error" class="error">{{ error }}</p>
+
+          <button type="submit" [disabled]="loading">
+            {{ loading ? 'Registrando…' : 'Crear cuenta' }}
           </button>
         </form>
 
-        <button type="button" class="google-btn" (click)="onGoogle()" [disabled]="loading">
+        <button type="button" class="google" (click)="onGoogle()" [disabled]="loading">
           Continuar con Google
         </button>
 
-        <p class="login-link">
-          ¿Ya tienes cuenta? 
+        <p class="links">
+          ¿Ya tienes cuenta?
           <a routerLink="/login">Inicia sesión</a>
         </p>
-
-        <div *ngIf="error" class="error-message">
-          {{ error }}
-        </div>
-      </div>
-    </div>
+      </article>
+    </section>
   `,
   styles: [`
-    .register-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 20px;
+    .login-shell {
+      min-height: calc(100vh - 100px);
+      display: grid;
+      place-items: center;
+      padding: 24px;
     }
-    .register-card {
-      background: white;
-      padding: 40px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-    .register-card h2 {
-      text-align: center;
-      margin-bottom: 30px;
-      color: #333;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: #333;
-    }
-    .input-field {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    .input-field:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    .submit-btn {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 20px;
-    }
-    .submit-btn:hover {
-      opacity: 0.9;
-    }
-    .submit-btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-    .hint {
-      display: block;
-      margin-top: 8px;
-      color: #6b7280;
-      font-size: 12px;
-    }
-    .google-btn {
-      width: 100%;
-      padding: 12px;
+
+    .login-card {
+      width: min(420px, 100%);
+      background: #ffffff;
       border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      background: #fff;
+      border-radius: 14px;
+      padding: 32px 24px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    h2 { margin: 0 0 8px; font-size: 1.5rem; }
+    p { margin: 0 0 16px; color: #4b5563; }
+
+    form { display: grid; gap: 14px; }
+
+    label {
+      display: grid;
+      gap: 5px;
+      font-weight: 600;
+      color: #1f2937;
+      font-size: 0.875rem;
+    }
+
+    input {
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 10px 12px;
       font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.1); }
+
+    .hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    .field-error {
+      font-size: 0.75rem;
+      color: #b91c1c;
+      font-weight: 400;
+    }
+
+    .error {
+      color: #b91c1c;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+
+    button[type="submit"] {
+      margin-top: 4px;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #1d4ed8;
+      color: #fff;
       font-weight: 600;
+      font-size: 0.9375rem;
       cursor: pointer;
+      transition: background 0.15s;
+    }
+    button[type="submit"]:hover:not(:disabled) { background: #1e40af; }
+    button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .google {
       margin-top: 10px;
-    }
-    .google-btn:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-    .login-link {
-      text-align: center;
-      margin-top: 20px;
-      color: #666;
-    }
-    .login-link a {
-      color: #667eea;
-      text-decoration: none;
+      width: 100%;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff;
+      color: #111827;
+      border: 1px solid #e5e7eb;
       font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.15s;
     }
-    .login-link a:hover {
-      text-decoration: underline;
+    .google:hover:not(:disabled) { background: #f9fafb; }
+    .google:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .links {
+      margin-top: 12px;
+      font-size: 0.875rem;
+      color: #6b7280;
     }
-    .error-message {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 12px;
-      border-radius: 4px;
-      margin-top: 20px;
-      border: 1px solid #f5c6cb;
-    }
+    .links a { color: #1d4ed8; font-weight: 500; text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
   `]
 })
 export class RegisterComponent {
@@ -201,12 +187,18 @@ export class RegisterComponent {
     private route: ActivatedRoute,
     private router: Router
   ) {
-    this.form = this.formBuilder.group({
-      name: [''],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8), this.passwordPolicyValidator]],
-      confirmPassword: ['', [Validators.required]]
-    }, { validators: [this.passwordsMatchValidator] });
+    this.form = this.formBuilder.group(
+      {
+        name: [''],
+        email: ['', [Validators.required, Validators.email]],
+        password: [
+          '',
+          [Validators.required, Validators.minLength(8), this.passwordPolicyValidator]
+        ],
+        confirmPassword: ['', [Validators.required]]
+      },
+      { validators: [this.passwordsMatchValidator] }
+    );
   }
 
   onSubmit(): void {
@@ -219,49 +211,54 @@ export class RegisterComponent {
     this.loading = true;
     this.error = null;
 
-    const { email, password, name } = this.form.getRawValue() as { email: string; password: string; name?: string };
-    this.authService.register({ email, password, displayName: name }).pipe(
-      catchError((err) => {
-        this.error = this.mapAuthError(err);
-        console.error('Register error:', err);
-        return of(null);
-      }),
-      finalize(() => {
-        this.loading = false;
-      })
-    ).subscribe((response) => {
-      if (!response) return;
-      this.navigateToReturnUrl();
-    });
+    const { email, password, name } = this.form.getRawValue() as {
+      email: string;
+      password: string;
+      name?: string;
+    };
+
+    this.authService
+      .register({ email, password, displayName: name })
+      .subscribe({
+        next: (response) => {
+          this.loading = false;
+          if (response) this.navigateToReturnUrl();
+        },
+        error: (err: any) => {
+          this.error = this.mapAuthError(err);
+          this.loading = false;
+        }
+      });
   }
 
   onGoogle(): void {
     this.loading = true;
     this.error = null;
-    this.authService.loginWithGoogle().pipe(
-      catchError((err) => {
-        this.error = this.mapAuthError(err);
-        console.error('Google login error:', err);
-        return of(null);
-      }),
-      finalize(() => {
+
+    this.authService.loginWithGoogle().subscribe({
+      next: (response) => {
         this.loading = false;
-      })
-    ).subscribe((response) => {
-      if (!response) return;
-      this.navigateToReturnUrl();
+        if (response) this.navigateToReturnUrl();
+      },
+      error: (err: any) => {
+        this.error = this.mapAuthError(err);
+        this.loading = false;
+      }
     });
   }
 
   private navigateToReturnUrl(): void {
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
+    const returnUrl =
+      this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
     this.router.navigateByUrl(returnUrl);
   }
 
   private passwordsMatchValidator = (group: any) => {
     const password = group?.get?.('password')?.value;
     const confirm = group?.get?.('confirmPassword')?.value;
-    return password && confirm && password !== confirm ? { passwordMismatch: true } : null;
+    return password && confirm && password !== confirm
+      ? { passwordMismatch: true }
+      : null;
   };
 
   private passwordPolicyValidator = (control: any) => {
@@ -274,23 +271,25 @@ export class RegisterComponent {
   };
 
   private resolveFormError(): string {
-    if (this.form.errors?.['passwordMismatch']) return 'Las contraseñas no coinciden';
+    if (this.form.errors?.['passwordMismatch']) return 'Las contraseñas no coinciden.';
     const email = this.form.get('email');
-    if (email?.errors?.['required']) return 'El email es obligatorio';
-    if (email?.errors?.['email']) return 'El email no tiene un formato válido';
+    if (email?.errors?.['required']) return 'El email es obligatorio.';
+    if (email?.errors?.['email']) return 'El email no tiene un formato válido.';
     const password = this.form.get('password');
-    if (password?.errors?.['required']) return 'La contraseña es obligatoria';
-    if (password?.errors?.['minlength']) return 'La contraseña debe tener al menos 8 caracteres';
-    if (password?.errors?.['passwordPolicy']) return 'La contraseña debe incluir 1 mayúscula, 1 número y 1 símbolo';
-    return 'Revisa los campos del formulario';
+    if (password?.errors?.['required']) return 'La contraseña es obligatoria.';
+    if (password?.errors?.['minlength']) return 'La contraseña debe tener al menos 8 caracteres.';
+    if (password?.errors?.['passwordPolicy'])
+      return 'La contraseña debe incluir 1 mayúscula, 1 número y 1 símbolo.';
+    return 'Revisa los campos del formulario.';
   }
 
   private mapAuthError(err: any): string {
-    const code = err?.code as string | undefined;
-    if (code === 'auth/email-already-in-use') return 'Este correo electrónico ya está registrado';
-    if (code === 'auth/invalid-email') return 'El correo electrónico no es válido';
-    if (code === 'auth/weak-password') return 'La contraseña es demasiado débil';
-    if (code === 'auth/popup-closed-by-user') return 'Cerraste la ventana de Google antes de completar el registro';
+    const code = String(err?.code || '');
+    if (code === 'auth/email-already-in-use') return 'Este correo ya está registrado. Intenta iniciar sesión.';
+    if (code === 'auth/invalid-email') return 'El correo electrónico no es válido.';
+    if (code === 'auth/weak-password') return 'La contraseña es demasiado débil.';
+    if (code === 'auth/popup-closed-by-user') return 'Cerraste la ventana de Google antes de completar el registro.';
+    if (code === 'auth/network-request-failed') return 'Sin conexión. Verifica tu red e intenta de nuevo.';
     return 'No fue posible completar el registro. Inténtalo de nuevo.';
   }
 }
