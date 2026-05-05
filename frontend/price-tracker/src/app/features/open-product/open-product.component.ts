@@ -42,7 +42,6 @@ export class OpenProductComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    // Preferimos resultados en BD por product_ref para no disparar scraping nuevo.
     this.productsService.getSearchFromDb(ref).pipe(
       catchError((err) => {
         console.error('OpenProduct error:', err);
@@ -60,8 +59,13 @@ export class OpenProductComponent implements OnInit {
         return;
       }
 
-      this.router.navigate(['/product', product.id]);
+      // FIX: pasar productRef como queryParam para que ProductDetailComponent
+      // pueda buscarlo en la BD sin necesitar un endpoint /products/:id separado.
+      this.router.navigate(['/product', product.id], {
+        queryParams: { productRef: ref },
+        state: { product }   // también pasamos el objeto completo por state para evitar
+                              // una segunda llamada a la BD si el componente lo recibe
+      });
     });
   }
 }
-
