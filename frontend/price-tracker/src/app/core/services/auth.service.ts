@@ -52,7 +52,24 @@ export class AuthService {
 
       const token = await user.getIdToken();
       this.tokenService.setTokens(token);
-      this.tokenService.setUserProfile(this.mapUserProfile(user));
+
+      // Preservar el rol ya guardado — no sobreescribir con el default de mapUserProfile.
+      // Si no hay perfil guardado aún, guardar el perfil base (el rol se actualizará
+      // cuando el login/register llame al backend).
+      const existingProfile = this.tokenService.getUserProfile();
+      if (!existingProfile) {
+        this.tokenService.setUserProfile(this.mapUserProfile(user));
+      } else {
+        // Solo actualizar campos de identidad, preservar el rol
+        this.tokenService.setUserProfile({
+          ...existingProfile,
+          id: user.uid,
+          email: user.email ?? existingProfile.email,
+          name: user.displayName ?? existingProfile.name,
+          avatar: user.photoURL ?? existingProfile.avatar,
+        });
+      }
+
       this.extensionAuthBridge.publishAuthUpdate(token, user.email ?? undefined);
     });
   }
@@ -66,6 +83,9 @@ export class AuthService {
             this.tokenService.setTokens(response.accessToken);
             this.tokenService.setUserProfile(response.user);
             this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
+            // El rol se sincroniza desde Mi Cuenta (PUT /api/v1/user/role).
+            // No llamamos createUser aquí porque ese endpoint solo crea usuarios
+            // nuevos y rechaza con 400 si el email ya existe.
             return response;
           })
         )

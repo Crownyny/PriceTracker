@@ -275,21 +275,52 @@ export class ProductsService {
   }
 
   /**
-   * Guarda un producto
+   * Guarda un producto (localStorage — el endpoint /save no existe en el backend aún)
    */
   saveProduct(productId: string): Observable<{ message: string }> {
-    return this.httpConfig.post<{ message: string }>(
-      `/products/${productId}/save`,
-      {}
-    );
+    const userId = this.getCurrentUserId();
+    const saved = this.readSavedProducts(userId);
+    const alreadySaved = saved.some((p) => p.id === productId);
+    if (!alreadySaved) {
+      // Guardamos solo el id; el objeto completo se recupera por búsqueda
+      this.writeSavedProducts(userId, [...saved, { id: productId } as Product]);
+    }
+    return of({ message: 'OK' });
   }
 
   /**
-   * Elimina un producto guardado
+   * Elimina un producto guardado (localStorage)
    */
   unsaveProduct(productId: string): Observable<{ message: string }> {
-    return this.httpConfig.delete<{ message: string }>(
-      `/products/${productId}/save`
+    const userId = this.getCurrentUserId();
+    this.writeSavedProducts(
+      userId,
+      this.readSavedProducts(userId).filter((p) => p.id !== productId)
+    );
+    return of({ message: 'OK' });
+  }
+
+  /**
+   * Comprueba si un producto está guardado por el usuario actual
+   */
+  isProductSaved(productId: string): boolean {
+    const userId = this.getCurrentUserId();
+    return this.readSavedProducts(userId).some((p) => p.id === productId);
+  }
+
+  /**
+   * Obtiene un producto buscando por productRef y filtrando por productId.
+   * Más robusto que getProduct() cuando el endpoint GET /products/{id}/product
+   * devuelve 500 por un bug en el backend.
+   */
+  getProductByIdAndRef(productId: string, productRef: string): Observable<{ best: Product; all: Product[] } | null> {
+    return this.getSearchFromDb(productRef).pipe(
+      map(resp => {
+        if (!resp.products.length) return null;
+        const best = resp.products[0]; // ya ordenado por precio asc
+        return { best, all: resp.products };
+      }),
+      rxCatchError(() => of(null))
     );
   }
 
@@ -297,8 +328,85 @@ export class ProductsService {
    * Obtiene comparación de precios para un producto
    */
   getPriceComparison(productId: string): Observable<any> {
-    return this.httpConfig.get<any>(
-      `/products/${productId}/priceComparison`
+    return this.httpConfig.get<any>(`/products/${productId}/priceComparison`);
+  }
+
+  /**
+   * Resuelve el nombre legible de un producto dado su ID.
+   * Intenta GET /api/v1/products/{id}/product, luego caché, luego ID truncado.
+   */
+  /**
+   * Resuelve el nombre de un producto dado su ID.
+   * Estrategia en cascada (sin ruido en consola):
+   *   1. Caché localStorage (instantáneo)
+   *   2. POST /api/products/search { product_ref: productId } (el ID a veces es indexable)
+   *   3. ID truncado como último recurso
+   *
+   * Para poblar el caché automáticamente: visitar el detalle del producto
+   * o crear una alerta desde el detalle (ambos llaman cacheProductName).
+   */
+  resolveProductName(productId: string): Observable<string> {
+    const cached = this.getCachedName(productId);
+    if (cached) return of(cached);
+
+    return this.http.post<any[]>(
+      `${this.httpConfig.getApiBaseUrl()}/products/search`,
+      { product_ref: productId }
+    ).pipe(
+      map((response: any[]) => {
+        const items = response ?? [];
+        // Buscar el item que corresponde exactamente a este ID
+        const match = items.find((r: any) => r.id === productId) ?? items[0];
+        const name = match?.canonical_name ?? match?.canonicalName ?? match?.name ?? '';
+        if (name) this.cacheProductName(productId, name);
+        return name || this.shortId(productId);
+      }),
+      rxCatchError(() => of(this.shortId(productId)))
     );
+  }
+
+  cacheProductName(productId: string, name: string): void {
+    try {
+      const key = 'product_names_cache';
+      const cache = JSON.parse(localStorage.getItem(key) ?? '{}');
+      cache[productId] = name;
+      const entries = Object.entries(cache);
+      localStorage.setItem(key, JSON.stringify(
+        entries.length > 200 ? Object.fromEntries(entries.slice(-200)) : cache
+      ));
+    } catch { /* ignore */ }
+  }
+
+  getCachedName(productId: string): string | null {
+    try {
+      return JSON.parse(localStorage.getItem('product_names_cache') ?? '{}')[productId] ?? null;
+    } catch { return null; }
+  }
+
+  /** Guarda el objeto Product completo en caché para uso en historial/alertas */
+  cacheFullProduct(product: Product): void {
+    if (!product?.id) return;
+    try {
+      const key = 'product_full_cache';
+      const cache = JSON.parse(localStorage.getItem(key) ?? '{}');
+      cache[product.id] = product;
+      const entries = Object.entries(cache);
+      localStorage.setItem(key,
+        JSON.stringify(entries.length > 100 ? Object.fromEntries(entries.slice(-100)) : cache)
+      );
+      // También guardar el nombre en el caché de nombres
+      if (product.name) this.cacheProductName(product.id, product.name);
+    } catch { /* ignore */ }
+  }
+
+  /** Recupera el objeto Product completo desde caché */
+  getCachedProduct(productId: string): Product | null {
+    try {
+      return JSON.parse(localStorage.getItem('product_full_cache') ?? '{}')[productId] ?? null;
+    } catch { return null; }
+  }
+
+  private shortId(id: string): string {
+    return id.slice(0, 8) + '…';
   }
 }

@@ -150,14 +150,13 @@ export class AlertService {
   }
 
   /**
-   * Crea una nueva alerta
-   * Endpoint: POST /api/{productId}/alert body: { frequency }
+   * Crea una nueva alerta.
+   * Endpoint real del backend: POST /api/{productId}/alert  body: { frequency }
+   * El userId lo obtiene el backend desde el JWT en SecurityContextHolder.
    */
   createAlert(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
-    const url = `${this.getApiBaseUrl()}/${encodeURIComponent(productId)}/alert`;
-    const body = {
-      frequency: request.frequency
-    };
+    const url  = `${this.getApiBaseUrl()}/${encodeURIComponent(productId)}/alert`;
+    const body = { frequency: request.frequency };   // enum lowercase: instant | daily | weekly
 
     return this.http.post<any>(url, body).pipe(
       map((response) => this.toAlertResponse(response))
@@ -175,18 +174,25 @@ export class AlertService {
 
   createAlertWithoutDuplicate(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
     return this.findAlertByProductId(productId).pipe(
+      catchError(() => of(null)),   // si getAlerts falla, continuar como si no existiera
       switchMap((existing) => {
         if (existing) {
-          return of({
-            alert: existing,
-            message: 'ALERT_ALREADY_EXISTS'
-          });
+          return of({ alert: existing, message: 'ALERT_ALREADY_EXISTS' });
         }
         return this.createAlert(productId, request);
       }),
       catchError((err) => {
-        if (err?.status === 409) {
+        // 400 ALERT_EXISTS o 409 = ya existe — tratar como duplicado, no como error
+        const isAlreadyExists =
+          err?.status === 409 ||
+          (err?.status === 400 && (
+            err?.error?.code === 'ALERT_EXISTS' ||
+            String(err?.error?.message ?? '').toLowerCase().includes('already exists')
+          ));
+
+        if (isAlreadyExists) {
           return this.findAlertByProductId(productId).pipe(
+            catchError(() => of(null)),
             map((existing) => ({
               alert: existing ?? undefined,
               message: 'ALERT_ALREADY_EXISTS'

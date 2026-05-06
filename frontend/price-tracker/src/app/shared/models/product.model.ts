@@ -1,6 +1,3 @@
-/**
- * Product Model - Representa un producto en el sistema
- */
 export interface Product {
   id: string;
   productRef: string;
@@ -13,19 +10,17 @@ export interface Product {
   currency: string;
   availability: boolean;
   source?: string;
-  // Propiedades de comparación de precios
+  url?: string;          // source_url del backend — link directo a la tienda
   bestPrice?: number;
   savings?: number;
   savingsPercent?: number;
+  isSaved?: boolean;
 }
 
 export interface ProductSearchRequest {
   product_ref: string;
 }
 
-/**
- * Product Source - Para comparación entre tiendas
- */
 export interface ProductSource {
   sourceId: string;
   sourceName: string;
@@ -37,9 +32,6 @@ export interface ProductSource {
   lastUpdated?: Date;
 }
 
-/**
- * Respuesta de búsqueda de productos
- */
 export interface ProductSearchResponse {
   productRef: string;
   products: Product[];
