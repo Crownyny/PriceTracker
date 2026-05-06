@@ -18,7 +18,7 @@
         <div>
           <p class="text-gray-600 text-sm font-medium">Ahorro Total</p>
           <p class="text-3xl font-bold text-gray-900 mt-2">${{ totalSavings | number }}</p>
-          <p class="text-xs text-gray-500 mt-1">En {{ itemsCompared }} productos</p>
+          <p class="text-xs text-gray-500 mt-1">En {{ savedProducts.length }} productos</p>
         </div>
         <div class="text-4xl">💰</div>
       </div>
@@ -28,9 +28,9 @@
     <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-gray-600 text-sm font-medium">Productos Comparados</p>
-          <p class="text-3xl font-bold text-gray-900 mt-2">{{ itemsCompared }}</p>
-          <p class="text-xs text-gray-500 mt-1">En los últimos 30 días</p>
+          <p class="text-gray-600 text-sm font-medium">Productos con Alertas</p>
+          <p class="text-3xl font-bold text-gray-900 mt-2">{{ alertCount }}</p>
+          <p class="text-xs text-gray-500 mt-1">Alertas activas</p>
         </div>
         <div class="text-4xl">📦</div>
       </div>
@@ -40,9 +40,9 @@
     <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-gray-600 text-sm font-medium">Guardados</p>
+          <p class="text-gray-600 text-sm font-medium">Productos Vistos</p>
           <p class="text-3xl font-bold text-gray-900 mt-2">{{ savedProducts.length }}</p>
-          <p class="text-xs text-gray-500 mt-1">Productos favoritos</p>
+          <p class="text-xs text-gray-500 mt-1">Vistos recientemente</p>
         </div>
         <div class="text-4xl">⭐</div>
       </div>

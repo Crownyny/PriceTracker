@@ -10,12 +10,12 @@
   <!-- Main Content -->
   <div class="max-w-7xl mx-auto px-8 py-12">
     <!-- Connection & Status Bar -->
-    <div *ngIf="usingStomp || searching || searchStatus || uiState === 'found' || uiState === 'empty' || uiState === 'error'" class="mb-6 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+    <div *ngIf="stompConnected || searching || searchStatus || uiState === 'found' || uiState === 'empty' || uiState === 'error'" class="mb-6 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
       <div class="flex items-center gap-2 text-sm text-blue-800">
-        <span *ngIf="usingStomp" class="inline-block">
-          🟢 <strong>Usando WebSocket en tiempo real</strong>
+        <span *ngIf="stompConnected" class="inline-block">
+          🟢 <strong>Búsqueda en tiempo real activa</strong>
         </span>
-        <span *ngIf="!usingStomp && !searching" class="inline-block">
+        <span *ngIf="!stompConnected && !searching" class="inline-block">
           🔗 <strong>Usando REST API</strong>
         </span>
         <span *ngIf="searching" class="inline-block">
@@ -41,7 +41,7 @@
             type="text" 
             placeholder="Buscar producto (ej: laptop, mouse, monitor...)" 
             [(ngModel)]="searchQuery"
-            (keyup)="onSearch()"
+            (input)="onQueryChange()" (keyup.enter)="onKeyEnter()"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -149,7 +149,7 @@
             <!-- Pricing -->
             <div class="mb-4">
               <div class="flex items-baseline gap-2 mb-1">
-                <span class="text-2xl font-bold text-gray-900">{{ product.currentPrice | currency }}</span>
+                <span class="text-2xl font-bold text-gray-900">${{ product.currentPrice | number:'1.0-0' }}</span>
                 <span *ngIf="product.bestPrice && product.bestPrice < product.currentPrice" class="text-sm text-gray-500 line-through">
                   {{ product.bestPrice | currency }}
                 </span>
@@ -168,7 +168,7 @@
                 Ver detalle
               </button>
               <button 
-                (click)="saveProduct(product)" 
+                (click)="createAlert(product)" 
                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 🤍 Guardar

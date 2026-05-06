@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
@@ -84,7 +84,8 @@ export class ProductDetailComponent implements OnInit {
     private alertService:        AlertService,
     private userRoleService:     UserRoleService,
     private route:  ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr:    ChangeDetectorRef
   ) {}
 
   // ── Init ──────────────────────────────────────────────────────────────────
@@ -117,7 +118,7 @@ export class ProductDetailComponent implements OnInit {
     if (this.productRef) {
       // Con productRef: traemos todas las variantes, best = más barato
       this.productsService.getProductByIdAndRef(this.productId, this.productRef)
-        .pipe(finalize(() => { this.loading = false; }))
+        .pipe(finalize(() => { this.loading = false; this.cdr.markForCheck(); }))
         .subscribe((result: { best: Product; all: Product[] } | null) => {
           if (!result) { this.error = 'No pudimos cargar el detalle del producto.'; return; }
           this.applyProducts(result.best, result.all);
@@ -214,9 +215,9 @@ export class ProductDetailComponent implements OnInit {
       ? this.productsService.unsaveProduct(this.product.id)
       : this.productsService.saveProduct(this.product.id);
 
-    action$.pipe(finalize(() => { this.savingProduct = false; }))
+    action$.pipe(finalize(() => { this.savingProduct = false; this.cdr.markForCheck(); }))
       .subscribe({
-        next: () => { this.isSaved = !this.isSaved; },
+        next: () => { this.isSaved = !this.isSaved; this.cdr.markForCheck(); },
         error: (err) => { if (!this.isSaved && (err?.status === 409 || err?.status === 400)) this.isSaved = true; }
       });
   }
@@ -254,13 +255,14 @@ export class ProductDetailComponent implements OnInit {
           }
           return of(null);
         }),
-        finalize(() => { this.alertLoading = false; })
+        finalize(() => { this.alertLoading = false; this.cdr.markForCheck(); })
       )
       .subscribe(response => {
         if (!response) return;
         this.hasAlert     = true;
         this.alertCreated = response.message !== 'ALERT_ALREADY_EXISTS';
         this.alertError   = null;
+        this.cdr.markForCheck();
       });
   }
 
@@ -288,8 +290,20 @@ export class ProductDetailComponent implements OnInit {
     this.chartSeries = []; this.gridLabels = []; this.gridYs = []; this.xLabels = [];
 
     this.priceHistoryService.getPriceHistory(productId, this.selectedRange)
-      .pipe(catchError(() => of(null)), finalize(() => { this.historyLoading = false; }))
-      .subscribe(resp => { if (resp?.history?.length) this.buildChart(resp.history); });
+      .pipe(catchError(() => of(null)), finalize(() => { this.historyLoading = false; this.cdr.markForCheck(); }))
+      .subscribe(resp => {
+        if (!resp?.history?.length) return;
+        this.buildChart(resp.history);
+        // Sincronizar el precio actual con el último punto del historial
+        const sorted = [...resp.history].sort((a, b) =>
+          new Date(b.updatedAt ?? (b as any).recordedAt).getTime() -
+          new Date(a.updatedAt ?? (a as any).recordedAt).getTime()
+        );
+        if (sorted[0]?.price && this.product) {
+          this.product = { ...this.product, currentPrice: Number(sorted[0].price) };
+        }
+        this.cdr.markForCheck();
+      });
   }
 
   private buildChart(history: PriceHistoryPoint[]): void {

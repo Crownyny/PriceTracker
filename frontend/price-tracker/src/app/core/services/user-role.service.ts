@@ -7,6 +7,7 @@ import { UserRole } from '../../shared/models/auth.model';
 
 export interface CreateUserRequest {
   email: string;
+  password?: string;
   name?: string;
 }
 

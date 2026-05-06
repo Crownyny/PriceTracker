@@ -40,18 +40,27 @@
       return 'search_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
     
-    // Helper: Checkea si el cache ha expirado (20 minutos)
-    function isCacheExpired() {
-      if (!searchTimestamp) {
-        return false; // Sin timestamp conocido, cache no expira
+    // Helper: Checkea si el cache ha expirado usando el update_at del backend.
+    // El backend filtra productos con updatedAt >= now-20min, así que si el
+    // producto fue actualizado hace más de 20 minutos no habrá resultados en BD.
+    function isCacheExpired(updatedAtStr) {
+      if (updatedAtStr) {
+        const updatedAt = new Date(updatedAtStr).getTime();
+        if (!isNaN(updatedAt)) {
+          const elapsedMs = Date.now() - updatedAt;
+          // Si elapsedMs es negativo (desfase de reloj/zona horaria), tratar como expirado
+          // para forzar nuevo scraping en lugar de mostrar resultados vacíos
+          if (elapsedMs < 0) {
+            console.log(`${constants.LOG_PREFIX} [CACHE] Clock skew detected (${Math.round(elapsedMs/1000)}s) - treating as EXPIRED to force scraping`);
+            return true;
+          }
+          const isExpired = elapsedMs > CACHE_EXPIRY_MS;
+          console.log(`${constants.LOG_PREFIX} [CACHE] Product updated ${Math.round(elapsedMs/1000)}s ago - cache ${isExpired ? 'EXPIRED' : 'FRESH'}`);
+          return isExpired;
+        }
       }
-      const now = Date.now();
-      const elapsedMs = now - searchTimestamp;
-      const isExpired = elapsedMs > CACHE_EXPIRY_MS;
-      if (isExpired) {
-        console.log(`${constants.LOG_PREFIX} [CACHE] Cache expired: ${elapsedMs}ms > ${CACHE_EXPIRY_MS}ms`);
-      }
-      return isExpired;
+      if (!searchTimestamp) return true; // Sin info → asumir expirado
+      return (Date.now() - searchTimestamp) > CACHE_EXPIRY_MS;
     }
     
     // Call /api/intent/intent to check if query is a purchase intent
@@ -282,10 +291,21 @@
       }
 
       if (event.code === 'PRODUCT_IN_BD') {
-        // Checkea si el cache ha expirado (20 minutos)
-        if (isCacheExpired()) {
-          console.log(`${constants.LOG_PREFIX} [HANDLER] ⏰ Cache EXPIRED (>20 min) - ignoring PRODUCT_IN_BD, continuing search...`);
-          // Continúa con búsqueda normal, no usa cache
+        // Checkea si el cache ha expirado usando el update_at del backend
+        if (isCacheExpired(event.updatedAt || event.update_at)) {
+          console.log(`${constants.LOG_PREFIX} [HANDLER] ⏰ Cache EXPIRED (>20 min) - relaunching WebSocket search to force scraping...`);
+          // El caché expiró → forzar nuevo scraping reenviando la búsqueda por WebSocket.
+          // No usamos REST fallback porque también filtraría por 20 min.
+          if (activeSearch) {
+            try {
+              const payload = activeSearch.payload || { query: activeSearch.query, search_id: activeSearch.searchId };
+              client.publish({ destination: '/app/search', body: JSON.stringify(payload) });
+              console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ Re-sent search to force fresh scraping`);
+            } catch (e) {
+              console.warn(`${constants.LOG_PREFIX} [HANDLER] Could not re-send search:`, e);
+            }
+          }
+          // No hacer return: dejar que el flujo continúe esperando resultados del WebSocket
         } else {
           console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ PRODUCT_IN_BD detected - loading cached products`);
           // Búsqueda existe en BD - traer resultados guardados
@@ -300,6 +320,21 @@
           }
           
           await fetchCachedProducts(event.productRef);
+
+          // Si la BD no devolvió nada (filtro 20min), relanzar scraping por WebSocket
+          if (products.length === 0 && activeSearch) {
+            console.log(`${constants.LOG_PREFIX} [HANDLER] BD returned 0 products - relaunching WebSocket scraping`);
+            expectedDisconnect = false;
+            try {
+              const payload = activeSearch.payload || { query: activeSearch.query, search_id: activeSearch.searchId };
+              client.publish({ destination: '/app/search', body: JSON.stringify(payload) });
+              console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ Re-sent search for fresh scraping`);
+              return; // Esperar resultados del WebSocket
+            } catch (e) {
+              console.warn(`${constants.LOG_PREFIX} [HANDLER] Could not re-send:`, e);
+            }
+          }
+
           updateStatus('completed');
           emit({ event });
           return;
