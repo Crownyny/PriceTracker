@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import unicauca.edu.co.API.DataAccess.Entity.PriceHistoryEntity;
 import unicauca.edu.co.API.Presentation.DTO.IN.PriceHistoryDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.ProductPriceHistoryDTO;
+import unicauca.edu.co.API.Services.IN.ProductService;
 import unicauca.edu.co.API.Services.enums.Range;
 
 @Component
@@ -17,7 +18,7 @@ public class HistoryPriceMapper {
         this.productSnapShotMapper = productSnapShotMapper;
     }
 
-    public ProductPriceHistoryDTO toDTO(List<PriceHistoryEntity> entities, Range range) {
+    public ProductPriceHistoryDTO toDTO(List<PriceHistoryEntity> entities, Range range, String canonicalName) {
 
         if (entities == null || entities.isEmpty()) {
             throw new IllegalArgumentException(
@@ -30,7 +31,8 @@ public class HistoryPriceMapper {
         var dto = new ProductPriceHistoryDTO();
         dto.setProductId(first.getProductId());
         dto.setCategory(range.name());
-        
+        dto.setCanonicalName(canonicalName);
+
         dto.setHistory(
                 entities.stream()
                         .map(productSnapShotMapper::toDTO)

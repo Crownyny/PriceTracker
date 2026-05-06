@@ -18,6 +18,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ProductPriceHistoryDTO {
     private String productId;
+    private String canonicalName;
     private String category;
     private List<PriceHistoryDTO> history;
 }
