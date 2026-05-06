@@ -23,7 +23,7 @@
   <div *ngIf="alerts.length > 0" class="alerts-list">
     <div *ngFor="let alert of alerts" class="alert-card" [class.alert-inactive]="!alert.isActive">
       <div class="alert-card-body">
-        <div class="alert-product-name">{{ alert.productRef || alert.productId }}</div>
+        <div class="alert-product-name">{{ productNames[alert.productId] || alert.productRef || alert.productId.slice(0, 8) + "…" }}</div>
         <div class="alert-meta">
           <span class="badge" [class.badge-active]="alert.isActive" [class.badge-inactive]="!alert.isActive">
             {{ alert.isActive ? '🔔 Activa' : '🔕 Pausada' }}

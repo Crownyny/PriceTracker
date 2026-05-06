@@ -44,7 +44,7 @@ export class UserRoleService {
   updateUserRole(role: UserRole): Observable<UserRoleResponse> {
     console.info('[UserRoleService] updateUserRole -> requesting role change to', role);
     const url = `${this.httpConfig.getApiUrl()}/user/role`;
-    return this.http.put<any>(url, { role }).pipe(
+    return this.http.put<any>(url, { newRole: role }).pipe(
       map((response) => {
         const normalizedRole = this.normalizeRole(response?.role) ?? role;
         this.tokenService.setUserRole(normalizedRole);

@@ -1,141 +1,41 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { PriceHistoryService } from '../services/price-history.service';
+import { HttpConfigService } from '../../../core/services/http-config.service';
 import { ProductsService } from '../../products/services/products.service';
 import { TokenService } from '../../../core/services/token.service';
 import { UserRoleService } from '../../../core/services/user-role.service';
 import { AlertService } from '../../alerts/services/alert.service';
 import { PriceHistoryResponse, PriceHistoryRange, PriceHistoryPoint } from '../../../shared/models/price-history.model';
+import { Product } from '../../../shared/models/product.model';
 import { Alert } from '../../../shared/models/alert.model';
 
+interface ChartDot  { x: number; y: number; price: number; date: string; }
+interface XLabel    { x: number; label: string; }
+interface GridLabel { y: number; label: string; }
+
 interface ProductWithAlert {
-  id: string;          // productId — solo para llamadas internas
-  productName: string; // nombre legible — lo que el usuario ve
-  alertId: string;
+  id:          string;
+  productName: string;
+  alertId:     string;
+  product:     Product | null;   // datos completos: imagen, tienda, url, precio
+  allVariants: Product[];        // todas las variantes ordenadas por precio
 }
 
 @Component({
   selector: 'app-price-history',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="price-history-container">
-      <header>
-        <h2>Historial de Precios</h2>
-        <p>Analiza tendencias de los productos con alertas activadas</p>
-      </header>
-
-      <!-- Controles -->
-      <div class="controls">
-        <div class="alerts-products-section">
-          <label for="productSelect">Producto con alerta:</label>
-          <select
-            id="productSelect"
-            [(ngModel)]="selectedProductId"
-            (change)="onProductChange()"
-            class="product-select"
-            [disabled]="loading || productsWithAlerts.length === 0"
-          >
-            <option value="">-- Selecciona un producto --</option>
-            <option *ngFor="let p of productsWithAlerts" [value]="p.id">
-              {{ p.productName }}
-            </option>
-          </select>
-        </div>
-
-        <div class="create-alert-section">
-          <button (click)="goToAlerts()" class="create-alert-btn">+ Crear Alerta</button>
-        </div>
-
-        <div class="filter-section">
-          <label>Rango:</label>
-          <select [(ngModel)]="selectedRange" (change)="onRangeChange()">
-            <option value="W1">1 Semana</option>
-            <option value="W3">3 Semanas</option>
-            <option value="W12">3 Meses</option>
-            <option value="ALL">Todo el historial</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Estadísticas + tabla -->
-      <div class="chart-section" *ngIf="priceData && priceData.history.length > 0 && !loading">
-        <div class="price-stats">
-          <div class="stat">
-            <span class="label">Precio más reciente</span>
-            <span class="value">{{ lastPrice() | currency:'COP':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="stat">
-            <span class="label">Precio mínimo</span>
-            <span class="value">{{ getMinPrice() | currency:'COP':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="stat">
-            <span class="label">Precio máximo</span>
-            <span class="value">{{ getMaxPrice() | currency:'COP':'symbol':'1.0-0' }}</span>
-          </div>
-          <div class="stat">
-            <span class="label">Precio promedio</span>
-            <span class="value">{{ getAveragePrice() | currency:'COP':'symbol':'1.0-0' }}</span>
-          </div>
-        </div>
-
-        <!-- Tabla de historial -->
-        <div class="price-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha y hora</th>
-                <th>Precio</th>
-                <th>Tienda</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let point of priceData.history.slice(0, 30)">
-                <td>{{ formatDate(point.updatedAt) }}</td>
-                <td>{{ point.price | currency:'COP':'symbol':'1.0-0' }}</td>
-                <td>{{ getSource(point) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Sin datos en el rango seleccionado -->
-      <div *ngIf="priceData && priceData.history.length === 0 && !loading" class="empty-state">
-        <p>No hay registros de precio en el rango seleccionado.</p>
-        <p><small>Prueba con un rango más amplio.</small></p>
-      </div>
-
-      <!-- Sin alertas -->
-      <div *ngIf="!loading && productsWithAlerts.length === 0" class="empty-state no-alerts">
-        <h3>No tienes alertas de precios activadas</h3>
-        <p>Crea alertas para monitorear productos y ver su historial de precios</p>
-        <button (click)="goToAlerts()" class="action-btn">Crear tu primera alerta</button>
-      </div>
-
-      <!-- Sin producto seleccionado -->
-      <div *ngIf="!priceData && !loading && productsWithAlerts.length > 0" class="empty-state">
-        <p>Selecciona un producto para ver su historial de precios.</p>
-      </div>
-
-      <!-- Loading -->
-      <div *ngIf="loading" class="loading">
-        <span>Cargando datos…</span>
-      </div>
-
-      <!-- Error -->
-      <div *ngIf="error && !loading" class="error">
-        {{ error }}
-      </div>
-    </div>
-  `,
+  templateUrl: './price-history.component.html',
   styleUrl: './price-history.component.css'
 })
 export class PriceHistoryComponent implements OnInit {
+
+  // ── State ─────────────────────────────────────────────────────────────────
   selectedRange: PriceHistoryRange = 'W3';
   selectedProductId = '';
   priceData: PriceHistoryResponse | null = null;
@@ -144,13 +44,40 @@ export class PriceHistoryComponent implements OnInit {
   productsWithAlerts: ProductWithAlert[] = [];
   alerts: Alert[] = [];
 
+  /** El item actualmente seleccionado (para el panel de info) */
+  get selectedItem(): ProductWithAlert | null {
+    return this.productsWithAlerts.find(p => p.id === this.selectedProductId) ?? null;
+  }
+
+  // ── Chart ─────────────────────────────────────────────────────────────────
+  polyline   = '';
+  areaPath   = '';
+  dots:       ChartDot[]  = [];
+  xLabels:    XLabel[]    = [];
+  gridLabels: GridLabel[] = [];
+  gridYs:     number[]    = [];
+  hoveredDot: ChartDot | null = null;
+
+  readonly chartW = 900;
+  readonly chartH = 280;
+  readonly pL = 72; readonly pR = 20; readonly pT = 20; readonly pB = 36;
+
+  readonly ranges = [
+    { value: 'W1'  as PriceHistoryRange, label: 'Última semana'   },
+    { value: 'W3'  as PriceHistoryRange, label: 'Último mes'      },
+    { value: 'W12' as PriceHistoryRange, label: 'Últimos 3 meses' },
+    { value: 'ALL' as PriceHistoryRange, label: 'Todo el periodo' },
+  ];
+
   constructor(
     private priceHistoryService: PriceHistoryService,
     private productsService: ProductsService,
     private tokenService: TokenService,
     private userRoleService: UserRoleService,
     private alertService: AlertService,
-    private router: Router
+    private router: Router,
+    private httpConfig: HttpConfigService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -158,188 +85,237 @@ export class PriceHistoryComponent implements OnInit {
     this.loadAlertsWithProducts();
   }
 
-  // ── Cargar alertas y resolver nombres de producto ─────────────────────────
+  // ── Load ──────────────────────────────────────────────────────────────────
 
   loadAlertsWithProducts(): void {
     this.loading = true;
-    this.error = null;
-
     this.alertService.getAlerts().subscribe({
       next: (response) => {
         this.alerts = response.alerts;
-        const activeAlerts = this.alerts.filter(a => a.isActive !== false);
+        const active = this.alerts.filter(a => a.isActive !== false);
 
-        if (activeAlerts.length === 0) {
+        if (!active.length) {
           this.productsWithAlerts = [];
           this.loading = false;
+          this.cdr.markForCheck();
           return;
         }
 
-        // Para cada alerta intentamos resolver el nombre del producto.
-        // Estrategia: si tiene productRef buscamos en DB; si no, usamos productRef como nombre
-        // o en último caso mostramos un placeholder amigable.
-        const requests = activeAlerts.map((alert) => {
-          const searchRef = String(alert.productRef || '').trim();
+        const requests = active.map(alert => {
+          const ref = String(alert.productRef || '').trim();
 
-          // Si no hay ref buscable, devolvemos un item con nombre placeholder
-          if (!searchRef) {
-            return of<ProductWithAlert>({
-              id: alert.productId,
-              productName: `Producto (sin referencia)`,
-              alertId: alert.id
-            });
-          }
+          const search$ = ref
+            ? this.productsService.getSearchFromDb(ref).pipe(
+                catchError(() => of({ productRef: ref, products: [], totalResults: 0 }))
+              )
+            : of({ productRef: '', products: [], totalResults: 0 });
 
-          return this.productsService.getSearchFromDb(searchRef).pipe(
-            map((dbResponse) => {
-              // Buscar primero el producto exacto por id, luego cualquiera del resultado
-              const match =
-                dbResponse.products.find((p) => p.id === alert.productId) ||
-                dbResponse.products[0];
+          return search$.pipe(
+            map(dbResp => {
+              // Todos los resultados del productRef, ordenados por precio
+              const all = dbResp.products;
+              const best = all.find(p => p.id === alert.productId) ?? all[0] ?? null;
+
+              // Nombre del producto
+              // Si la búsqueda no encontró nada, usar el caché completo del producto
+              const cachedProduct = !best ? this.productsService.getCachedProduct(alert.productId) : null;
+              const resolvedBest  = best ?? cachedProduct;
+              const resolvedAll   = all.length ? all : (cachedProduct ? [cachedProduct] : []);
+
+              let productName = resolvedBest?.name || ref || '';
+              if (!productName) {
+                productName = this.productsService.getCachedName(alert.productId) ?? `Producto ${alert.productId.slice(0, 8)}…`;
+              }
+              if (resolvedBest?.name && alert.productId) {
+                this.productsService.cacheFullProduct(resolvedBest);
+              }
 
               return <ProductWithAlert>{
-                id: alert.productId,
-                // Si encontramos el producto usamos su nombre, si no el ref es ya legible
-                productName: match?.name || searchRef,
-                alertId: alert.id
+                id:          alert.productId,
+                productName,
+                alertId:     alert.id,
+                product:     resolvedBest,
+                allVariants: resolvedAll
               };
             }),
-            catchError(() =>
-              of<ProductWithAlert>({
-                id: alert.productId,
-                productName: searchRef,   // el ref suele ser legible (ej: "samsung-tv-55")
-                alertId: alert.id
-              })
-            )
+            catchError(() => {
+              const cached = this.productsService.getCachedProduct(alert.productId);
+              return of(<ProductWithAlert>{
+                id:          alert.productId,
+                productName: cached?.name || this.productsService.getCachedName(alert.productId) || `Producto ${alert.productId.slice(0,8)}…`,
+                alertId:     alert.id,
+                product:     cached,
+                allVariants: cached ? [cached] : []
+              });
+            })
           );
         });
 
         forkJoin(requests).subscribe({
-          next: (items) => {
+          next: items => {
             this.productsWithAlerts = items;
-
-            if (this.productsWithAlerts.length > 0) {
-              this.selectedProductId = this.productsWithAlerts[0].id;
-              this.loadPriceHistory(this.selectedProductId);
+            this.cdr.markForCheck();
+            if (items.length) {
+              this.selectedProductId = items[0].id;
+              this.loadHistory(items[0].id);
             } else {
               this.loading = false;
             }
           },
           error: () => {
-            // Fallback: usar lo que tengamos sin nombres bonitos
-            this.productsWithAlerts = activeAlerts.map((alert) => ({
-              id: alert.productId,
-              productName: alert.productRef || `Producto ${alert.productId.slice(0, 8)}`,
-              alertId: alert.id
+            this.productsWithAlerts = active.map(a => ({
+              id: a.productId,
+              productName: a.productRef || `Producto ${a.productId.slice(0,8)}…`,
+              alertId: a.id, product: null, allVariants: []
             }));
-
-            if (this.productsWithAlerts.length > 0) {
-              this.selectedProductId = this.productsWithAlerts[0].id;
-              this.loadPriceHistory(this.selectedProductId);
-            } else {
-              this.loading = false;
-            }
+            this.loading = false;
+            this.cdr.markForCheck();
           }
         });
       },
-      error: (err) => {
-        console.error('Error cargando alertas:', err);
-        this.error = 'No se pudieron cargar las alertas.';
-        this.loading = false;
-      }
+      error: () => { this.loading = false; this.cdr.markForCheck(); }
     });
   }
-
-  // ── Carga del historial ───────────────────────────────────────────────────
 
   onProductChange(): void {
     if (this.selectedProductId) {
       this.priceData = null;
-      this.error = null;
-      this.loadPriceHistory(this.selectedProductId);
+      this.clearChart();
+      this.loadHistory(this.selectedProductId);
     }
   }
 
   onRangeChange(): void {
-    if (this.selectedProductId) {
-      this.loadPriceHistory(this.selectedProductId);
-    }
+    if (this.selectedProductId) this.loadHistory(this.selectedProductId);
   }
 
-  private loadPriceHistory(productId: string): void {
+  private loadHistory(productId: string): void {
     this.loading = true;
     this.error = null;
-
-    this.priceHistoryService
-      .getPriceHistory(productId, this.selectedRange)
-      .subscribe({
-        next: (response) => {
-          this.priceData = response;
-          this.loading = false;
-        },
-        error: (err: any) => {
-          const msg =
-            err?.error?.message || err?.statusText || 'Error desconocido del servidor';
-          this.error = `Error al cargar historial (${err?.status ?? '?'}): ${msg}`;
-          this.loading = false;
-        }
-      });
+    this.priceHistoryService.getPriceHistory(productId, this.selectedRange).subscribe({
+      next: resp => {
+        this.priceData = resp;
+        this.buildChart(resp.history);
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        this.error = `Error (${err?.status ?? '?'}): ${err?.error?.message || 'No se pudo cargar el historial.'}`;
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
-  // ── Helpers de template ───────────────────────────────────────────────────
+  // ── Chart ─────────────────────────────────────────────────────────────────
 
-  /** Precio más reciente = último elemento del array (orden cronológico) */
-  lastPrice(): number {
-    if (!this.priceData?.history.length) return 0;
-    return this.priceData.history[this.priceData.history.length - 1].price;
-  }
+  private buildChart(history: PriceHistoryPoint[]): void {
+    this.clearChart();
+    if (!history?.length) return;
 
-  getMinPrice(): number {
-    if (!this.priceData?.history.length) return 0;
-    return Math.min(...this.priceData.history.map((h) => h.price));
-  }
+    const sorted = [...history].sort((a, b) =>
+      new Date(a.updatedAt ?? (a as any).recordedAt).getTime() -
+      new Date(b.updatedAt ?? (b as any).recordedAt).getTime()
+    );
 
-  getMaxPrice(): number {
-    if (!this.priceData?.history.length) return 0;
-    return Math.max(...this.priceData.history.map((h) => h.price));
-  }
+    const prices = sorted.map(p => Number(p.price)).filter(v => v > 0);
+    const times  = sorted.map(p => new Date(p.updatedAt ?? (p as any).recordedAt).getTime()).filter(t => !isNaN(t));
+    if (!prices.length || !times.length) return;
 
-  getAveragePrice(): number {
-    if (!this.priceData?.history.length) return 0;
-    const sum = this.priceData.history.reduce((acc, h) => acc + h.price, 0);
-    return sum / this.priceData.history.length;
-  }
+    const minP = Math.min(...prices), maxP = Math.max(...prices);
+    const minT = Math.min(...times),  maxT = Math.max(...times);
+    const rangeP = maxP - minP || 1,  rangeT = maxT - minT || 1;
+    const plotW = this.chartW - this.pL - this.pR;
+    const plotH = this.chartH - this.pT - this.pB;
+    const toX = (t: number) => this.pL + ((t - minT) / rangeT) * plotW;
+    const toY = (p: number) => this.pT + plotH - ((p - minP) / rangeP) * plotH;
 
-  /**
-   * Formatea la fecha del punto de historial de forma legible.
-   * El campo puede ser un Date, un string ISO o un timestamp.
-   */
-  formatDate(raw: Date | string | undefined | null): string {
-    if (!raw) return '—';
-    try {
-      const d = raw instanceof Date ? raw : new Date(raw);
-      if (isNaN(d.getTime())) return String(raw);
-      return d.toLocaleString('es-CO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return String(raw);
+    const pts = sorted.map(pt => {
+      const t = new Date(pt.updatedAt ?? (pt as any).recordedAt).getTime();
+      const d = new Date(t);
+      return {
+        x: toX(t), y: toY(Number(pt.price)),
+        price: Number(pt.price),
+        date: `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
+      };
+    });
+
+    this.dots     = pts;
+    this.polyline = pts.map(d => `${d.x},${d.y}`).join(' ');
+
+    const baseY = this.pT + plotH;
+    this.areaPath = `M${pts[0].x},${baseY} ` + pts.map(d => `L${d.x},${d.y}`).join(' ') + ` L${pts[pts.length-1].x},${baseY} Z`;
+
+    for (let i = 0; i <= 5; i++) {
+      const price = minP + rangeP * i / 5;
+      const y = toY(price);
+      this.gridYs.push(y);
+      this.gridLabels.push({ y, label: this.fmtChartPrice(price) });
+    }
+
+    const count = Math.min(6, sorted.length);
+    for (let i = 0; i < count; i++) {
+      const t = minT + rangeT * i / Math.max(count - 1, 1);
+      const d = new Date(t);
+      this.xLabels.push({ x: toX(t), label: `${d.getDate()}/${d.getMonth()+1}` });
     }
   }
 
-  /**
-   * Extrae el nombre de la tienda del punto de historial.
-   * El backend puede enviarlo como `sourceName`, `source`, o no enviarlo.
-   */
-  getSource(point: PriceHistoryPoint): string {
-    return (point as any).sourceName || point.source || '—';
+  private clearChart(): void {
+    this.polyline = ''; this.areaPath = '';
+    this.dots = []; this.xLabels = [];
+    this.gridYs = []; this.gridLabels = [];
+    this.hoveredDot = null;
   }
 
-  goToAlerts(): void {
-    this.router.navigate(['/alerts']);
+  // ── Stats ─────────────────────────────────────────────────────────────────
+
+  get currentPrice(): number {
+    if (!this.priceData?.history.length) return 0;
+    return Number([...this.priceData.history].sort((a, b) =>
+      new Date(b.updatedAt ?? (b as any).recordedAt).getTime() -
+      new Date(a.updatedAt ?? (a as any).recordedAt).getTime()
+    )[0].price);
+  }
+
+  getMinPrice():     number { return this.priceData ? Math.min(...this.priceData.history.map(h => h.price)) : 0; }
+  getMaxPrice():     number { return this.priceData ? Math.max(...this.priceData.history.map(h => h.price)) : 0; }
+  getAveragePrice(): number {
+    if (!this.priceData?.history.length) return 0;
+    return this.priceData.history.reduce((a, h) => a + h.price, 0) / this.priceData.history.length;
+  }
+
+  rangeLabel(): string { return this.ranges.find(r => r.value === this.selectedRange)?.label ?? ''; }
+
+  fmtPrice(p: number): string {
+    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(p);
+  }
+
+  private fmtChartPrice(p: number): string {
+    if (p >= 1_000_000) return `$${(p/1_000_000).toFixed(1)}M`;
+    if (p >= 1_000)     return `$${(p/1_000).toFixed(0)}k`;
+    return `$${p.toFixed(0)}`;
+  }
+
+  savings(item: ProductWithAlert): number {
+    if (item.allVariants.length < 2) return 0;
+    const max = Math.max(...item.allVariants.map(v => v.currentPrice));
+    return max - (item.product?.currentPrice ?? 0);
+  }
+
+  savingsPct(item: ProductWithAlert): number {
+    const max = item.allVariants.length > 1 ? Math.max(...item.allVariants.map(v => v.currentPrice)) : 0;
+    if (!max) return 0;
+    return ((max - (item.product?.currentPrice ?? 0)) / max) * 100;
+  }
+
+  setHovered(dot: ChartDot | null): void { this.hoveredDot = dot; }
+  goToAlerts(): void { this.router.navigate(['/alerts']); }
+  goToProduct(item: ProductWithAlert): void {
+    const ref = item.product?.productRef || item.allVariants[0]?.productRef || '';
+    this.router.navigate(['/product', item.id], {
+      queryParams: ref ? { productRef: ref } : {},
+      state: item.product ? { productResult: { best: item.product, all: item.allVariants } } : {}
+    });
   }
 }

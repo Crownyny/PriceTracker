@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductsService } from '../products/services/products.service';
@@ -46,7 +46,8 @@ export class DashboardComponent implements OnInit {
     private priceHistoryService: PriceHistoryService,
     private tokenService: TokenService,
     private alertService: AlertService,
-    private userRoleService: UserRoleService
+    private userRoleService: UserRoleService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -127,8 +128,12 @@ export class DashboardComponent implements OnInit {
       }),
       finalize(() => {
         this.loading = false;
+        this.cdr.markForCheck();
       })
-    ).subscribe();
+    ).subscribe({
+      next: () => this.cdr.markForCheck(),
+      error: () => this.cdr.markForCheck()
+    });
   }
 
   private getCurrentUserId(): string {

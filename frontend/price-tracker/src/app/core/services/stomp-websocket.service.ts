@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { Client, IMessage } from '@stomp/stompjs';
 import { HttpConfigService } from './http-config.service';
@@ -61,7 +61,10 @@ export class StompWebSocketService {
   public status$ = this.statusSubject.asObservable();
   public connected$ = this.connectionSubject.asObservable();
 
-  constructor(private httpConfig: HttpConfigService) {
+  constructor(
+    private httpConfig: HttpConfigService,
+    private ngZone: NgZone
+  ) {
     const apiUrl = this.httpConfig.getApiBaseUrl();
     const baseUrl = apiUrl.replace(/\/api$/, '');
     this.wsUrl = `${baseUrl}/ws`;
@@ -85,17 +88,23 @@ export class StompWebSocketService {
         heartbeatOutgoing: 10000,
         debug: (msg: string) => console.log('[STOMP]', msg),
         onConnect: () => {
-          console.log('✓ Conectado a STOMP');
-          this.connectionSubject.next(true);
-          this.subscribeToQueues();
+          this.ngZone.run(() => {
+            console.log('✓ Conectado a STOMP');
+            this.connectionSubject.next(true);
+            this.subscribeToQueues();
+          });
         },
         onStompError: (frame) => {
-          console.error('✗ STOMP Error:', frame.headers['message'], frame.body);
-          this.connectionSubject.next(false);
+          this.ngZone.run(() => {
+            console.error('✗ STOMP Error:', frame.headers['message'], frame.body);
+            this.connectionSubject.next(false);
+          });
         },
         onWebSocketClose: () => {
-          console.log('ℹ️ WebSocket cerrado');
-          this.connectionSubject.next(false);
+          this.ngZone.run(() => {
+            console.log('ℹ️ WebSocket cerrado');
+            this.connectionSubject.next(false);
+          });
         }
       });
 
@@ -199,27 +208,33 @@ export class StompWebSocketService {
     }
 
     this.client.subscribe('/user/queue/products', (message: IMessage) => {
-      try {
-        this.productsSubject.next(JSON.parse(message.body));
-      } catch (error) {
-        console.error('Error parsing product message:', error);
-      }
+      this.ngZone.run(() => {
+        try {
+          this.productsSubject.next(JSON.parse(message.body));
+        } catch (error) {
+          console.error('Error parsing product message:', error);
+        }
+      });
     });
 
     this.client.subscribe('/user/queue/errors', (message: IMessage) => {
-      try {
-        this.errorsSubject.next(JSON.parse(message.body));
-      } catch (error) {
-        console.error('Error parsing error message:', error);
-      }
+      this.ngZone.run(() => {
+        try {
+          this.errorsSubject.next(JSON.parse(message.body));
+        } catch (error) {
+          console.error('Error parsing error message:', error);
+        }
+      });
     });
 
     this.client.subscribe('/user/queue/status', (message: IMessage) => {
-      try {
-        this.statusSubject.next(JSON.parse(message.body));
-      } catch (error) {
-        console.error('Error parsing status message:', error);
-      }
+      this.ngZone.run(() => {
+        try {
+          this.statusSubject.next(JSON.parse(message.body));
+        } catch (error) {
+          console.error('Error parsing status message:', error);
+        }
+      });
     });
   }
-}
+} 

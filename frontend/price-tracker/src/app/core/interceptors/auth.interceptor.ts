@@ -9,36 +9,37 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TokenService } from '../services/token.service';
+import { Router } from '@angular/router';
 
-/**
- * HTTP Interceptor - Añade automáticamente el token JWT a las peticiones
- */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(private tokenService: TokenService) {}
+
+  constructor(
+    private tokenService: TokenService,
+    private router: Router
+  ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Obtén el token
     const token = this.tokenService.getToken();
 
-    // Si existe token y la petición es a la API, añádelo al header
     if (token && request.url.includes('/api')) {
       request = request.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
+        setHeaders: { Authorization: `Bearer ${token}` }
       });
     }
 
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
-        // Manejo de errores 401 (token expirado)
         if (error.status === 401) {
+          // Token expirado o inválido — limpiar sesión y redirigir al login
+          console.warn('[AuthInterceptor] 401 recibido — sesión expirada, redirigiendo al login');
           this.tokenService.clearTokens();
-          // Aquí podrías redirigir a login
-          console.error('Token expirado, usuario deslogueado');
+          this.router.navigate(['/login'], {
+            queryParams: { returnUrl: this.router.url }
+          });
         }
-
+        // SIEMPRE re-lanzar el error para que los componentes puedan
+        // reaccionar en su propio error handler y quitar el estado loading.
         return throwError(() => error);
       })
     );

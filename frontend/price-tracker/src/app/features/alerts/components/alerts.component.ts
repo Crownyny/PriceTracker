@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -22,6 +22,7 @@ export class AlertsComponent implements OnInit {
 
   // ── Estado de alertas ──────────────────────────────────────────────────────
   alerts: Alert[] = [];
+  productNames: Record<string, string> = {};
   loading = false;
   error: string | null = null;
   isPremium = false;
@@ -49,7 +50,8 @@ export class AlertsComponent implements OnInit {
     private alertService: AlertService,
     private userRoleService: UserRoleService,
     private productsService: ProductsService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {
     // Debounce de búsqueda de productos
     this.searchSubject.pipe(
@@ -99,12 +101,28 @@ export class AlertsComponent implements OnInit {
       next: (response) => {
         this.alerts = response.alerts;
         this.loading = false;
+        this.resolveProductNames(response.alerts);
+        this.cdr.markForCheck();
       },
       error: () => {
         this.error = 'Error al cargar las alertas.';
         this.loading = false;
+        this.cdr.markForCheck();
       }
     });
+  }
+
+  /** Resuelve en paralelo el nombre de cada producto — sin bloquear la UI */
+  private resolveProductNames(alerts: Alert[]): void {
+    for (const alert of alerts) {
+      if (!alert.productId || this.productNames[alert.productId]) continue;
+      // Placeholder inmediato
+      this.productNames[alert.productId] = alert.productRef || alert.productId.slice(0, 8) + '…';
+      // Resolver nombre real en segundo plano
+      this.productsService.resolveProductName(alert.productId).subscribe(name => {
+        this.productNames[alert.productId] = name;
+      });
+    }
   }
 
   // ── Apertura del modal ─────────────────────────────────────────────────────
@@ -274,8 +292,9 @@ export class AlertsComponent implements OnInit {
         this.syncAlertInList(this.modalExistingAlert!);
         this.modalSuccess = newStatus ? 'Alerta activada.' : 'Alerta pausada.';
         this.modalError = null;
+        this.cdr.markForCheck();
       },
-      error: () => { this.modalError = 'Error al cambiar estado de la alerta.'; }
+      error: () => { this.modalError = 'Error al cambiar estado de la alerta.'; this.cdr.markForCheck(); }
     });
   }
 
@@ -293,8 +312,9 @@ export class AlertsComponent implements OnInit {
         this.syncAlertInList(this.modalExistingAlert!);
         this.modalSuccess = 'Frecuencia actualizada.';
         this.modalError = null;
+        this.cdr.markForCheck();
       },
-      error: () => { this.modalError = 'Error al actualizar la frecuencia.'; }
+      error: () => { this.modalError = 'Error al actualizar la frecuencia.'; this.cdr.markForCheck(); }
     });
   }
 
@@ -304,9 +324,10 @@ export class AlertsComponent implements OnInit {
       next: () => {
         this.alerts = this.alerts.filter(a => a.id !== this.modalExistingAlert!.id);
         this.modalSuccess = 'Alerta eliminada.';
+        this.cdr.markForCheck();
         setTimeout(() => this.closeModal(), 900);
       },
-      error: () => { this.modalError = 'Error al eliminar la alerta.'; }
+      error: () => { this.modalError = 'Error al eliminar la alerta.'; this.cdr.markForCheck(); }
     });
   }
 
@@ -314,16 +335,16 @@ export class AlertsComponent implements OnInit {
 
   toggleAlertInList(alert: Alert): void {
     this.alertService.updateAlertStatus(alert.id, { isActive: !alert.isActive }).subscribe({
-      next: () => { alert.isActive = !alert.isActive; },
-      error: () => { this.error = 'Error al cambiar estado.'; }
+      next: () => { alert.isActive = !alert.isActive; this.cdr.markForCheck(); },
+      error: () => { this.error = 'Error al cambiar estado.'; this.cdr.markForCheck(); }
     });
   }
 
   deleteAlertInList(alertId: string): void {
     if (!confirm('¿Eliminar esta alerta?')) return;
     this.alertService.deleteAlert(alertId).subscribe({
-      next: () => { this.alerts = this.alerts.filter(a => a.id !== alertId); },
-      error: () => { this.error = 'Error al eliminar la alerta.'; }
+      next: () => { this.alerts = this.alerts.filter(a => a.id !== alertId); this.cdr.markForCheck(); },
+      error: () => { this.error = 'Error al eliminar la alerta.'; this.cdr.markForCheck(); }
     });
   }
 
