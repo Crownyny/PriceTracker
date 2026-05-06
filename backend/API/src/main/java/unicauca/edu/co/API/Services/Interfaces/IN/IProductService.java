@@ -36,7 +36,12 @@ public interface IProductService {
      */
     QueryDTOIN createProductRef(QueryDTOIN query);
 
-
+    /**
+     * Obtiene un producto normalizado por su ID.
+     * @param id Identificador único del producto normalizado.
+     * @return Un objeto NormalizedProductDTO que corresponde al ID del producto especificado. Si el producto no existe, se devuelve null.
+     */
+    NormalizedProductDTO getProductById(String id);
 
 
 }

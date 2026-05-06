@@ -74,6 +74,15 @@ public class ProductService implements IProductService {
         return query;
     }
 
+    @Override
+    public NormalizedProductDTO getProductById(String id) {
+        var entity = productRepository.findById(id);
+        if (entity.isEmpty()) {
+            return null;
+        }
+        return mapperProduct.toDTO(entity.get());
+    }
+
     
 
 

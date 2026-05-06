@@ -10,12 +10,15 @@ import org.springframework.stereotype.Service;
 
 
 import unicauca.edu.co.API.Config.Security.AuthenticatedUserPrincipal;
+import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.DataAccess.Entity.PriceHistoryEntity;
 import unicauca.edu.co.API.DataAccess.Repository.PriceHistoryRepository;
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Presentation.DTO.IN.ProductPriceHistoryDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.Mapper.HistoryPriceMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IPriceHistoryService;
+import unicauca.edu.co.API.Services.Interfaces.IN.IProductService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
 import unicauca.edu.co.API.Services.enums.Range;
 import unicauca.edu.co.API.Domain.Model.UserRole;
@@ -33,21 +36,27 @@ public class HistoryPriceService implements IPriceHistoryService {
     private final PriceHistoryRepository priceHistoryRepository;
     private final HistoryPriceMapper historyPriceMapper;
     private final IUserService userService;
+    private final IProductService productService; 
 
 
     public HistoryPriceService(
         PriceHistoryRepository priceHistoryRepository,
         HistoryPriceMapper historyPriceMapper,
-        IUserService userService
+        IUserService userService,
+        IProductService productService
     ) {
         this.priceHistoryRepository = priceHistoryRepository;
         this.historyPriceMapper = historyPriceMapper;
         this.userService = userService;
+        this.productService = productService;   
     }
     @Override
     public ProductPriceHistoryDTO getHistoryPrice(String productId, Range range) {
         UUID currentUserId = getCurrentUserId();
         boolean isFreemium = validatedUserAccessFremium(currentUserId);
+        NormalizedProductDTO product = productService.getProductById(productId);
+        String canonicalName = product.getCanonicalName();
+        System.out.println("Canonical Name: !!!!!!!!!!!" + canonicalName);
         LocalDateTime fromDate;
         if (isFreemium && range != Range.W1) {
             throw new IllegalArgumentException(
@@ -63,7 +72,7 @@ public class HistoryPriceService implements IPriceHistoryService {
             history = priceHistoryRepository
                     .findByProductIdAndRecordedAtAfter(productId, fromDate);
         }
-        return historyPriceMapper.toDTO(history, range);
+        return historyPriceMapper.toDTO(history, range, canonicalName);
     }
 
     /**
