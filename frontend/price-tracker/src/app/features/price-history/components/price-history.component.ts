@@ -102,47 +102,30 @@ export class PriceHistoryComponent implements OnInit {
         }
 
         const requests = active.map(alert => {
-          const ref = String(alert.productRef || '').trim();
-
-          const search$ = ref
-            ? this.productsService.getSearchFromDb(ref).pipe(
-                catchError(() => of({ productRef: ref, products: [], totalResults: 0 }))
-              )
-            : of({ productRef: '', products: [], totalResults: 0 });
-
-          return search$.pipe(
-            map(dbResp => {
-              // Todos los resultados del productRef, ordenados por precio
-              const all = dbResp.products;
-              const best = all.find(p => p.id === alert.productId) ?? all[0] ?? null;
-
-              // Nombre del producto
-              // Si la búsqueda no encontró nada, usar el caché completo del producto
-              const cachedProduct = !best ? this.productsService.getCachedProduct(alert.productId) : null;
-              const resolvedBest  = best ?? cachedProduct;
-              const resolvedAll   = all.length ? all : (cachedProduct ? [cachedProduct] : []);
-
-              let productName = resolvedBest?.name || ref || '';
-              if (!productName) {
-                productName = this.productsService.getCachedName(alert.productId) ?? `Producto ${alert.productId.slice(0, 8)}…`;
-              }
-              if (resolvedBest?.name && alert.productId) {
-                this.productsService.cacheFullProduct(resolvedBest);
-              }
+          // Usar directamente GET /api/products/{id}/product que ya fue corregido
+          // por el backend. Devuelve: id, product_ref, source_name, canonical_name,
+          // price, currency, category, availability, source_url, image_url
+          return this.productsService.getProduct(alert.productId).pipe(
+            map(product => {
+              // Guardar en caché completo para próximas visitas
+              if (product?.id) this.productsService.cacheFullProduct(product);
 
               return <ProductWithAlert>{
                 id:          alert.productId,
-                productName,
+                productName: product?.name || `Producto ${alert.productId.slice(0, 8)}…`,
                 alertId:     alert.id,
-                product:     resolvedBest,
-                allVariants: resolvedAll
+                product:     product,
+                allVariants: product ? [product] : []
               };
             }),
             catchError(() => {
+              // Fallback al caché si el endpoint falla
               const cached = this.productsService.getCachedProduct(alert.productId);
               return of(<ProductWithAlert>{
                 id:          alert.productId,
-                productName: cached?.name || this.productsService.getCachedName(alert.productId) || `Producto ${alert.productId.slice(0,8)}…`,
+                productName: cached?.name ||
+                             this.productsService.getCachedName(alert.productId) ||
+                             `Producto ${alert.productId.slice(0, 8)}…`,
                 alertId:     alert.id,
                 product:     cached,
                 allVariants: cached ? [cached] : []

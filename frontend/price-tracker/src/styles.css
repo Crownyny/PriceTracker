@@ -178,3 +178,50 @@ input:focus, select:focus, textarea:focus {
   }
 }
 
+
+
+/* ── Product Detail Layout (override to ensure grid works) ── */
+app-product-detail .pd-content {
+  display: grid !important;
+  grid-template-columns: 1fr 1.35fr !important;
+  gap: 28px;
+  max-width: 1160px;
+  margin: 32px auto;
+  padding: 0 32px 48px;
+}
+
+app-product-detail .pd-left,
+app-product-detail .pd-right {
+  display: flex !important;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+app-product-detail .pd-hero-card,
+app-product-detail .pd-info-card,
+app-product-detail .pd-chart-card {
+  background: #fff;
+  border: 1px solid #e8eaf0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+app-product-detail .pd-image-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  app-product-detail .pd-content {
+    grid-template-columns: 1fr !important;
+    padding: 0 16px 48px;
+  }
+}

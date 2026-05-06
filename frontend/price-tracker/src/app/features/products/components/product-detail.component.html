@@ -1,4 +1,4 @@
-<div class="pd">
+<div class="pd-shell">
 
   <!-- Back -->
   <div class="pd-topbar">
@@ -6,133 +6,104 @@
   </div>
 
   <!-- Loading -->
-  <div *ngIf="loading" class="pd-state">
-    <span class="pd-spin"></span>
+  <div *ngIf="loading" class="pd-loading">
+    <span class="pd-spinner"></span>
     <p>Cargando producto…</p>
   </div>
 
-  <!-- Error -->
-  <div *ngIf="error && !loading" class="pd-error">
-    <span>⚠️</span><span>{{ error }}</span>
-  </div>
-
   <!-- Not found -->
-  <div *ngIf="!loading && !product && !error" class="pd-state">
-    <span style="font-size:3rem">😕</span>
+  <div *ngIf="!loading && !product && !error" class="pd-empty">
+    <span class="pd-empty-icon">😕</span>
     <h3>Producto no encontrado</h3>
     <p>No pudimos cargar el producto solicitado</p>
     <a routerLink="/search" class="pd-btn-primary">Volver a búsqueda</a>
   </div>
 
-  <!-- ── CONTENT ─────────────────────────────────────────────────────────── -->
-  <div *ngIf="!loading && product" class="pd-body">
+  <!-- Error -->
+  <div *ngIf="error" class="pd-error-banner">
+    <span>⚠️</span>
+    <div>
+      <strong>Error al cargar</strong>
+      <p>{{ error }}</p>
+    </div>
+  </div>
 
-    <!-- LEFT: image + tags + comparison -->
+  <!-- ── CONTENT ─────────────────────────────────────────────────────────── -->
+  <div *ngIf="!loading && product" class="pd-content">
+
+    <!-- LEFT: image + tags -->
     <div class="pd-left">
 
-      <div class="pd-img-wrap">
-        <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="pd-img" />
-        <div *ngIf="!product.image" class="pd-img-placeholder">📦</div>
-        <span *ngIf="product.category" class="pd-img-tag">{{ product.category }}</span>
+      <div class="pd-image-card">
+        <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="pd-image" />
+        <div *ngIf="!product.image" class="pd-image-placeholder">📦</div>
       </div>
 
       <div class="pd-tags">
-        <span *ngIf="product.ean" class="pd-tag-muted">EAN: {{ product.ean }}</span>
-      </div>
-
-      <!-- Price comparison -->
-      <div class="pd-comparison" *ngIf="storeRows.length">
-        <h3 class="pd-section-title">Comparación de Precios</h3>
-        <div class="pd-store-list">
-          <div *ngFor="let row of storeRows"
-               class="pd-store-row"
-               [class.pd-store-best]="row.isBest">
-
-            <div class="pd-store-left">
-              <div class="pd-store-logo">
-                <img *ngIf="row.logo" [src]="row.logo" [alt]="row.name"
-                     (error)="row.logo = ''" />
-                <span *ngIf="!row.logo">{{ row.name.charAt(0).toUpperCase() }}</span>
-              </div>
-              <span class="pd-store-name">{{ row.name }}</span>
-              <span *ngIf="row.isBest" class="pd-best-badge">Mejor Precio</span>
-            </div>
-
-            <div class="pd-store-right">
-              <span class="pd-store-price">${{ fmtPrice(row.price) }}</span>
-              <span *ngIf="row.diff > 0" class="pd-store-diff">+${{ fmtPrice(row.diff) }}</span>
-              <span class="pd-store-ship">{{ row.shipping === 0 ? 'Envío gratis' : 'Ver envío' }}</span>
-              <a *ngIf="row.url" [href]="row.url" target="_blank" rel="noopener"
-                 class="pd-store-link">Ver tienda ↗</a>
-            </div>
-          </div>
-        </div>
+        <span *ngIf="product.category" class="pd-tag">{{ product.category }}</span>
+        <span *ngIf="product.ean" class="pd-tag pd-tag-muted">EAN: {{ product.ean }}</span>
       </div>
 
     </div>
 
-    <!-- RIGHT: hero + name + chart -->
+    <!-- RIGHT: hero + info + chart (solo si tiene alerta) -->
     <div class="pd-right">
 
       <!-- Hero card -->
-      <div class="pd-hero">
+      <div class="pd-hero-card">
+        <p class="pd-hero-label">Mejor Precio</p>
 
-        <div class="pd-hero-top">
-          <div>
-            <p class="pd-hero-label">Mejor Precio</p>
-            <div class="pd-hero-price-row">
-              <span class="pd-hero-price">${{ fmtPrice(bestPrice) }}</span>
-              <span *ngIf="savingsPct > 0" class="pd-hero-badge">↘ -{{ savingsPct | number:'1.0-1' }}%</span>
-            </div>
-            <p class="pd-hero-store">en {{ bestSource }}</p>
-            <p *ngIf="savings > 0" class="pd-hero-savings">
-              Ahorras ${{ fmtPrice(savings) }} vs. el precio más alto
-            </p>
-          </div>
+        <div class="pd-hero-price-row">
+          <span class="pd-hero-price">${{ bestPrice | number:'1.0-0' }}</span>
+          <span *ngIf="savingsPct > 0" class="pd-hero-badge">
+            ↘ -{{ savingsPct | number:'1.0-1' }}%
+          </span>
         </div>
 
-        <!-- Actions -->
+        <p class="pd-hero-store">en {{ bestSource }}</p>
+        <p *ngIf="savings > 0" class="pd-hero-savings">
+          Ahorras ${{ savings | number:'1.0-0' }} vs. el precio más alto
+        </p>
+
         <div class="pd-hero-actions">
           <a *ngIf="bestUrl" [href]="bestUrl" target="_blank" rel="noopener"
              class="pd-btn-primary pd-btn-store">
             ↗ Ir a la tienda
           </a>
-          <button class="pd-btn-save"
+          <button class="pd-btn-icon-save"
                   [class.pd-btn-saved]="isSaved"
                   [disabled]="savingProduct"
                   (click)="saveProduct()"
-                  [title]="isSaved ? 'Quitar de guardados' : 'Guardar'">
+                  [title]="isSaved ? 'Quitar de guardados' : 'Guardar producto'">
             🔖
           </button>
         </div>
 
-        <button class="pd-btn-alert"
-                [disabled]="alertLoading"
-                (click)="createAlert()">
-          🔔 {{ hasAlert ? 'Gestionar Alerta' : alertLoading ? 'Creando…' : 'Crear Alerta de Precio' }}
+        <button class="pd-btn-alert" [disabled]="alertLoading" (click)="createAlert()">
+          🔔 {{ hasAlert ? 'Gestionar Alerta' : (alertLoading ? 'Creando…' : 'Crear Alerta de Precio') }}
         </button>
 
-        <div *ngIf="alertError"   class="pd-msg pd-msg-err">{{ alertError }}</div>
-        <div *ngIf="alertCreated" class="pd-msg pd-msg-ok">✓ Alerta creada.</div>
-        <div *ngIf="hasAlert && !alertCreated && !alertError" class="pd-msg pd-msg-info">
+        <div *ngIf="alertError"   class="pd-feedback pd-feedback-error">{{ alertError }}</div>
+        <div *ngIf="alertCreated" class="pd-feedback pd-feedback-ok">✓ Alerta creada correctamente.</div>
+        <div *ngIf="hasAlert && !alertCreated && !alertError" class="pd-feedback pd-feedback-info">
           Alerta activa — haz clic en "Gestionar Alerta" para editarla.
         </div>
       </div>
 
-      <!-- Product info -->
-      <div class="pd-info">
+      <!-- Product name / description -->
+      <div class="pd-info-card">
         <h1 class="pd-product-name">{{ product.name }}</h1>
         <p *ngIf="product.description" class="pd-product-desc">{{ product.description }}</p>
       </div>
 
-      <!-- Price History Chart -->
-      <div class="pd-chart-card">
+      <!-- Price History Chart — solo si el producto tiene alerta activa -->
+      <div class="pd-chart-card" *ngIf="hasAlert">
         <div class="pd-chart-header">
           <div>
             <h3 class="pd-section-title">Historial de Precios</h3>
-            <p class="pd-chart-sub">{{ rangeLabel() }}</p>
+            <p class="pd-chart-subtitle">{{ rangeLabel() }}</p>
           </div>
-          <div class="pd-chart-ranges">
+          <div class="pd-chart-controls">
             <button *ngFor="let r of ranges"
                     class="pd-range-btn"
                     [class.pd-range-active]="selectedRange === r.value"
@@ -142,51 +113,60 @@
           </div>
         </div>
 
-        <div *ngIf="historyLoading" class="pd-chart-state">
-          <span class="pd-spin pd-spin-sm"></span> Cargando…
+        <div *ngIf="historyLoading" class="pd-chart-loading">
+          <span class="pd-spinner pd-spinner-sm"></span> Cargando historial…
         </div>
 
-        <div *ngIf="!historyLoading && chartSeries.length === 0" class="pd-chart-state">
+        <div *ngIf="!historyLoading && chartSeries.length === 0" class="pd-chart-empty">
           Sin datos para el rango seleccionado.
         </div>
 
         <div *ngIf="!historyLoading && chartSeries.length > 0" class="pd-chart-wrap">
           <svg [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
-               class="pd-svg" preserveAspectRatio="xMidYMid meet">
+               class="pd-chart-svg" preserveAspectRatio="xMidYMid meet">
 
-            <!-- Grid -->
+            <defs>
+              <linearGradient id="pdAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#4f46e5" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+
             <line *ngFor="let y of gridYs"
                   [attr.x1]="pL" [attr.y1]="y"
                   [attr.x2]="chartW - pR" [attr.y2]="y"
                   class="pd-grid-line" />
 
-            <!-- Y labels -->
-            <text *ngFor="let g of gridLabels"
-                  [attr.x]="pL - 6" [attr.y]="g.y + 4"
-                  class="pd-axis-y">{{ g.label }}</text>
+            <text *ngFor="let item of gridLabels"
+                  [attr.x]="pL - 8" [attr.y]="item.y + 4"
+                  class="pd-axis-label pd-axis-label-y">
+              ${{ item.label }}
+            </text>
 
-            <!-- X labels -->
-            <text *ngFor="let x of xLabels"
-                  [attr.x]="x.x" [attr.y]="chartH - 4"
-                  class="pd-axis-x">{{ x.label }}</text>
+            <text *ngFor="let item of xLabels"
+                  [attr.x]="item.x" [attr.y]="chartH - 6"
+                  class="pd-axis-label pd-axis-label-x">
+              {{ item.label }}
+            </text>
 
-            <!-- Series -->
-            <g *ngFor="let s of chartSeries; let si = index">
-              <polyline [attr.points]="s.polyline"
-                        [style.stroke]="seriesColor(si)"
-                        fill="none" stroke-width="2"
-                        stroke-linejoin="round" stroke-linecap="round" />
-              <circle *ngFor="let d of s.dots"
-                      [attr.cx]="d.x" [attr.cy]="d.y" r="3.5"
-                      [style.fill]="seriesColor(si)" />
+            <g *ngFor="let series of chartSeries; let si = index">
+              <polyline
+                [attr.points]="series.polyline"
+                [style.stroke]="seriesColor(si)"
+                fill="none" stroke-width="2"
+                stroke-linejoin="round" stroke-linecap="round"
+                class="pd-line" />
+              <circle *ngFor="let dot of series.dots"
+                      [attr.cx]="dot.x" [attr.cy]="dot.y" r="3.5"
+                      [style.fill]="seriesColor(si)"
+                      class="pd-dot" />
             </g>
           </svg>
 
-          <!-- Legend -->
           <div class="pd-legend">
-            <span *ngFor="let s of chartSeries; let si = index" class="pd-legend-item">
+            <span *ngFor="let series of chartSeries; let si = index" class="pd-legend-item">
               <span class="pd-legend-dot" [style.background]="seriesColor(si)"></span>
-              {{ s.sourceName }}
+              {{ series.sourceName }}
             </span>
           </div>
         </div>
@@ -194,4 +174,5 @@
 
     </div>
   </div>
+
 </div>

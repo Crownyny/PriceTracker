@@ -104,8 +104,10 @@ export class AuthService {
             this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
 
             // Crea usuario en backend (endpoint existente) y guarda rol base.
+            // El backend requiere email + password para validación.
             return this.userRoleService.createUser({
               email: response.user.email,
+              password: credentials.password,
               name: credentials.displayName
             }).pipe(
               map((created) => {

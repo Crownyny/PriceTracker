@@ -59,61 +59,85 @@ export class DashboardComponent implements OnInit {
     this.error = '';
     this.userRoleLabel = this.userRoleService.getCurrentRole();
     this.premiumLocked = !this.userRoleService.canUsePremiumFeatures();
+    this.isPremium     = this.userRoleService.canUsePremiumFeatures();
 
     const userId = this.getCurrentUserId();
 
-    this.productsService.getSavedProducts(userId, 0, 50).pipe(
-      switchMap((saved) => {
-        this.savedProducts = saved.products ?? [];
-        this.itemsCompared = saved.totalResults ?? this.savedProducts.length;
+    // Cargar alertas y productos guardados en paralelo
+    forkJoin({
+      alerts:  this.alertService.getAlerts().pipe(
+                 catchError(() => of({ alerts: [], total: 0, page: 0, pageSize: 0 }))
+               ),
+      saved:   this.productsService.getSavedProducts(userId, 0, 50).pipe(
+                 catchError(() => of({ productRef: '', products: [], totalResults: 0 }))
+               )
+    }).pipe(
+      switchMap(({ alerts: alertsResponse, saved }) => {
+        const allAlerts = alertsResponse.alerts ?? [];
+        this.alertCount = allAlerts.filter(a => Boolean(a.isActive)).length;
 
-        // Tabla comparativa: máximo 10 para no sobrecargar
-        const comparativeProducts = this.savedProducts.slice(0, 10);
-        const trends$ = comparativeProducts.length
+        // Mapa productId → Alert para el modal inline
+        this.alertsByProductId = {};
+        for (const a of allAlerts) {
+          if (a.productId) this.alertsByProductId[a.productId] = a;
+        }
+
+        // IDs de productos con alertas activas (cargar desde BD, sin filtro 20min)
+        const alertProductIds = [
+          ...new Set(allAlerts.map(a => a.productId).filter(Boolean))
+        ].slice(0, 20);
+
+        // Productos del caché/guardados (ya los tenemos)
+        const cachedProducts = saved.products ?? [];
+
+        // Cargar productos con alertas desde BD
+        const alertProducts$ = alertProductIds.length
           ? forkJoin(
-              comparativeProducts.map((p) =>
-                this.priceHistoryService.getTrendAnalysis(p.id).pipe(
-                  catchError(() => of(null))
-                )
+              alertProductIds.map(id =>
+                this.productsService.getProduct(id).pipe(catchError(() => of(null)))
               )
             )
-          : of([] as Array<PriceTrendAnalysis | null>);
+          : of([] as Array<import('../../shared/models/product.model').Product | null>);
 
-        return trends$.pipe(
-          switchMap((trends) => {
-            const trendByProductId = new Map<string, PriceTrendAnalysis>();
-            for (const t of trends ?? []) {
-              if (t?.productId) {
-                trendByProductId.set(t.productId, t);
-              }
-            }
+        return alertProducts$.pipe(
+          switchMap((alertResults) => {
+            const alertProducts = alertResults.filter(
+              (p): p is import('../../shared/models/product.model').Product => p !== null
+            );
 
-            this.comparativeRows = comparativeProducts.map((product) => {
-              const trend = trendByProductId.get(product.id) ?? null;
-              return {
-                product,
-                trend: trend?.trend ?? null,
-                percentageChange: typeof trend?.percentageChange === 'number' ? trend.percentageChange : null
-              };
-            });
+            // Combinar: alertas activas primero, luego guardados sin duplicar
+            const alertIds = new Set(alertProducts.map(p => p.id));
+            const uniqueCached = cachedProducts.filter(p => !alertIds.has(p.id));
+            const allProducts  = [...alertProducts, ...uniqueCached];
 
-            this.bestDeals = this.buildBestDeals(this.savedProducts);
-            this.totalSavings = this.computeTotalSavings(this.savedProducts);
+            this.savedProducts = allProducts;
+            this.itemsCompared = allProducts.length;
 
-            return this.alertService.getAlerts().pipe(
-              catchError(() => of({ alerts: [], total: 0, page: 0, pageSize: 0 })),
-              switchMap((alertsResponse) => {
-                const activeAlerts = (alertsResponse.alerts || []).filter(a => Boolean(a.isActive));
-                this.alertCount = activeAlerts.length;
+            // Tabla comparativa con tendencia del historial
+            const forTable = allProducts.slice(0, 10);
+            const trends$ = forTable.length
+              ? forkJoin(
+                  forTable.map(p =>
+                    this.priceHistoryService.getTrendAnalysis(p.id).pipe(catchError(() => of(null)))
+                  )
+                )
+              : of([] as Array<PriceTrendAnalysis | null>);
 
-                // Construir mapa productId -> Alert para el modal inline
-                this.alertsByProductId = {};
-                for (const a of alertsResponse.alerts ?? []) {
-                  if (a.productId) this.alertsByProductId[a.productId] = a;
+            return trends$.pipe(
+              switchMap((trends) => {
+                const trendMap = new Map<string, PriceTrendAnalysis>();
+                for (const t of trends ?? []) {
+                  if (t?.productId) trendMap.set(t.productId, t);
                 }
 
-                // Flag premium
-                this.isPremium = this.userRoleService.canUsePremiumFeatures();
+                this.comparativeRows = forTable.map(product => ({
+                  product,
+                  trend: trendMap.get(product.id)?.trend ?? null,
+                  percentageChange: trendMap.get(product.id)?.percentageChange ?? null
+                }));
+
+                this.bestDeals    = this.buildBestDeals(allProducts);
+                this.totalSavings = this.computeTotalSavings(allProducts);
 
                 return of(null);
               })

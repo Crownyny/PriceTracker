@@ -1,13 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { Subject, merge, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { ProductsService } from '../products/services/products.service';
 import { StompWebSocketService } from '../../core/services/stomp-websocket.service';
-import { Product } from '../../shared/models/product.model';
-import { catchError, merge, of, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { ProductSearchResponse } from '../../shared/models/product.model';
+import { Product, ProductSearchResponse } from '../../shared/models/product.model';
 
 @Component({
   selector: 'app-search-products',
@@ -17,58 +16,114 @@ import { ProductSearchResponse } from '../../shared/models/product.model';
   styleUrl: './search-products.component.css'
 })
 export class SearchProductsComponent implements OnInit, OnDestroy {
-  searchQuery = '';
-  products: Product[] = [];
+
+  searchQuery       = '';
   filteredProducts: Product[] = [];
-  loading = false;
-  searching = false; // Para indicar búsqueda actual
-  error = '';
-  searchStatus = ''; // Para mostrar estado de búsqueda
-  usingStomp = false; // Indicador visual si se usa STOMP
-  stompConnected = false; // Estado de conexión STOMP
-  lastSearchRef = '';
+  loading           = false;
+  searching         = false;
+  error             = '';
+  searchStatus      = '';
+  stompConnected    = false;
+  lastSearchRef     = '';
   uiState: 'idle' | 'loading' | 'in-progress' | 'found' | 'empty' | 'error' = 'idle';
 
-  private destroy$ = new Subject<void>();
+  private destroy$       = new Subject<void>();
   private searchSession$ = new Subject<void>();
+  private queryInput$    = new Subject<string>();
 
-    constructor(
-      private productsService: ProductsService,
-      private stompService: StompWebSocketService,
-      private router: Router
-    ) {}
+  constructor(
+    private productsService: ProductsService,
+    private stompService:    StompWebSocketService,
+    private router:          Router,
+    private cdr:             ChangeDetectorRef
+  ) {}
 
-  ngOnInit() {
-    // Importante: el servicio NO se conecta solo; si no llamamos connect(),
-    // Angular nunca se suscribe a `/user/queue/products` (tu prueba.html sí lo hace).
+  ngOnInit(): void {
     this.stompService.connect();
 
-    // Monitorear estado de STOMP
+    // Estado de conexión STOMP
     this.stompService.connected$
       .pipe(takeUntil(this.destroy$))
       .subscribe((connected: boolean) => {
         this.stompConnected = connected;
+        this.cdr.markForCheck();
       });
 
-    // Escuchar mensajes de estado del backend
+    // Mensajes de estado del backend
     this.stompService.status$
       .pipe(takeUntil(this.destroy$))
       .subscribe((status: any) => {
-        this.searchStatus = status.message;
-        if (status.status === 'complete') {
-          this.searching = false;
+        const msg  = String(status?.message ?? '');
+        const code = String(status?.status  ?? '');
+
+        // PRODUCT_IN_BD = producto ya en BD → buscar por REST
+        if (msg === 'PRODUCT_IN_BD' || msg.includes('PRODUCT_IN_BD')) {
+          if (this.lastSearchRef && this.filteredProducts.length === 0) {
+            this.productsService.getSearchFromDb(this.lastSearchRef).pipe(
+              catchError(() => of({ productRef: this.lastSearchRef, products: [], totalResults: 0 } as ProductSearchResponse))
+            ).subscribe(resp => {
+              if (resp.products.length > 0) {
+                this.filteredProducts = resp.products;
+                this.uiState          = 'found';
+                this.searching        = false;
+                this.searchStatus     = '';
+                this.error            = '';
+              }
+              this.cdr.markForCheck();
+            });
+          }
+          return;
         }
+
+        this.searchStatus = msg;
+        if (code === 'complete') {
+          this.searching = false;
+          if (this.filteredProducts.length === 0) this.uiState = 'empty';
+        }
+        this.cdr.markForCheck();
       });
 
-    // Escuchar errores del backend
+    // Errores del backend
     this.stompService.errors$
       .pipe(takeUntil(this.destroy$))
       .subscribe((errorMsg: any) => {
-        this.error = errorMsg.message;
+        const msg = String(errorMsg?.message ?? errorMsg?.code ?? '');
+
+        // PRODUCT_IN_BD por canal errors → buscar por REST
+        if (msg === 'PRODUCT_IN_BD' || msg.includes('PRODUCT_IN_BD')) {
+          if (this.lastSearchRef) {
+            this.searchStatus = 'Producto encontrado en base de datos…';
+            this.cdr.markForCheck();
+            this.productsService.getSearchFromDb(this.lastSearchRef).pipe(
+              catchError(() => of({ productRef: this.lastSearchRef, products: [], totalResults: 0 } as ProductSearchResponse))
+            ).subscribe(resp => {
+              if (resp.products.length > 0) {
+                this.filteredProducts = resp.products;
+                this.uiState          = 'found';
+              } else {
+                this.uiState = 'empty';
+              }
+              this.searching    = false;
+              this.searchStatus = '';
+              this.error        = '';
+              this.cdr.markForCheck();
+            });
+          }
+          return;
+        }
+
+        this.error     = msg || 'Error en la búsqueda';
         this.searching = false;
+        this.uiState   = 'error';
+        this.cdr.markForCheck();
       });
 
-    this.loadProducts();
+    // Debounce de 400ms para no lanzar una petición por cada tecla
+    this.queryInput$.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(query => this.runSearch(query));
   }
 
   ngOnDestroy(): void {
@@ -78,113 +133,120 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadProducts() {
-    this.loading = true;
-    this.uiState = 'loading';
-    // Buscar todos los productos con query vacía
-    this.productsService.searchProducts('').pipe(
-      catchError(error => {
-        this.error = 'Error cargando productos';
-        console.error(error);
-        return of({ productRef: '', products: [], totalResults: 0 });
-      }),
-      takeUntil(this.destroy$)
-    ).subscribe((response: any) => {
-      this.products = response.products || [];
-      this.filteredProducts = this.products;
-      this.loading = false;
-      this.usingStomp = this.stompConnected;
-      this.uiState = this.filteredProducts.length > 0 ? 'found' : 'idle';
+  // ── Input handlers ────────────────────────────────────────────────────────
+
+  onQueryChange(): void {
+    this.queryInput$.next(this.searchQuery);
+  }
+
+  onSearch(): void {
+    // Clic en botón → búsqueda inmediata
+    this.runSearch(this.searchQuery);
+  }
+
+  onKeyEnter(): void {
+    this.runSearch(this.searchQuery);
+  }
+
+  clearSearch(): void {
+    this.searchQuery      = '';
+    this.filteredProducts = [];
+    this.error            = '';
+    this.searchStatus     = '';
+    this.uiState          = 'idle';
+    this.cdr.markForCheck();
+  }
+
+  // ── Core search ───────────────────────────────────────────────────────────
+
+  private runSearch(query: string): void {
+    const trimmed = query.trim();
+
+    if (!trimmed) {
+      this.filteredProducts = [];
+      this.uiState          = 'idle';
+      this.searching        = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // Cancelar búsqueda anterior
+    this.searchSession$.next();
+
+    const productRef    = trimmed.replace(/\s+/g, '').toLowerCase();
+    this.lastSearchRef  = productRef;
+    this.searching      = true;
+    this.error          = '';
+    this.searchStatus   = 'Buscando en la base de datos…';
+    this.uiState        = 'loading';
+    this.filteredProducts = [];
+    this.cdr.markForCheck();
+
+    // 1) BD primero
+    this.productsService.getSearchFromDb(productRef).pipe(
+      catchError(() => of({ productRef, products: [], totalResults: 0 } as ProductSearchResponse)),
+      takeUntil(merge(this.destroy$, this.searchSession$))
+    ).subscribe(dbResp => {
+      const dbProducts = dbResp.products ?? [];
+
+      if (dbProducts.length > 0) {
+        this.filteredProducts = dbProducts;
+        this.searching        = false;
+        this.searchStatus     = '';
+        this.uiState          = 'found';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      // 2) Sin resultados en BD → WebSocket (scraping en tiempo real)
+      if (!this.stompConnected) {
+        this.searching    = false;
+        this.searchStatus = '';
+        this.uiState      = 'empty';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      this.searchStatus = 'Búsqueda en tiempo real…';
+      this.uiState      = 'in-progress';
+      this.cdr.markForCheck();
+
+      this.stompService.sendSearchCommand(trimmed, productRef);
+
+      // Escuchar productos en tiempo real solo para esta búsqueda
+      this.stompService.products$
+        .pipe(takeUntil(merge(this.destroy$, this.searchSession$)))
+        .subscribe((message: any) => {
+          const msgRef = String(message?.productRef ?? message?.product_ref ?? '').trim();
+          if (msgRef && msgRef !== this.lastSearchRef) return;
+
+          const raw: any[]      = message?.products ?? [];
+          const incoming: Product[] = raw.map(p => this.productsService.mapBackendProduct(p));
+
+          if (incoming.length > 0) {
+            this.filteredProducts = incoming;
+            this.uiState          = 'found';
+            this.searching        = false;
+            this.searchStatus     = '';
+            this.cdr.markForCheck();
+          }
+        });
     });
   }
 
-  onSearch() {
-    this.error = ''; // Limpiar error previo
-    // Cancela streams de una búsqueda anterior
-    this.searchSession$.next();
-    
-    if (this.searchQuery.trim()) {
-      this.searching = true;
-      this.searchStatus = 'Buscando productos...';
-      this.usingStomp = this.stompConnected; // Mostrar si se usa STOMP
-      this.uiState = 'loading';
-      const productRef = this.searchQuery.trim().replace(/\s+/g, '').toLowerCase();
-      this.lastSearchRef = productRef;
+  // ── Navigation ────────────────────────────────────────────────────────────
 
-      // 1) REST primero: buscar en BD por `product_ref` (más rápido si ya existe/recent).
-      this.productsService.getSearchFromDb(productRef).pipe(
-        catchError((error) => {
-          console.error(error);
-          return of({ productRef, products: [], totalResults: 0 } as ProductSearchResponse);
-        }),
-        takeUntil(merge(this.destroy$, this.searchSession$))
-      ).subscribe((dbResponse) => {
-        const dbProducts = dbResponse.products || [];
-        if (dbProducts.length > 0) {
-          this.filteredProducts = dbProducts;
-          this.searching = false;
-          this.searchStatus = '';
-          this.uiState = 'found';
-          return;
-        }
-
-        // 2) Si no hay resultados en BD, usar WebSocket (si está conectado).
-        if (!this.stompConnected) {
-          this.error = 'WebSocket desconectado. No hay resultados en BD.';
-          this.searching = false;
-          this.searchStatus = '';
-          this.uiState = 'error';
-          return;
-        }
-
-        this.searchStatus = 'Búsqueda en progreso (tiempo real)...';
-        this.filteredProducts = [];
-        this.uiState = 'in-progress';
-
-        // Enviar búsqueda (misma destination que `prueba ac.html`)
-        this.stompService.sendSearchCommand(this.searchQuery, productRef);
-
-        // Escuchar productos en tiempo real SOLO para esta búsqueda
-        this.stompService.products$
-          .pipe(takeUntil(merge(this.destroy$, this.searchSession$)))
-          .subscribe((message: any) => {
-            const msgRef = String(message?.productRef ?? message?.product_ref ?? '').trim();
-            if (msgRef && msgRef !== this.lastSearchRef) return;
-
-            const incoming = Array.isArray(message?.products) ? message.products : [];
-            this.filteredProducts = incoming as Product[];
-            this.uiState = this.filteredProducts.length > 0 ? 'found' : 'in-progress';
-          });
-      });
-    } else {
-      // Si no hay query, mostrar todos
-      this.filteredProducts = this.products;
-      this.searching = false;
-      this.searchStatus = '';
-      this.uiState = this.filteredProducts.length > 0 ? 'found' : 'idle';
-    }
+  openProductDetail(product: Product): void {
+    this.productsService.cacheFullProduct(product);
+    this.router.navigate(['/product', product.id], {
+      queryParams: { productRef: product.productRef || this.lastSearchRef },
+      state:       { productResult: { best: product, all: this.filteredProducts } }
+    });
   }
 
-  clearSearch() {
-    this.searchQuery = '';
-    this.filteredProducts = this.products;
-    this.searchStatus = '';
-    this.error = '';
-    this.uiState = this.filteredProducts.length > 0 ? 'found' : 'idle';
-  }
-
-  saveProduct(product: Product) {
+  createAlert(product: Product): void {
     this.router.navigate(['/alerts'], {
       queryParams: { productId: product.id }
     });
   }
-
-  openProductDetail(product: Product): void {
-    this.router.navigate(['/product', product.id], {
-      queryParams: { productRef: product.productRef || product.id },
-      state: { product }
-    });
-  }
 }
-
-
