@@ -1,0 +1,144 @@
+<div class="rg-shell">
+  <div class="rg-card">
+
+    <!-- Header -->
+    <div class="rg-header">
+      <a routerLink="/" class="rg-logo">
+        <span>📊</span> Price<strong>Tracker</strong>
+      </a>
+      <h1>Crear cuenta</h1>
+      <p>Empieza a ahorrar gratis hoy</p>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="rg-form">
+
+      <!-- Nombre -->
+      <div class="rg-field">
+        <label for="name">Nombre completo <span class="rg-optional">(opcional)</span></label>
+        <input id="name" type="text" formControlName="name"
+               placeholder="Tu nombre" class="rg-input" />
+      </div>
+
+      <!-- Email -->
+      <div class="rg-field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email"
+               placeholder="tu@email.com" class="rg-input"
+               [class.rg-input-error]="form.get('email')?.invalid && form.get('email')?.touched"
+               [class.rg-input-ok]="form.get('email')?.valid && form.get('email')?.touched" />
+        <span class="rg-field-error"
+              *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          {{ form.get('email')?.errors?.['required'] ? 'El email es obligatorio' : 'Formato de email inválido' }}
+        </span>
+      </div>
+
+      <!-- Contraseña -->
+      <div class="rg-field">
+        <label for="password">Contraseña</label>
+        <div class="rg-input-wrap">
+          <input id="password"
+                 [type]="showPassword ? 'text' : 'password'"
+                 formControlName="password"
+                 placeholder="Mínimo 8 caracteres"
+                 class="rg-input rg-input-icon"
+                 autocomplete="new-password" />
+          <button type="button" class="rg-eye" (click)="showPassword = !showPassword"
+                  [title]="showPassword ? 'Ocultar' : 'Mostrar'">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+
+        <!-- Barra de fortaleza — aparece mientras escribe -->
+        <div class="rg-strength" *ngIf="pwdValue">
+          <div class="rg-strength-bars">
+            <span class="rg-strength-bar" [class.rg-bar-active]="pwdStrength >= 1"
+                  [style.background]="pwdStrength >= 1 ? strengthColor : ''"></span>
+            <span class="rg-strength-bar" [class.rg-bar-active]="pwdStrength >= 2"
+                  [style.background]="pwdStrength >= 2 ? strengthColor : ''"></span>
+            <span class="rg-strength-bar" [class.rg-bar-active]="pwdStrength >= 3"
+                  [style.background]="pwdStrength >= 3 ? strengthColor : ''"></span>
+            <span class="rg-strength-bar" [class.rg-bar-active]="pwdStrength >= 4"
+                  [style.background]="pwdStrength >= 4 ? strengthColor : ''"></span>
+          </div>
+          <span class="rg-strength-label" [style.color]="strengthColor">{{ strengthLabel }}</span>
+        </div>
+
+        <!-- Requisitos en tiempo real -->
+        <ul class="rg-requirements" *ngIf="pwdValue || (pwd?.touched && pwd?.invalid)">
+          <li [class.rg-req-ok]="hasMin8"   [class.rg-req-bad]="!hasMin8">
+            <span class="rg-req-icon">{{ hasMin8 ? '✓' : '○' }}</span>
+            Mínimo 8 caracteres
+          </li>
+          <li [class.rg-req-ok]="hasUpper"  [class.rg-req-bad]="!hasUpper">
+            <span class="rg-req-icon">{{ hasUpper ? '✓' : '○' }}</span>
+            Al menos 1 letra mayúscula
+          </li>
+          <li [class.rg-req-ok]="hasNumber" [class.rg-req-bad]="!hasNumber">
+            <span class="rg-req-icon">{{ hasNumber ? '✓' : '○' }}</span>
+            Al menos 1 número
+          </li>
+          <li [class.rg-req-ok]="hasSymbol" [class.rg-req-bad]="!hasSymbol">
+            <span class="rg-req-icon">{{ hasSymbol ? '✓' : '○' }}</span>
+            Al menos 1 símbolo (!@#$%...)
+          </li>
+        </ul>
+      </div>
+
+      <!-- Confirmar contraseña -->
+      <div class="rg-field">
+        <label for="confirmPassword">Confirmar contraseña</label>
+        <div class="rg-input-wrap">
+          <input id="confirmPassword"
+                 [type]="showConfirm ? 'text' : 'password'"
+                 formControlName="confirmPassword"
+                 placeholder="Repite tu contraseña"
+                 class="rg-input rg-input-icon"
+                 [class.rg-input-error]="confirmTouched && !passwordsMatch"
+                 [class.rg-input-ok]="confirmTouched && passwordsMatch"
+                 autocomplete="new-password" />
+          <button type="button" class="rg-eye" (click)="showConfirm = !showConfirm">
+            {{ showConfirm ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <span class="rg-field-error" *ngIf="confirmTouched && !passwordsMatch">
+          Las contraseñas no coinciden
+        </span>
+        <span class="rg-field-ok" *ngIf="confirmTouched && passwordsMatch">
+          ✓ Las contraseñas coinciden
+        </span>
+      </div>
+
+      <!-- Error general -->
+      <div *ngIf="error" class="rg-error-box">⚠️ {{ error }}</div>
+
+      <!-- Submit -->
+      <button type="submit" class="rg-btn-submit" [disabled]="form.invalid || loading">
+        <span *ngIf="!loading">Crear cuenta gratis</span>
+        <span *ngIf="loading" class="rg-spinner-row">
+          <span class="rg-spin"></span> Registrando…
+        </span>
+      </button>
+
+    </form>
+
+    <!-- Divider -->
+    <div class="rg-divider"><span>o</span></div>
+
+    <!-- Google -->
+    <button type="button" class="rg-btn-google" (click)="onGoogle()" [disabled]="loading">
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 19 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.5 35.5 26.9 36 24 36c-5.1 0-9.5-3.2-11.3-7.8l-6.6 5.1C9.8 39.8 16.4 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.5 36.2 44 30.5 44 24c0-1.3-.1-2.7-.4-4z"/>
+      </svg>
+      Continuar con Google
+    </button>
+
+    <p class="rg-login-link">
+      ¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a>
+    </p>
+
+  </div>
+</div>
