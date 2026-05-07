@@ -39,9 +39,23 @@
         <button *ngFor="let r of ranges"
                 class="ph-range-btn"
                 [class.ph-range-active]="selectedRange === r.value"
-                (click)="selectedRange = r.value; onRangeChange()">
+                [class.ph-range-locked]="r.premiumOnly && !isPremium"
+                (click)="onRangeClick(r)">
+          <span *ngIf="r.premiumOnly && !isPremium" class="ph-range-lock">🔒</span>
           {{ r.label }}
         </button>
+      </div>
+
+      <!-- Banner upgrade Premium (HE-3 HU-2 CA-2) -->
+      <div *ngIf="showUpgradeBanner" class="ph-upgrade-banner">
+        <div class="ph-upgrade-banner-content">
+          <span class="ph-upgrade-icon">⭐</span>
+          <div>
+            <strong>Historial limitado a 7 días</strong>
+            <p>Con Premium accedes a 3 meses de historial y todo el período.</p>
+          </div>
+        </div>
+        <a routerLink="/account" class="ph-upgrade-btn">Mejorar a Premium →</a>
       </div>
 
       <button class="ph-btn-green" (click)="goToAlerts()">+ Crear Alerta</button>

@@ -299,8 +299,9 @@
           if (activeSearch) {
             try {
               const payload = activeSearch.payload || { query: activeSearch.query, search_id: activeSearch.searchId };
-              client.publish({ destination: '/app/search', body: JSON.stringify(payload) });
+              client.sendSearch(payload);
               console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ Re-sent search to force fresh scraping`);
+              return; // Esperar resultados del WebSocket
             } catch (e) {
               console.warn(`${constants.LOG_PREFIX} [HANDLER] Could not re-send search:`, e);
             }
@@ -327,7 +328,7 @@
             expectedDisconnect = false;
             try {
               const payload = activeSearch.payload || { query: activeSearch.query, search_id: activeSearch.searchId };
-              client.publish({ destination: '/app/search', body: JSON.stringify(payload) });
+              client.sendSearch(payload);
               console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ Re-sent search for fresh scraping`);
               return; // Esperar resultados del WebSocket
             } catch (e) {

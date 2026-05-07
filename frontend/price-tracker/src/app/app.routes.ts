@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { LandingComponent } from './features/landing/landing.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { PriceHistoryComponent } from './features/price-history/components/price-history.component';
@@ -17,8 +18,7 @@ import { OpenProductComponent } from './features/open-product/open-product.compo
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: '/dashboard',
-    pathMatch: 'full'
+    component: LandingComponent
   },
   {
     path: 'login',

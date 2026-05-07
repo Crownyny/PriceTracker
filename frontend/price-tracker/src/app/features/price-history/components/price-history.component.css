@@ -205,3 +205,34 @@
   .ph-btn-green { margin-left: 0; }
   .ph-stats { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Premium upgrade banner (HE-3 HU-2 CA-2) ───────────────────────────── */
+.ph-upgrade-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1.5px solid #f59e0b;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.ph-upgrade-banner-content {
+  display: flex; align-items: center; gap: 12px;
+}
+.ph-upgrade-icon { font-size: 1.5rem; flex-shrink: 0; }
+.ph-upgrade-banner strong { display: block; color: #92400e; font-size: .9375rem; margin-bottom: 2px; }
+.ph-upgrade-banner p { margin: 0; color: #b45309; font-size: .8125rem; }
+.ph-upgrade-btn {
+  padding: 8px 18px; background: #f59e0b; color: #fff;
+  border-radius: 8px; font-size: .875rem; font-weight: 700;
+  text-decoration: none; white-space: nowrap; transition: background .15s;
+  flex-shrink: 0;
+}
+.ph-upgrade-btn:hover { background: #d97706; }
+
+.ph-range-locked { opacity: .55; cursor: not-allowed !important; }
+.ph-range-locked:hover { background: #f3f4f6 !important; color: #6b7280 !important; border-color: #e5e7eb !important; }
+.ph-range-lock { font-size: .75rem; margin-right: 4px; }
