@@ -237,11 +237,23 @@
       },
       onOpenDashboard: () => {
         const activeSearch = latestWorkflowState?.activeSearch || null;
-        chrome.runtime.sendMessage({
-          type: constants.MESSAGE_TYPES.OPEN_DASHBOARD,
-          productRef: activeSearch?.productRef || null,
-          query: activeSearch?.query || null,
-        });
+        try {
+          chrome.runtime.sendMessage({
+            type: constants.MESSAGE_TYPES.OPEN_DASHBOARD,
+            productRef: activeSearch?.productRef || null,
+            query: activeSearch?.query || null,
+          });
+        } catch (e) {
+          // Contexto de extensión invalidado (extensión recargada sin recargar la pestaña)
+          // Abrir dashboard directamente
+          console.warn(`${constants.LOG_PREFIX} Extension context invalidated - opening dashboard directly`);
+          const ref   = activeSearch?.productRef || activeSearch?.query?.replace(/\s+/g, '').toLowerCase() || '';
+          const base  = 'http://localhost:4200';
+          const url   = ref
+            ? `${base}/open-product?productRef=${encodeURIComponent(ref)}`
+            : `${base}/dashboard`;
+          window.open(url, '_blank');
+        }
       },
     });
 

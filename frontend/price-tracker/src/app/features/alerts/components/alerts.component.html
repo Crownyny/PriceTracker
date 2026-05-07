@@ -138,7 +138,17 @@
           </div>
         </div>
 
-        <div *ngIf="modalError" class="modal-error">{{ modalError }}</div>
+        <!-- Banner upgrade (HE-4 HU-1 CA-2) -->
+        <div *ngIf="modalError === 'UPGRADE_REQUIRED'" class="upgrade-banner">
+          <span class="upgrade-icon">⭐</span>
+          <div class="upgrade-text">
+            <strong>Límite de alertas alcanzado</strong>
+            <p>Has llegado al máximo de 3 alertas del plan gratuito.<br>
+               Elimina una alerta existente o mejora a Premium para alertas ilimitadas.</p>
+          </div>
+          <a routerLink="/account" class="upgrade-cta">Ver Premium →</a>
+        </div>
+        <div *ngIf="modalError && modalError !== 'UPGRADE_REQUIRED'" class="modal-error">{{ modalError }}</div>
         <div *ngIf="modalSuccess" class="modal-success">✓ {{ modalSuccess }}</div>
       </div>
 

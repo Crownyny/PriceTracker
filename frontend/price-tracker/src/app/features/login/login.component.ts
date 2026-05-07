@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { catchError, finalize, of } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthResponse } from '../../shared/models/auth.model';
 
@@ -12,25 +13,22 @@ import { AuthResponse } from '../../shared/models/auth.model';
   template: `
     <section class="login-shell">
       <article class="login-card">
-        <h2>Iniciar sesión</h2>
-        <p>Accede para usar tu dashboard de seguimiento de precios.</p>
+        <h2>Iniciar sesion</h2>
+        <p>Accede con Firebase para usar tu dashboard de seguimiento de precios.</p>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
           <label>
             Email
-            <input type="email" formControlName="email" placeholder="tu@email.com" autocomplete="email" />
+            <input type="email" formControlName="email" placeholder="tu@email.com" />
           </label>
 
           <label>
-            Contraseña
-            <input type="password" formControlName="password" placeholder="••••••••" autocomplete="current-password" />
+            Password
+            <input type="password" formControlName="password" placeholder="********" />
           </label>
 
-          <!-- Error visible siempre que exista, independiente del estado loading -->
-          <p *ngIf="error" class="error">{{ error }}</p>
-
           <button type="submit" [disabled]="form.invalid || loading">
-            {{ loading ? 'Entrando…' : 'Entrar' }}
+            {{ loading ? 'Entrando...' : 'Entrar' }}
           </button>
         </form>
 
@@ -38,108 +36,99 @@ import { AuthResponse } from '../../shared/models/auth.model';
           Continuar con Google
         </button>
 
+        <p *ngIf="error" class="error">{{ error }}</p>
+
         <p class="links">
           <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
         </p>
 
-        <p class="links">
-          ¿No tienes cuenta?
-          <a routerLink="/register">Regístrate</a>
-        </p>
+        <p class="back-link"><a routerLink="/dashboard">Ir al dashboard</a></p>
       </article>
     </section>
   `,
-  styles: [`
-    .login-shell {
-      min-height: calc(100vh - 100px);
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
+  styles: [
+    `
+      .login-shell {
+        min-height: calc(100vh - 100px);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
 
-    .login-card {
-      width: min(420px, 100%);
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 32px 24px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-    }
+      .login-card {
+        width: min(420px, 100%);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
 
-    h2 { margin: 0 0 8px; font-size: 1.5rem; }
+      h2 {
+        margin: 0 0 8px;
+      }
 
-    p { margin: 0 0 16px; color: #4b5563; }
+      p {
+        margin: 0 0 16px;
+        color: #4b5563;
+      }
 
-    form { display: grid; gap: 14px; }
+      form {
+        display: grid;
+        gap: 12px;
+      }
 
-    label {
-      display: grid;
-      gap: 6px;
-      font-weight: 600;
-      color: #1f2937;
-      font-size: 0.875rem;
-    }
+      label {
+        display: grid;
+        gap: 6px;
+        font-weight: 600;
+        color: #1f2937;
+      }
 
-    input {
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 14px;
-      transition: border-color 0.15s;
-      outline: none;
-    }
-    input:focus { border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.1); }
+      input {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
 
-    button[type="submit"] {
-      margin-top: 4px;
-      border: none;
-      border-radius: 10px;
-      padding: 11px 12px;
-      background: #1d4ed8;
-      color: #fff;
-      font-weight: 600;
-      font-size: 0.9375rem;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    button[type="submit"]:hover:not(:disabled) { background: #1e40af; }
-    button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; }
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #1d4ed8;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+      }
 
-    .google {
-      margin-top: 10px;
-      width: 100%;
-      border-radius: 10px;
-      padding: 10px 12px;
-      background: #fff;
-      color: #111827;
-      border: 1px solid #e5e7eb;
-      font-weight: 600;
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .google:hover:not(:disabled) { background: #f9fafb; }
-    .google:disabled { opacity: 0.6; cursor: not-allowed; }
+      button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
 
-    /* Error mostrado ENCIMA del botón para que sea inmediatamente visible */
-    .error {
-      color: #b91c1c;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.875rem;
-      margin: 0;
-    }
+      .google {
+        margin-top: 12px;
+        width: 100%;
+        background: #fff;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+      }
 
-    .links {
-      margin-top: 12px;
-      font-size: 0.875rem;
-      color: #6b7280;
-    }
-    .links a { color: #1d4ed8; font-weight: 500; text-decoration: none; }
-    .links a:hover { text-decoration: underline; }
-  `]
+      .error {
+        color: #b91c1c;
+        margin-top: 12px;
+      }
+
+      .links {
+        margin-top: 10px;
+      }
+
+      .back-link {
+        margin-top: 10px;
+      }
+    `
+  ]
 })
 export class LoginComponent {
   loading = false;
@@ -164,65 +153,58 @@ export class LoginComponent {
       return;
     }
 
-    // Limpiar error ANTES de deshabilitar el botón para que el usuario
-    // vea el estado limpio mientras espera la nueva respuesta.
     this.error = null;
     this.loading = true;
 
-    this.authService
-      .login(this.form.getRawValue() as { email: string; password: string })
-      .subscribe({
-        next: (response: AuthResponse) => {
-          this.loading = false;
-          if (response) {
-            this.navigateToReturnUrl();
-          }
-        },
-        error: (err: any) => {
-          // El error se setea ANTES de quitar el loading para que
-          // aparezca en pantalla en el mismo ciclo de detección de cambios.
-          this.error = this.mapFirebaseError(err);
-          this.loading = false;
-        }
-      });
+    this.authService.login(this.form.getRawValue() as { email: string; password: string }).pipe(
+      catchError((err) => {
+        this.error = 'No fue posible iniciar sesion con Firebase. Verifica email y contraseña.';
+        console.error('Login error:', err);
+        return of(null);
+      }),
+      finalize(() => {
+        this.loading = false;
+      })
+    ).subscribe((response) => {
+      if (!response) {
+        return;
+      }
+
+      this.navigateToReturnUrl();
+    });
   }
 
   onGoogle(): void {
     this.error = null;
     this.loading = true;
 
-    this.authService.loginWithGoogle().subscribe({
-      next: (response: AuthResponse) => {
+    this.authService.loginWithGoogle().pipe(
+      catchError((err) => {
+        const code = err?.code as string | undefined;
+        if (code === 'auth/popup-closed-by-user') {
+          this.error = 'Cerraste la ventana de Google antes de completar el inicio de sesión.';
+        } else {
+          this.error = 'No fue posible iniciar sesión con Google.';
+        }
+        console.error('Google login error:', err);
+        return of(null);
+      }),
+      finalize(() => {
         this.loading = false;
-        if (response) this.navigateToReturnUrl();
-      },
-      error: (err: any) => {
-        this.error =
-          err?.code === 'auth/popup-closed-by-user'
-            ? 'Cerraste la ventana de Google antes de completar el inicio de sesión.'
-            : 'No fue posible iniciar sesión con Google.';
-        this.loading = false;
-      }
+      })
+    ).subscribe((response) => {
+      if (!response) return;
+      this.navigateToReturnUrl();
     });
   }
 
   private navigateToReturnUrl(): void {
-    const returnUrl =
-      this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
-    this.router.navigateByUrl(returnUrl);
-  }
+    // HE-4 HU-4 CA-2: redirect persistente post-login
+    // Soporta returnUrl de: AuthGuard, links de email de alertas, y navegación normal
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
 
-  private mapFirebaseError(err: any): string {
-    const code = String(err?.code || '');
-    if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-      return 'Email o contraseña incorrectos.';
-    }
-    if (code === 'auth/too-many-requests') {
-      return 'Demasiados intentos fallidos. Espera unos minutos e intenta de nuevo.';
-    }
-    if (code === 'auth/network-request-failed') {
-      return 'Sin conexión. Verifica tu red e intenta de nuevo.';
-    }
-    return 'No fue posible iniciar sesión. Verifica tus credenciales.';
+    // Limpiar returnUrl de posibles caracteres peligrosos
+    const safeUrl = returnUrl.startsWith('/') ? returnUrl : '/dashboard';
+    this.router.navigateByUrl(safeUrl);
   }
 }

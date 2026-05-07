@@ -54,19 +54,19 @@
         <p class="pd-hero-label">Mejor Precio</p>
 
         <div class="pd-hero-price-row">
-          <span class="pd-hero-price">${{ bestPrice | number:'1.0-0' }}</span>
-          <span *ngIf="savingsPct > 0" class="pd-hero-badge">
-            ↘ -{{ savingsPct | number:'1.0-1' }}%
+          <span class="pd-hero-price">${{ bestPrice() | number:'1.0-0' }}</span>
+          <span *ngIf="savingsPercent() > 0" class="pd-hero-badge">
+            ↘ -{{ savingsPercent() | number:'1.0-1' }}%
           </span>
         </div>
 
-        <p class="pd-hero-store">en {{ bestSource }}</p>
-        <p *ngIf="savings > 0" class="pd-hero-savings">
-          Ahorras ${{ savings | number:'1.0-0' }} vs. el precio más alto
+        <p class="pd-hero-store">en {{ bestSource() }}</p>
+        <p *ngIf="savings() > 0" class="pd-hero-savings">
+          Ahorras ${{ savings() | number:'1.0-0' }} vs. el precio más alto
         </p>
 
         <div class="pd-hero-actions">
-          <a *ngIf="bestUrl" [href]="bestUrl" target="_blank" rel="noopener"
+          <a *ngIf="bestUrl()" [href]="bestUrl()" target="_blank" rel="noopener"
              class="pd-btn-primary pd-btn-store">
             ↗ Ir a la tienda
           </a>
@@ -83,7 +83,18 @@
           🔔 {{ hasAlert ? 'Gestionar Alerta' : (alertLoading ? 'Creando…' : 'Crear Alerta de Precio') }}
         </button>
 
-        <div *ngIf="alertError"   class="pd-feedback pd-feedback-error">{{ alertError }}</div>
+        <!-- Banner upgrade (HE-4 HU-1 CA-2) -->
+        <div *ngIf="alertError === 'UPGRADE_REQUIRED'" class="pd-upgrade-banner">
+          <div class="pd-upgrade-left">
+            <span>⭐</span>
+            <div>
+              <strong>Límite de alertas alcanzado</strong>
+              <p>El plan gratuito permite hasta 3 alertas activas.</p>
+            </div>
+          </div>
+          <a routerLink="/account" class="pd-upgrade-cta">Ver Premium →</a>
+        </div>
+        <div *ngIf="alertError && alertError !== 'UPGRADE_REQUIRED'" class="pd-feedback pd-feedback-error">{{ alertError }}</div>
         <div *ngIf="alertCreated" class="pd-feedback pd-feedback-ok">✓ Alerta creada correctamente.</div>
         <div *ngIf="hasAlert && !alertCreated && !alertError" class="pd-feedback pd-feedback-info">
           Alerta activa — haz clic en "Gestionar Alerta" para editarla.
@@ -101,7 +112,7 @@
         <div class="pd-chart-header">
           <div>
             <h3 class="pd-section-title">Historial de Precios</h3>
-            <p class="pd-chart-subtitle">{{ rangeLabel() }}</p>
+            <p class="pd-chart-subtitle">{{ chartRangeLabel() }}</p>
           </div>
           <div class="pd-chart-controls">
             <button *ngFor="let r of ranges"
@@ -133,12 +144,12 @@
             </defs>
 
             <line *ngFor="let y of gridYs"
-                  [attr.x1]="pL" [attr.y1]="y"
-                  [attr.x2]="chartW - pR" [attr.y2]="y"
+                  [attr.x1]="paddingLeft" [attr.y1]="y"
+                  [attr.x2]="chartW - paddingRight" [attr.y2]="y"
                   class="pd-grid-line" />
 
             <text *ngFor="let item of gridLabels"
-                  [attr.x]="pL - 8" [attr.y]="item.y + 4"
+                  [attr.x]="paddingLeft - 8" [attr.y]="item.y + 4"
                   class="pd-axis-label pd-axis-label-y">
               ${{ item.label }}
             </text>
@@ -151,7 +162,7 @@
 
             <g *ngFor="let series of chartSeries; let si = index">
               <polyline
-                [attr.points]="series.polyline"
+                [attr.points]="series.points"
                 [style.stroke]="seriesColor(si)"
                 fill="none" stroke-width="2"
                 stroke-linejoin="round" stroke-linecap="round"

@@ -63,11 +63,14 @@ export class PriceHistoryComponent implements OnInit {
   readonly pL = 72; readonly pR = 20; readonly pT = 20; readonly pB = 36;
 
   readonly ranges = [
-    { value: 'W1'  as PriceHistoryRange, label: 'Última semana'   },
-    { value: 'W3'  as PriceHistoryRange, label: 'Último mes'      },
-    { value: 'W12' as PriceHistoryRange, label: 'Últimos 3 meses' },
-    { value: 'ALL' as PriceHistoryRange, label: 'Todo el periodo' },
+    { value: 'W1'  as PriceHistoryRange, label: 'Última semana',    premiumOnly: false },
+    { value: 'W3'  as PriceHistoryRange, label: 'Último mes',       premiumOnly: true  },
+    { value: 'W12' as PriceHistoryRange, label: 'Últimos 3 meses',  premiumOnly: true  },
+    { value: 'ALL' as PriceHistoryRange, label: 'Todo el periodo',  premiumOnly: true  },
   ];
+
+  showUpgradeBanner = false;
+  isPremium = false;
 
   constructor(
     private priceHistoryService: PriceHistoryService,
@@ -81,7 +84,9 @@ export class PriceHistoryComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.selectedRange = this.userRoleService.canUsePremiumFeatures() ? 'W3' : 'W1';
+    this.isPremium     = this.userRoleService.canUsePremiumFeatures();
+    this.selectedRange = this.isPremium ? 'W3' : 'W1';
+    this.showUpgradeBanner = !this.isPremium;
     this.loadAlertsWithProducts();
   }
 
@@ -170,6 +175,18 @@ export class PriceHistoryComponent implements OnInit {
 
   onRangeChange(): void {
     if (this.selectedProductId) this.loadHistory(this.selectedProductId);
+  }
+
+  /** HE-3 HU-2 CA-2: bloquea rangos Premium para usuarios Free */
+  onRangeClick(r: { value: PriceHistoryRange; label: string; premiumOnly: boolean }): void {
+    if (r.premiumOnly && !this.isPremium) {
+      this.showUpgradeBanner = true;
+      this.cdr.markForCheck();
+      return;
+    }
+    this.showUpgradeBanner = false;
+    this.selectedRange = r.value;
+    this.onRangeChange();
   }
 
   private loadHistory(productId: string): void {

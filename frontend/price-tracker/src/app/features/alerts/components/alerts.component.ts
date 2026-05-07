@@ -273,7 +273,7 @@ export class AlertsComponent implements OnInit {
         if (err.status === 409) {
           this.modalError = 'Ya existe una alerta para este producto.';
         } else if (err.status === 403) {
-          this.modalError = 'Límite de alertas alcanzado para tu plan actual.';
+          this.modalError = this.isPremium ? 'Límite de alertas alcanzado. Contacta soporte.' : 'UPGRADE_REQUIRED';
         } else {
           this.modalError = 'Error al crear la alerta. Intenta de nuevo.';
         }
