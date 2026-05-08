@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -177,7 +177,8 @@ export class ForgotPasswordComponent {
 
   constructor(
     private formBuilder: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr:         ChangeDetectorRef
   ) {
     this.form = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]]
@@ -205,11 +206,12 @@ export class ForgotPasswordComponent {
         } else {
           this.error = 'No fue posible enviar el email de recuperación. Inténtalo de nuevo.';
         }
-        console.error('Reset password error:', err);
+        this.cdr.markForCheck();
         return of(null);
       }),
       finalize(() => {
         this.loading = false;
+        this.cdr.markForCheck();
       })
     ).subscribe((result) => {
       if (result === null) return;

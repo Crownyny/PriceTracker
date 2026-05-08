@@ -22,7 +22,9 @@ export class AlertsComponent implements OnInit {
 
   // ── Estado de alertas ──────────────────────────────────────────────────────
   alerts: Alert[] = [];
-  productNames: Record<string, string> = {};
+  productNames:  Record<string, string> = {};
+  productImages: Record<string, string> = {};
+  productPrices: Record<string, number>  = {};
   loading = false;
   error: string | null = null;
   isPremium = false;
@@ -112,16 +114,31 @@ export class AlertsComponent implements OnInit {
     });
   }
 
-  /** Resuelve en paralelo el nombre de cada producto — sin bloquear la UI */
+  /** Resuelve en paralelo nombre, imagen y precio de cada producto */
   private resolveProductNames(alerts: Alert[]): void {
     for (const alert of alerts) {
       if (!alert.productId || this.productNames[alert.productId]) continue;
       // Placeholder inmediato
       this.productNames[alert.productId] = alert.productRef || alert.productId.slice(0, 8) + '…';
-      // Resolver nombre real en segundo plano
+      // Resolver datos reales en segundo plano
       this.productsService.resolveProductName(alert.productId).subscribe(name => {
         this.productNames[alert.productId] = name;
+        this.cdr.markForCheck();
       });
+      // Obtener imagen y precio del caché o del backend
+      const cached = this.productsService.getCachedProduct(alert.productId);
+      if (cached) {
+        if (cached.image) this.productImages[alert.productId] = cached.image;
+        if (cached.currentPrice) this.productPrices[alert.productId] = cached.currentPrice;
+      } else {
+        this.productsService.getProduct(alert.productId).pipe(
+          catchError(() => of(null))
+        ).subscribe(product => {
+          if (product?.image)        this.productImages[alert.productId] = product.image;
+          if (product?.currentPrice) this.productPrices[alert.productId] = product.currentPrice;
+          this.cdr.markForCheck();
+        });
+      }
     }
   }
 
@@ -141,13 +158,15 @@ export class AlertsComponent implements OnInit {
   }
 
   openManageModal(alert: Alert): void {
-    // Construir un Product mínimo desde la alerta para mostrar en el modal
+    // Usar el nombre ya resuelto del producto si está disponible
+    const resolvedName = this.productNames[alert.productId] || alert.productRef || alert.productId;
     this.modalProduct = {
-      id: alert.productId,
-      productRef: alert.productRef ?? alert.productId,
-      name: alert.productRef ?? alert.productId,
-      currentPrice: alert.targetPrice ?? 0,
-      currency: alert.currency ?? 'COP',
+      id:           alert.productId,
+      productRef:   alert.productRef ?? alert.productId,
+      name:         resolvedName,
+      image:        this.productImages[alert.productId],
+      currentPrice: this.productPrices[alert.productId] ?? alert.targetPrice ?? 0,
+      currency:     alert.currency ?? 'COP',
       availability: true
     };
     this.modalExistingAlert = alert;
@@ -267,16 +286,25 @@ export class AlertsComponent implements OnInit {
             this.modalMode = 'manage';
           }
         }
+        this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
         this.modalSubmitting = false;
         if (err.status === 409) {
           this.modalError = 'Ya existe una alerta para este producto.';
-        } else if (err.status === 403) {
-          this.modalError = this.isPremium ? 'Límite de alertas alcanzado. Contacta soporte.' : 'UPGRADE_REQUIRED';
+        } else if (
+          err.status === 403 ||
+          (err.status === 400 &&
+            String(err?.error?.message ?? '').toLowerCase().includes('maximum'))
+        ) {
+          // Backend devuelve 400 con "Maximum number of alerts reached for freemium users"
+          this.modalError = this.isPremium
+            ? 'Límite de alertas alcanzado. Contacta soporte.'
+            : 'UPGRADE_REQUIRED';
         } else {
           this.modalError = 'Error al crear la alerta. Intenta de nuevo.';
         }
+        this.cdr.markForCheck();
       }
     });
   }

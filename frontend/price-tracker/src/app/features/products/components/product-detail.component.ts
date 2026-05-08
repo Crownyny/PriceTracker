@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, forkJoin } from 'rxjs';
@@ -62,7 +62,7 @@ export class ProductDetailComponent implements OnInit {
   gridLabels:    GridLabel[]   = [];
   xLabels:       XLabel[]      = [];
   historyLoading = false;
-  selectedRange: PriceHistoryRange = 'W3';
+  selectedRange: PriceHistoryRange = 'W1'; // se actualiza en ngOnInit según el rol
 
   readonly chartW      = 700;
   readonly chartH      = 260;
@@ -84,15 +84,18 @@ export class ProductDetailComponent implements OnInit {
   private productRef = '';
 
   constructor(
-    private productsService:    ProductsService,
+    private productsService:     ProductsService,
     private priceHistoryService: PriceHistoryService,
     private alertService:        AlertService,
     private userRoleService:     UserRoleService,
     private route:  ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr:    ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    // Freemium solo puede usar W1 — evita el 400 del backend
+    this.selectedRange = this.userRoleService.canUsePremiumFeatures() ? 'W3' : 'W1';
     this.route.params.subscribe(params => {
       this.productId  = params['id'];
       this.productRef = this.route.snapshot.queryParamMap.get('productRef') ?? '';
@@ -105,6 +108,7 @@ export class ProductDetailComponent implements OnInit {
         this.buildComparison(stateProduct);
         this.refreshAlertState(stateProduct.id);
         this.loadHistory(stateProduct.id);
+        this.cdr.markForCheck();
         return;
       }
 
@@ -120,26 +124,28 @@ export class ProductDetailComponent implements OnInit {
 
     if (this.productRef) {
       this.productsService.getProductByIdAndRef(this.productId, this.productRef)
-        .pipe(finalize(() => { this.loading = false; }))
+        .pipe(finalize(() => { this.loading = false; this.cdr.markForCheck(); }))
         .subscribe((result: { best: Product; all: Product[] } | null) => {
-          if (!result) { this.error = 'No pudimos cargar el detalle del producto.'; return; }
+          if (!result) { this.error = 'No pudimos cargar el detalle del producto.'; this.cdr.markForCheck(); return; }
           this.product = result.best;
           this.buildComparison(result.best);
           this.refreshAlertState(result.best.id);
           this.loadHistory(result.best.id);
+          this.cdr.markForCheck();
         });
     } else {
       this.productsService.getProduct(this.productId)
         .pipe(
           catchError(() => of(null as Product | null)),
-          finalize(() => { this.loading = false; })
+          finalize(() => { this.loading = false; this.cdr.markForCheck(); })
         )
         .subscribe((product: Product | null) => {
-          if (!product) { this.error = 'No pudimos cargar el detalle del producto.'; return; }
+          if (!product) { this.error = 'No pudimos cargar el detalle del producto.'; this.cdr.markForCheck(); return; }
           this.product = product;
           this.buildComparison(product);
           this.refreshAlertState(product.id);
           this.loadHistory(product.id);
+          this.cdr.markForCheck();
         });
     }
   }
@@ -222,10 +228,13 @@ export class ProductDetailComponent implements OnInit {
       ? this.productsService.unsaveProduct(this.product.id)
       : this.productsService.saveProduct(this.product.id);
 
-    action$.pipe(finalize(() => { this.savingProduct = false; }))
+    action$.pipe(finalize(() => { this.savingProduct = false; this.cdr.markForCheck(); }))
       .subscribe({
-        next: () => { this.isSaved = !this.isSaved; },
-        error: (err) => { if (!this.isSaved && (err?.status === 409 || err?.status === 400)) this.isSaved = true; }
+        next: () => { this.isSaved = !this.isSaved; this.cdr.markForCheck(); },
+        error: (err) => {
+          if (!this.isSaved && (err?.status === 409 || err?.status === 400)) this.isSaved = true;
+          this.cdr.markForCheck();
+        }
       });
   }
 
@@ -247,21 +256,29 @@ export class ProductDetailComponent implements OnInit {
       .createAlertWithoutDuplicate(this.product.id, { frequency: 'instant' as AlertFrequency })
       .pipe(
         catchError(err => {
-          if (err?.status === 409)      { this.hasAlert = true; }
-          else if (err?.status === 403) {
+          if (err?.status === 409) {
+            this.hasAlert = true;
+          } else if (
+            err?.status === 403 ||
+            (err?.status === 400 &&
+              String(err?.error?.message ?? '').toLowerCase().includes('maximum'))
+          ) {
+            // Backend devuelve 400 con "Maximum number of alerts reached for freemium users"
             this.alertError = 'UPGRADE_REQUIRED';
           } else {
             this.alertError = 'No fue posible crear la alerta. Intenta de nuevo.';
           }
+          this.cdr.markForCheck();
           return of(null);
         }),
-        finalize(() => { this.alertLoading = false; })
+        finalize(() => { this.alertLoading = false; this.cdr.markForCheck(); })
       )
       .subscribe(response => {
-        if (!response) return;
+        if (!response) { this.cdr.markForCheck(); return; }
         this.hasAlert     = true;
         this.alertCreated = response.message !== 'ALERT_ALREADY_EXISTS';
         this.alertError   = null;
+        this.cdr.markForCheck();
       });
   }
 
@@ -290,11 +307,12 @@ export class ProductDetailComponent implements OnInit {
     this.priceHistoryService.getPriceHistory(productId, this.selectedRange)
       .pipe(
         catchError(() => of(null)),
-        finalize(() => { this.historyLoading = false; })
+        finalize(() => { this.historyLoading = false; this.cdr.markForCheck(); })
       )
       .subscribe(response => {
-        if (!response?.history?.length) return;
+        if (!response?.history?.length) { this.cdr.markForCheck(); return; }
         this.buildChart(response.history);
+        this.cdr.markForCheck();
       });
   }
 
@@ -385,6 +403,7 @@ export class ProductDetailComponent implements OnInit {
       .pipe(catchError(() => of({ alerts: [], total: 0, page: 0, pageSize: 0 })))
       .subscribe(resp => {
         this.hasAlert = Array.isArray(resp.alerts) && resp.alerts.length > 0;
+        this.cdr.markForCheck();
       });
   }
 }

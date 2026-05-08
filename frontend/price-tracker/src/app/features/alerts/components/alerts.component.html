@@ -22,8 +22,24 @@
 
   <div *ngIf="alerts.length > 0" class="alerts-list">
     <div *ngFor="let alert of alerts" class="alert-card" [class.alert-inactive]="!alert.isActive">
+
+      <!-- Imagen del producto -->
+      <div class="alert-card-img">
+        <img *ngIf="productImages[alert.productId]"
+             [src]="productImages[alert.productId]"
+             [alt]="productNames[alert.productId]"
+             class="alert-card-img-el" />
+        <span *ngIf="!productImages[alert.productId]" class="alert-card-img-placeholder">📦</span>
+      </div>
+
+      <!-- Info del producto -->
       <div class="alert-card-body">
-        <div class="alert-product-name">{{ productNames[alert.productId] || alert.productRef || alert.productId.slice(0, 8) + "…" }}</div>
+        <div class="alert-product-name">
+          {{ productNames[alert.productId] || alert.productRef || alert.productId.slice(0, 8) + "…" }}
+        </div>
+        <div class="alert-product-price" *ngIf="productPrices[alert.productId]">
+          ${{ productPrices[alert.productId] | number:'1.0-0' }}
+        </div>
         <div class="alert-meta">
           <span class="badge" [class.badge-active]="alert.isActive" [class.badge-inactive]="!alert.isActive">
             {{ alert.isActive ? '🔔 Activa' : '🔕 Pausada' }}
@@ -32,6 +48,7 @@
         </div>
       </div>
 
+      <!-- Acciones -->
       <div class="alert-card-actions">
         <button class="btn-icon" [title]="alert.isActive ? 'Pausar' : 'Activar'" (click)="toggleAlertInList(alert)">
           {{ alert.isActive ? '⏸' : '▶' }}
@@ -142,11 +159,11 @@
         <div *ngIf="modalError === 'UPGRADE_REQUIRED'" class="upgrade-banner">
           <span class="upgrade-icon">⭐</span>
           <div class="upgrade-text">
-            <strong>Límite de alertas alcanzado</strong>
-            <p>Has llegado al máximo de 3 alertas del plan gratuito.<br>
-               Elimina una alerta existente o mejora a Premium para alertas ilimitadas.</p>
+            <strong>Plan gratuito — límite de alertas alcanzado</strong>
+            <p>Los usuarios freemium pueden tener hasta <strong>3 alertas activas</strong>.
+               Para crear más, elimina una alerta existente o actualiza tu plan a Premium.</p>
           </div>
-          <a routerLink="/account" class="upgrade-cta">Ver Premium →</a>
+          <a routerLink="/account" class="upgrade-cta">Ver planes →</a>
         </div>
         <div *ngIf="modalError && modalError !== 'UPGRADE_REQUIRED'" class="modal-error">{{ modalError }}</div>
         <div *ngIf="modalSuccess" class="modal-success">✓ {{ modalSuccess }}</div>

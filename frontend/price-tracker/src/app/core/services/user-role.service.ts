@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
 import { HttpConfigService } from './http-config.service';
 import { TokenService } from './token.service';
 import { UserRole } from '../../shared/models/auth.model';
@@ -69,6 +69,29 @@ export class UserRoleService {
 
   canUsePremiumFeatures(): boolean {
     return this.tokenService.isPremiumUser();
+  }
+
+  /**
+   * Sincroniza el rol con el backend usando PUT /user/role.
+   * Envía el rol actual como payload — el backend devuelve el rol real en BD.
+   * Si alguien cambió el rol externamente (Postman, admin), se actualiza localStorage.
+   * Si el request falla, mantiene el rol local como fallback silencioso.
+   */
+  fetchAndSyncRole(): Observable<UserRole> {
+    const currentRole = this.getCurrentRole();
+    const url = `${this.httpConfig.getApiUrl()}/user/role`;
+    return this.http.put<{ id?: string; email?: string; role?: string }>(
+      url, { newRole: currentRole }
+    ).pipe(
+      map(response => {
+        const backendRole = this.normalizeRole(response?.role) ?? currentRole;
+        if (backendRole !== this.tokenService.getUserRole()) {
+          this.tokenService.setUserRole(backendRole);
+        }
+        return backendRole;
+      }),
+      catchError(() => of(currentRole))
+    );
   }
 
   private normalizeRole(value: unknown): UserRole | undefined {

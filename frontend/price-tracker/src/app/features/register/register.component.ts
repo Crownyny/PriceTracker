@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -23,7 +23,8 @@ export class RegisterComponent {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private route:  ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr:    ChangeDetectorRef
   ) {
     this.form = this.formBuilder.group({
       name:            [''],
@@ -79,8 +80,8 @@ export class RegisterComponent {
       { email: string; password: string; name?: string };
 
     this.authService.register({ email, password, displayName: name }).pipe(
-      catchError(err => { this.error = this.mapAuthError(err); return of(null); }),
-      finalize(() => { this.loading = false; })
+      catchError(err => { this.error = this.mapAuthError(err); this.cdr.markForCheck(); return of(null); }),
+      finalize(() => { this.loading = false; this.cdr.markForCheck(); })
     ).subscribe(response => {
       if (!response) return;
       this.navigateToReturnUrl();
@@ -91,8 +92,8 @@ export class RegisterComponent {
     this.loading = true;
     this.error   = null;
     this.authService.loginWithGoogle().pipe(
-      catchError(err => { this.error = this.mapAuthError(err); return of(null); }),
-      finalize(() => { this.loading = false; })
+      catchError(err => { this.error = this.mapAuthError(err); this.cdr.markForCheck(); return of(null); }),
+      finalize(() => { this.loading = false; this.cdr.markForCheck(); })
     ).subscribe(response => {
       if (!response) return;
       this.navigateToReturnUrl();

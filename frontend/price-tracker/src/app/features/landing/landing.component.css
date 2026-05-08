@@ -381,3 +381,25 @@
   .lp-plans         { grid-template-columns: 1fr; max-width: 420px; }
   .lp-nav-links     { display: none; }
 }
+/* ── Dashboard quick-access buttons ─────────────────────────────────────── */
+.lp-btn-dashboard {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, .35);
+}
+.lp-btn-dashboard:hover {
+  opacity: .92;
+  transform: translateY(-1px);
+}
+.lp-btn-outline-dashboard {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-color: rgba(255,255,255,.6) !important;
+  color: #fff !important;
+}
+.lp-btn-outline-dashboard:hover {
+  background: rgba(255,255,255,.12) !important;
+}
