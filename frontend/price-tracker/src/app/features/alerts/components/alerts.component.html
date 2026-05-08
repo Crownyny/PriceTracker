@@ -1,0 +1,195 @@
+<div class="alerts-container">
+  <div class="alerts-header">
+    <div class="alerts-header-text">
+      <h2>Alertas de Precio</h2>
+      <p>Crea una alerta buscando el producto, sin copiar IDs.</p>
+    </div>
+    <button class="btn-primary" (click)="openCreateModal()">+ Nueva Alerta</button>
+  </div>
+
+  <div *ngIf="loading" class="state-card state-loading">
+    <span class="spinner"></span> Cargando alertas...
+  </div>
+
+  <div *ngIf="!loading && alerts.length === 0 && !error" class="state-card state-empty">
+    <span class="empty-icon">🔔</span>
+    <strong>Sin alertas todavía</strong>
+    <p>Crea una alerta buscando un producto. Te avisaremos cuando baje el precio.</p>
+    <button class="btn-primary btn-sm" (click)="openCreateModal()">Crear primera alerta</button>
+  </div>
+
+  <div *ngIf="error" class="state-card state-error">⚠️ {{ error }}</div>
+
+  <div *ngIf="alerts.length > 0" class="alerts-list">
+    <div *ngFor="let alert of alerts" class="alert-card" [class.alert-inactive]="!alert.isActive">
+
+      <!-- Imagen del producto — clic va al detalle -->
+      <div class="alert-card-img alert-card-img-link" (click)="goToProduct(alert)" title="Ver producto">
+        <img *ngIf="productImages[alert.productId]"
+             [src]="productImages[alert.productId]"
+             [alt]="productNames[alert.productId]"
+             class="alert-card-img-el" />
+        <span *ngIf="!productImages[alert.productId]" class="alert-card-img-placeholder">📦</span>
+      </div>
+
+      <!-- Info del producto -->
+      <div class="alert-card-body">
+        <div class="alert-product-name alert-product-name-link" (click)="goToProduct(alert)">
+          {{ productNames[alert.productId] || alert.productRef || alert.productId.slice(0, 8) + "…" }}
+          <span class="alert-go-arrow">↗</span>
+        </div>
+        <div class="alert-product-price" *ngIf="productPrices[alert.productId]">
+          ${{ productPrices[alert.productId] | number:'1.0-0' }}
+        </div>
+        <div class="alert-meta">
+          <span class="badge" [class.badge-active]="alert.isActive" [class.badge-inactive]="!alert.isActive">
+            {{ alert.isActive ? '🔔 Activa' : '🔕 Pausada' }}
+          </span>
+          <span class="alert-freq">{{ getFrequencyLabel(alert.frequency) }}</span>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="alert-card-actions">
+        <button class="btn-icon" [title]="alert.isActive ? 'Pausar' : 'Activar'" (click)="toggleAlertInList(alert)">
+          {{ alert.isActive ? '⏸' : '▶' }}
+        </button>
+        <button class="btn-icon btn-icon-edit" title="Gestionar" (click)="openManageModal(alert)">✎</button>
+        <button class="btn-icon btn-icon-delete" title="Eliminar" (click)="deleteAlertInList(alert.id)">🗑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="modalOpen" class="modal-backdrop" (click)="closeModal()">
+  <div class="modal-panel" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ modalMode === 'create' ? (modalProduct ? 'Crear Alerta' : 'Buscar Producto') : 'Gestionar Alerta' }}</h3>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+
+    <ng-container *ngIf="!modalProduct">
+      <div class="modal-body">
+        <div class="search-container">
+          <p class="modal-hint">🔍 Busca el producto por nombre o marca</p>
+          <div class="search-input-wrapper">
+            <input
+              type="text"
+              class="search-input"
+              placeholder="ej: iPhone, Samsung, Dell, Sony..."
+              [(ngModel)]="productSearchQuery"
+              (input)="onProductSearch()"
+              autofocus
+            />
+            <span *ngIf="productSearchLoading" class="search-spinner">⏳</span>
+            <span *ngIf="!productSearchLoading && productSearchQuery" class="search-clear" (click)="productSearchQuery = ''; productSearchResults = []">✕</span>
+          </div>
+        </div>
+
+        <div *ngIf="productSearchDone && productSearchResults.length === 0 && !productSearchLoading" class="search-empty">
+          Sin resultados para <strong>"{{ productSearchQuery }}"</strong>.
+          <br />Prueba con otro término o busca primero el producto en <a href="/search">Buscar productos</a>.
+        </div>
+
+        <div *ngIf="productSearchError" class="modal-error">{{ productSearchError }}</div>
+
+        <ul *ngIf="productSearchResults.length > 0" class="product-results">
+          <li *ngFor="let p of productSearchResults" class="product-result-item" (click)="selectProduct(p)">
+            <div class="product-result-img">
+              <img *ngIf="p.image" [src]="p.image" [alt]="p.name" />
+              <span *ngIf="!p.image" class="product-result-img-placeholder">📦</span>
+            </div>
+            <div class="product-result-info">
+              <span class="product-result-name">{{ p.name }}</span>
+              <span class="product-result-price">${{ p.currentPrice | number:'1.0-0' }} {{ p.currency }}</span>
+              <span *ngIf="p.source" class="product-result-source">{{ p.source }}</span>
+            </div>
+            <span class="product-result-cta">Seleccionar →</span>
+          </li>
+        </ul>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="modalProduct">
+      <div class="modal-body">
+        <div class="selected-product">
+          <div class="selected-product-img">
+            <img *ngIf="modalProduct.image" [src]="modalProduct.image" [alt]="modalProduct.name" />
+            <span *ngIf="!modalProduct.image">📦</span>
+          </div>
+          <div class="selected-product-info">
+            <span class="selected-product-name">{{ modalProduct.name }}</span>
+            <span class="selected-product-price">${{ modalProduct.currentPrice | number:'1.0-0' }} {{ modalProduct.currency }}</span>
+          </div>
+          <button *ngIf="modalMode === 'create' && !modalExistingAlert" class="btn-ghost btn-xs" (click)="clearSelectedProduct()">Cambiar</button>
+        </div>
+
+        <ng-container *ngIf="modalMode === 'manage' && modalExistingAlert">
+          <div class="existing-alert-status">
+            <span class="badge" [class.badge-active]="modalExistingAlert.isActive" [class.badge-inactive]="!modalExistingAlert.isActive">
+              {{ modalExistingAlert.isActive ? '🔔 Alerta activa' : '🔕 Alerta pausada' }}
+            </span>
+            <button class="btn-secondary btn-sm" (click)="toggleAlertStatus()">
+              {{ modalExistingAlert.isActive ? 'Pausar' : 'Activar' }}
+            </button>
+          </div>
+        </ng-container>
+
+        <div class="form-group">
+          <label class="form-label">Frecuencia de notificación</label>
+          <div class="freq-grid">
+            <button
+              *ngFor="let opt of [
+                { value: 'instant', label: '⚡ Inmediata', desc: 'Al instante' },
+                { value: 'daily', label: '📅 Diaria', desc: 'Resumen diario' },
+                { value: 'weekly', label: '📆 Semanal', desc: isPremium ? 'Resumen semanal' : '🔒 Premium' }
+              ]"
+              class="freq-btn"
+              [class.freq-btn-active]="modalFrequency === opt.value"
+              [class.freq-btn-disabled]="opt.value === 'weekly' && !isPremium"
+              [disabled]="opt.value === 'weekly' && !isPremium"
+              (click)="setModalFrequency(opt.value)"
+            >
+              <span class="freq-btn-label">{{ opt.label }}</span>
+              <span class="freq-btn-desc">{{ opt.desc }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner upgrade (HE-4 HU-1 CA-2) -->
+        <div *ngIf="modalError === 'UPGRADE_REQUIRED'" class="upgrade-banner">
+          <span class="upgrade-icon">⭐</span>
+          <div class="upgrade-text">
+            <strong>Plan gratuito — límite de alertas alcanzado</strong>
+            <p>Los usuarios freemium pueden tener hasta <strong>3 alertas activas</strong>.
+               Para crear más, elimina una alerta existente o actualiza tu plan a Premium.</p>
+          </div>
+          <a routerLink="/account" class="upgrade-cta">Ver planes →</a>
+        </div>
+        <div *ngIf="modalError && modalError !== 'UPGRADE_REQUIRED'" class="modal-error">{{ modalError }}</div>
+        <div *ngIf="modalSuccess" class="modal-success">✓ {{ modalSuccess }}</div>
+      </div>
+
+      <div class="modal-footer">
+        <ng-container *ngIf="modalMode === 'create'">
+          <button class="btn-ghost" (click)="closeModal()">Cancelar</button>
+          <button class="btn-primary" [disabled]="modalSubmitting" (click)="submitCreateAlert()">
+            {{ modalSubmitting ? 'Creando...' : 'Crear Alerta' }}
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="modalMode === 'manage'">
+          <button class="btn-danger-outline" (click)="deleteAlert()">Eliminar</button>
+          <div class="modal-footer-right">
+            <button class="btn-ghost" (click)="closeModal()">Cerrar</button>
+            <button class="btn-primary" (click)="updateFrequency()">Guardar cambios</button>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+
+    <div *ngIf="!modalProduct" class="modal-footer modal-footer-simple">
+      <button class="btn-ghost" (click)="closeModal()">Cancelar</button>
+    </div>
+  </div>
+</div>

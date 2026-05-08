@@ -1,40 +1,75 @@
 """graph/state.py
-Estado del grafo LangGraph de normalización.
+Estado del grafo LangGraph de normalización (v3 — pipeline de 10 nodos).
 
-El estado fluye de nodo en nodo. Cada nodo retorna un dict con SOLO
-los campos que modifica; LangGraph hace el merge con el estado anterior.
+Flujo:
+  input_sanitizer → field_standardizer → text_canonicalizer
+  → attribute_extractor → quality_evaluator
+  → [llm_extractor → attribute_merger] (solo si confianza baja)
+  → semantic_normalizer → validation → calculate_policy → save → END
 
-Convenciones sobre campos:
-  - Campos de entrada (job_id, product_ref, source_name, captured_at, raw_fields):
-      Populados por el worker antes de invocar al grafo.
-      raw_fields viene embebido en el ScrapingMessage (sin MongoDB).
-  - Campos de procesamiento (cleaned_product, etc.):
-      Populados progresivamente por los nodos.
-  - `error`: error fatal → desvía el flujo al nodo error_end.
-  - `outcome`: resultado final del pipeline (inicializado pesimistamente).
+Cada nodo retorna un dict con SOLO los campos que modifica;
+LangGraph hace el merge con el estado anterior.
 """
+import datetime
 from typing import Optional
 from typing_extensions import TypedDict
 
 
 class NormalizationState(TypedDict):
-    # ── Entrada ───────────────────────────────────────────────────────────────
+    # ── Entrada (populados por el worker) ─────────────────────────────────────
     job_id: str
     product_ref: str
     source_name: str
-    captured_at: str          # ISO-8601 string de la fecha de captura
+    captured_at: str                         # ISO-8601
+    query: str                               # Query original de búsqueda (obligatoria)
+    raw_fields: dict                         # Campos crudos del scraper
 
-    # ── Datos del evento (sin MongoDB) ────────────────────────────────────────
-    raw_fields: dict          # Campos extraídos por el scraper, del ScrapingMessage
+    # ── Node 1: Input Sanitizer ───────────────────────────────────────────────
+    sanitized_product: Optional[dict]        # raw_fields limpiados
+    product_invalid: bool                    # True si raw_title es None
 
-    # ── Campos de procesamiento ───────────────────────────────────────────────
-    cleaned_product: Optional[dict]        # NormalizedProduct tras reglas deterministas
-    enrichment_updates: Optional[dict]     # Actualizaciones aplicadas por el LLM
+    # ── Node 2: Field Standardizer ────────────────────────────────────────────
+    standardized_product: Optional[dict]     # Esquema interno unificado
 
-    # ── Resultado final ───────────────────────────────────────────────────────
-    final_product: Optional[dict]          # NormalizedProduct.model_dump() validado
-    validation_errors: list                # Errores de validación de negocio
+    # ── Node 2.5: Semantic Validation (2 capas) ──────────────────────────────
+    semantic_decision: Optional[str]         # "SKIP" | "VALID" | "FILTERED" | "UNCERTAIN"
+    semantic_score: Optional[float]          # score capa 2 (valid - invalid)
+    semantic_pattern_used: Optional[str]     # patrón KB seleccionado
+    semantic_reason: Optional[str]           # explicación breve de la decisión
+    semantic_domain_gap: Optional[float]     # gap = sim_tech - sim_non_tech
+    semantic_is_tech: Optional[bool]         # resultado capa 1
+    semantic_latency_ms: Optional[float]     # latencia total del nodo
+
+    # ── Node 3: Text Canonicalizer ────────────────────────────────────────────
+    canonical_text: Optional[str]            # Texto preparado para extracción
+
+    # ── Node 4: Attribute Candidate Extractor ─────────────────────────────────
+    heuristic_attributes: Optional[dict]     # Candidatos heurísticos
+
+    # ── Node 5: Attribute Quality Evaluator ───────────────────────────────────
+    heuristic_confidence: Optional[int]      # 0-4
+
+    # ── Node 6: LLM Attribute Extractor ───────────────────────────────────────
+    llm_attributes: Optional[dict]           # Atributos extraídos por LLM
+
+    # ── Node 7: Attribute Merger / Node 5 high-confidence ─────────────────────
+    merged_attributes: Optional[dict]        # Atributos fusionados
+
+    # ── Node 8: Product Semantic Normalizer ───────────────────────────────────
+    normalized_product: Optional[dict]       # Representación canónica
+
+    # ── Node 9: Validation + Confidence ───────────────────────────────────────
+    final_confidence: Optional[str]          # "high" | "medium" | "low"
+    final_product: Optional[dict]            # NormalizedProduct.model_dump() validado
+    validation_errors: list                  # Errores de validación de negocio
+
+    # ── Node 10: Calculate Policy ─────────────────────────────────────────────
+    policy_alert_priority: Optional[int]     # Prioridad validada (0..3)
+    policy_volatility_score: Optional[float] # Volatilidad validada (>= 0)
+    policy_alpha: Optional[float]            # Alpha aplicado en la formula
+    policy_last_scraped_at: Optional[datetime.datetime]
+    policy_next_scrape_at: Optional[datetime.datetime]
 
     # ── Control de flujo ──────────────────────────────────────────────────────
-    error: Optional[str]   # Error fatal que aborta el pipeline
-    outcome: str           # "normalized" | "normalization_failed"
+    error: Optional[str]                     # Error fatal → error_end
+    outcome: str                             # "normalized" | "normalization_failed"

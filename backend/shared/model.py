@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 
 class ScrapingState(StrEnum):
-    """Ciclo de vida de un job de scraping a través de ambos servicios."""
+    """Ciclo de vida de un job de scraping a través de ambos servicios and more."""
     PENDING              = "pending"
     SCRAPED              = "scraped"
     FAILED               = "failed"
@@ -32,6 +32,22 @@ class SearchRequest(BaseModel):
     product_ref: str                        # identificador interno del producto
     sources: Optional[list[str]] = None     # None = auto-discovery via SearXNG
     priority: int = 5
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+# ── Solicitud de scraping documentado (URL específica) ────────────────────────
+class DocumentedScrapingRequest(BaseModel):
+    """
+    Solicitud de scraping para una URL de producto específica.
+    A diferencia de SearchRequest, este modelo recibe directamente la URL
+    del producto en lugar de un query de búsqueda.
+    """
+    search_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    product_url: str                        # URL específica del producto
+    product_ref: str                        # identificador interno del producto
+    priority: int = 5
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -44,6 +60,7 @@ class ScrapingJob(BaseModel):
     source_name: str                        # "amazon", "mercadolibre", "unknown", …
     product_ref: str
     priority: int = 5
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -73,6 +90,9 @@ class ScrapingMessage(BaseModel):
     source_name: str
     captured_at: datetime.datetime
     state: ScrapingState
+    query: Optional[str] = None
+    store_url: Optional[str] = None          # URL de la tienda proporcionada
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     raw_fields: dict[str, Any] = Field(default_factory=dict)
     error_message: Optional[str] = None
 
@@ -85,18 +105,23 @@ class SearchCompletedMessage(BaseModel):
     search_id: str
     product_ref: str
     total_jobs: int
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
     dispatched_at: datetime.datetime
 # ── Producto normalizado (salida del Normalizer Service) ──────────────────────
 class NormalizedProduct(BaseModel):
     """Representación canónica de un producto. Formato estándar de la plataforma."""
+    id: Optional[str] = None
     product_ref: str
     source_name: str
     canonical_name: str
     price: float
-    currency: str           # ISO 4217: "COP", "USD", "EUR"
+    currency: str                            # ISO 4217: "COP", "USD", "EUR"
     category: str
     availability: bool
     updated_at: datetime.datetime
+    scraped_at: Optional[datetime.datetime] = None   # Fecha de captura por el scraper
+    source_url: Optional[str] = None                 # URL original del producto scrapeado
+    confidence: Optional[str] = None                 # "high" | "medium" | "low"
     image_url: Optional[str] = None
     description: Optional[str] = None
     extra: dict[str, Any] = Field(default_factory=dict)
@@ -115,6 +140,22 @@ class NormalizedEventMessage(BaseModel):
     state: ScrapingState            # "normalized" | "normalization_failed"
     schema_version: str = "2.0"
     error_message: Optional[str] = None
+    search_id: Optional[str] = None
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
+    normalized_product: Optional[NormalizedProduct] = None
+
+
+# ── Cierre de búsqueda normalizada (Normalizer → downstream) ─────────────────
+class SearchNormalizedMessage(BaseModel):
+    """
+    Publicado por el Normalizer cuando todos los jobs de un SearchRequest
+    han sido procesados. Cierra el ciclo de vida de una búsqueda.
+    """
+    search_id: str
+    product_ref: str
+    total_normalized: int
+    is_update: Optional[bool] = None        # True=actualización, False/None=búsqueda nueva
+    completed_at: datetime.datetime
 
 
 # ── Historial de precios ──────────────────────────────────────────────────────

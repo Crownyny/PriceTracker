@@ -1,0 +1,220 @@
+import { Component, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { catchError, finalize, of } from 'rxjs';
+import { AuthService } from '../../core/services/auth.service';
+import { AuthResponse } from '../../shared/models/auth.model';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  template: `
+    <section class="login-shell">
+      <article class="login-card">
+        <h2>Iniciar sesion</h2>
+        <p>Accede con Firebase para usar tu dashboard de seguimiento de precios.</p>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+          <label>
+            Email
+            <input type="email" formControlName="email" placeholder="tu@email.com" />
+          </label>
+
+          <label>
+            Password
+            <input type="password" formControlName="password" placeholder="********" />
+          </label>
+
+          <button type="submit" [disabled]="form.invalid || loading">
+            {{ loading ? 'Entrando...' : 'Entrar' }}
+          </button>
+        </form>
+
+        <button type="button" class="google" (click)="onGoogle()" [disabled]="loading">
+          Continuar con Google
+        </button>
+
+        <p *ngIf="error" class="error">{{ error }}</p>
+
+        <p class="links">
+          <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
+        </p>
+
+        <p class="signup-link">
+          ¿No tienes cuenta? <a routerLink="/register">Regístrate</a>
+        </p>
+
+      </article>
+    </section>
+  `,
+  styles: [
+    `
+      .login-shell {
+        min-height: calc(100vh - 100px);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .login-card {
+        width: min(420px, 100%);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
+
+      h2 {
+        margin: 0 0 8px;
+      }
+
+      p {
+        margin: 0 0 16px;
+        color: #4b5563;
+      }
+
+      form {
+        display: grid;
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-weight: 600;
+        color: #1f2937;
+      }
+
+      input {
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      button {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #1d4ed8;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
+      .google {
+        margin-top: 12px;
+        width: 100%;
+        background: #fff;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+      }
+
+      .error {
+        color: #b91c1c;
+        margin-top: 12px;
+      }
+
+      .links {
+        margin-top: 10px;
+      }
+
+      .signup-link {
+        margin-top: 10px;
+      }
+
+      .back-link {
+        margin-top: 10px;
+      }
+    `
+  ]
+})
+export class LoginComponent {
+  loading = false;
+  error: string | null = null;
+  readonly form;
+
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService,
+    private route:  ActivatedRoute,
+    private router: Router,
+    private cdr:    ChangeDetectorRef
+  ) {
+    this.form = this.formBuilder.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(4)]]
+    });
+  }
+
+  onSubmit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    this.error = null;
+    this.loading = true;
+
+    this.authService.login(this.form.getRawValue() as { email: string; password: string }).pipe(
+      catchError((err) => {
+        this.error = 'No fue posible iniciar sesion con Firebase. Verifica email y contraseña.';
+        this.cdr.markForCheck();
+        return of(null);
+      }),
+      finalize(() => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe((response) => {
+      if (!response) {
+        return;
+      }
+
+      this.navigateToReturnUrl();
+    });
+  }
+
+  onGoogle(): void {
+    this.error = null;
+    this.loading = true;
+
+    this.authService.loginWithGoogle().pipe(
+      catchError((err) => {
+        const code = err?.code as string | undefined;
+        if (code === 'auth/popup-closed-by-user') {
+          this.error = 'Cerraste la ventana de Google antes de completar el inicio de sesión.';
+        } else {
+          this.error = 'No fue posible iniciar sesión con Google.';
+        }
+        this.cdr.markForCheck();
+        return of(null);
+      }),
+      finalize(() => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe((response) => {
+      if (!response) return;
+      this.navigateToReturnUrl();
+    });
+  }
+
+  private navigateToReturnUrl(): void {
+    // HE-4 HU-4 CA-2: redirect persistente post-login
+    // Soporta returnUrl de: AuthGuard, links de email de alertas, y navegación normal
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/dashboard';
+
+    // Limpiar returnUrl de posibles caracteres peligrosos
+    const safeUrl = returnUrl.startsWith('/') ? returnUrl : '/dashboard';
+    this.router.navigateByUrl(safeUrl);
+  }
+}

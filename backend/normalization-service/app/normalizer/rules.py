@@ -56,8 +56,9 @@ class DefaultNormalizer(BaseNormalizer):
             category=self._clean_text(raw_fields.get("raw_category") or "unknown"),
             availability=self._parse_availability(raw_fields.get("raw_availability") or ""),
             updated_at=now,
+            source_url=raw_fields.get("raw_url"),
             image_url=raw_fields.get("raw_image_url"),
-            description=self._clean_text(raw_fields.get("raw_description") or ""),
+            description=self._clean_text(raw_fields.get("raw_description") or "") or None,
         )
 
     # ── Helpers de normalización ──────────────────────────────────────────────

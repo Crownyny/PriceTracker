@@ -90,9 +90,12 @@ class BasePublisher:
         return self._channel
 
     async def _ensure_queue(self, channel: aio_pika.abc.AbstractChannel, queue_name: str) -> None:
-        """Declara la cola solo la primera vez por canal."""
+        """Verifica que la cola existe (passive=True) sin re-declararla.
+        Los consumers son los responsables de declararlas con sus argumentos
+        DLQ correctos. Un publisher que intente re-declarar una cola con
+        argumentos distintos recibirá PRECONDITION_FAILED de RabbitMQ."""
         if queue_name not in self._declared_queues:
-            await channel.declare_queue(queue_name, durable=True)
+            await channel.declare_queue(queue_name, durable=True, passive=True)
             self._declared_queues.add(queue_name)
 
     async def publish(self, queue_name: str, payload: dict[str, Any]) -> None:
@@ -180,9 +183,31 @@ class BaseConsumer(ABC):
             },
         )
         logger.info("Escuchando en '%s'...", self._queue_name)
-        async with queue.iterator() as queue_iter:
-            async for message in queue_iter:
+
+        concurrency = max(1, self._prefetch_count)
+        semaphore = asyncio.Semaphore(concurrency)
+        pending: set[asyncio.Task] = set()
+
+        async def _dispatch_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
+            try:
                 await self._dispatch(message)
+            finally:
+                semaphore.release()
+
+        try:
+            async with queue.iterator() as queue_iter:
+                async for message in queue_iter:
+                    await semaphore.acquire()
+                    task = asyncio.create_task(_dispatch_message(message))
+                    pending.add(task)
+                    task.add_done_callback(pending.discard)
+        except asyncio.CancelledError:
+            logger.info("start_consuming cancelado, esperando tareas pendientes...")
+            raise
+        finally:
+            if pending:
+                logger.info("Esperando %d tareas pendientes antes de cerrar...", len(pending))
+                await asyncio.gather(*pending, return_exceptions=True)
 
     async def _dispatch(self, message: aio_pika.abc.AbstractIncomingMessage) -> None:
         """Deserializa y delega a handle(); gestiona reintentos y DLQ."""

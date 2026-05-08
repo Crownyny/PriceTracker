@@ -29,8 +29,8 @@ class ProductValidator:
 
         if not product.canonical_name.strip():
             errors.append("canonical_name no puede estar vacío.")
-        if product.price < 0:
-            errors.append(f"price inválido: {product.price}")
+        if product.price <= 0:
+            errors.append(f"price inválido (debe ser > 0): {product.price}")
         if len(product.currency) != 3:
             errors.append(f"currency debe ser código ISO 4217 de 3 letras: '{product.currency}'")
         if not product.product_ref.strip():

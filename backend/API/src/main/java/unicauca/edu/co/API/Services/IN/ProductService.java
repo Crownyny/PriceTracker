@@ -1,0 +1,89 @@
+package unicauca.edu.co.API.Services.IN;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import unicauca.edu.co.API.Config.WebSocketConfig;
+import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
+import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
+import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
+import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
+import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
+import unicauca.edu.co.API.Services.Interfaces.IN.IProductService;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IScrapingService;
+import unicauca.edu.co.API.Services.OUT.MessengerService;
+
+
+@Service
+public class ProductService implements IProductService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ProductService.class); 
+    private final IScrapingService scrapingService;
+    private final ProductRepository productRepository;
+    private final NormalizedProductMapper mapperProduct;
+
+    public ProductService(
+        IScrapingService scrapingService,
+        ProductRepository productRepository,
+        WebSocketConfig webSocket, 
+        MessengerService messengerService,
+        NormalizedProductMapper mapperProduct,
+        ReferenceCheckService referenceCheckService
+    ) {
+        this.scrapingService = scrapingService;
+        this.productRepository = productRepository;
+        this.mapperProduct = mapperProduct;
+    }
+
+    @Override
+    @Async
+    public void searchProduct(QueryDTOIN query) {
+        logger.info("Enviando query a la cola de scraping: {}", query);
+        scrapingService.sendData(query);
+        logger.info("Query enviado exitosamente a la cola");
+    }
+
+    @Override
+    public List<NormalizedProductDTO> getProductByProductRef(QueryDTOIN query) {
+        LocalDateTime twentyMinutesAgo = LocalDateTime.now().minusMinutes(20);
+        List<NormalizedProductEntity> entities =
+            productRepository.findRecentProducts(
+                query.getProduct_ref(),
+                twentyMinutesAgo
+            );
+
+        return entities.stream()
+            .map(mapperProduct::toDTO)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public QueryDTOIN createProductRef(QueryDTOIN query){
+        String baseRef = query.getQuery().trim().replaceAll(" ", "").toLowerCase(Locale.ROOT);
+        String var_productRef = baseRef;
+        query.setProduct_ref(var_productRef);
+        query.setSearch_id(var_productRef);
+        return query;
+    }
+
+    @Override
+    public NormalizedProductDTO getProductById(String id) {
+        var entity = productRepository.findById(id);
+        if (entity.isEmpty()) {
+            return null;
+        }
+        return mapperProduct.toDTO(entity.get());
+    }
+
+    
+
+
+}

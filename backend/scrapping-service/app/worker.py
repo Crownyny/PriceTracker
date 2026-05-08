@@ -5,11 +5,14 @@ Flujo por mensaje:
     2. Selecciona las fuentes a usar: las indicadas en `sources` o TODAS las registradas.
     3. Construye un ScrapingJob por fuente con la URL correspondiente (build_url).
     4. Ejecuta el scraping en PARALELO sobre todas las fuentes (asyncio.gather).
-    5. Publica cada ScrapingMessage en JSON hacia la cola del Normalizer Service.
-    6. Publica SearchCompletedMessage como sentinel con el total de resultados enviados.
+    5. Cada fuente publica sus resultados en tiempo real en cuanto termina, sin
+       esperar a las demás (streaming: no se acumulan resultados en memoria).
+    6. Publica SearchCompletedMessage como sentinel con el total de mensajes enviados.
 """
 import asyncio
 import logging
+import re
+from difflib import SequenceMatcher
 from typing import Any
 
 from shared.messaging import (
@@ -18,14 +21,34 @@ from shared.messaging import (
     QUEUE_SCRAPING_JOBS,
     QUEUE_SCRAPING_JOBS_DLQ,
 )
-from shared.model import RawScrapingResult, ScrapingJob, SearchRequest
+from shared.model import ScrapingJob, SearchRequest, DocumentedScrapingRequest
 
 from .config import settings
 from .publisher import ScrapingResultPublisher
 from .scraper.playwright_scraper import PlaywrightScraper
 from .sources import registry
+from .sources.detector import detector
 
 logger = logging.getLogger(__name__)
+
+
+def _normalize_text(text: str | None) -> str:
+    value = (text or "").lower().strip()
+    value = re.sub(r"[^a-z0-9áéíóúñü\s]+", " ", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _relevance_score(query: str, title: str | None) -> float:
+    normalized_query = _normalize_text(query)
+    normalized_title = _normalize_text(title)
+    if not normalized_query or not normalized_title:
+        return 0.0
+
+    query_tokens = set(normalized_query.split())
+    title_tokens = set(normalized_title.split())
+    overlap = len(query_tokens & title_tokens) / max(1, len(query_tokens))
+    sequence = SequenceMatcher(None, normalized_query, normalized_title).ratio()
+    return round((0.7 * overlap) + (0.3 * sequence), 3)
 
 
 class ScraperWorker(BaseConsumer):
@@ -39,6 +62,7 @@ class ScraperWorker(BaseConsumer):
             connection=connection,
             queue_name=QUEUE_SCRAPING_JOBS,
             dlq_name=QUEUE_SCRAPING_JOBS_DLQ,
+            prefetch_count=settings.worker_prefetch_count,
         )
         self._scraper = PlaywrightScraper(
             registry=registry,
@@ -57,23 +81,106 @@ class ScraperWorker(BaseConsumer):
         logger.info("PlaywrightScraper detenido.")
 
     async def handle(self, payload: dict[str, Any]) -> None:
-        await self._handle_search(payload)
+        # Detectar tipo de mensaje basado en los campos presentes
+        if "product_url" in payload:
+            logger.info("[recv] DocumentedScrapingRequest recibido: search_id=%s product_url='%s'",
+                        payload.get("search_id"), payload.get("product_url"))
+            await self._handle_documented_scraping(payload)
+        elif "query" in payload:
+            logger.info("[recv] SearchRequest recibido: search_id=%s query='%s' sources=%s",
+                        payload.get("search_id"), payload.get("query"), payload.get("sources"))
+            await self._handle_search(payload)
+        else:
+            logger.error("[recv] Mensaje no reconocido: %s", payload)
+
+    async def _scrape_and_publish(self, job: ScrapingJob, request: SearchRequest) -> int:
+        """
+        Scraping de una fuente + publicación inmediata de cada producto en cuanto
+        se extrae del HTML (no espera a tener todos los productos de la fuente).
+        Retorna cuántos productos reales se publicaron.
+        """
+        products_published = 0
+        seen_urls = set()  # Para evitar duplicados dentro de la misma fuente
+        try:
+            async for result in self._scraper.scrape(job):
+                if result.status == "failed":
+                    logger.info(
+                        "[%s] Fuente '%s': resultado FAILED omitido (%s)",
+                        request.search_id,
+                        job.source_name,
+                        result.error_message or "sin detalle",
+                    )
+                    continue
+
+                raw_price = result.raw_fields.get("raw_price") if result.raw_fields else None
+                if raw_price in (None, ""):
+                    logger.info(
+                        "[%s] Fuente '%s': producto omitido por raw_price nulo/vacío",
+                        request.search_id,
+                        job.source_name,
+                    )
+                    continue
+
+                # Filtrar duplicados por URL dentro de la misma fuente
+                raw_url = result.raw_fields.get("raw_url") if result.raw_fields else None
+                if raw_url and raw_url in seen_urls:
+                    logger.info(
+                        "[%s] Fuente '%s': producto duplicado omitido (URL ya procesada: %s)",
+                        request.search_id,
+                        job.source_name,
+                        raw_url,
+                    )
+                    continue
+                if raw_url:
+                    seen_urls.add(raw_url)
+
+                if settings.enable_relevance_guard:
+                    title = result.raw_fields.get("raw_title") if result.raw_fields else None
+                    score = _relevance_score(request.query, title)
+                    if score < settings.relevance_min_score:
+                        logger.info(
+                            "[%s] Fuente '%s': producto omitido por baja relevancia (score=%.3f < %.3f, title=%r)",
+                            request.search_id,
+                            job.source_name,
+                            score,
+                            settings.relevance_min_score,
+                            title,
+                        )
+                        continue
+
+                await self._publisher.publish_result(result, query=request.query, is_update=request.is_update)
+                products_published += 1
+        except Exception as exc:
+            logger.error("[%s] Excepción no capturada en fuente '%s': %s",
+                         request.search_id, job.source_name, exc)
+            return 0
+
+        if products_published == 0:
+            logger.info("[%s] Fuente '%s': 0 productos (sin mensaje en cola)",
+                        request.search_id, job.source_name)
+            return 0
+
+        logger.info("[%s] Fuente '%s': %d producto(s) publicado(s) en tiempo real",
+                    request.search_id, job.source_name, products_published)
+        return products_published
 
     async def _handle_search(self, payload: dict[str, Any]) -> None:
         """
-        Recibe un SearchRequest, lanza el scraping en paralelo en todas las fuentes
-        y publica cada resultado como ScrapingMessage (JSON) hacia el Normalizer.
+        Recibe un SearchRequest, lanza el scraping en paralelo en todas las fuentes.
+        Cada fuente publica sus resultados en cuanto termina (streaming real).
         """
         request = SearchRequest.model_validate(payload)
 
-        # Seleccionar fuentes: explícitas o todas las registradas
-        sources = registry.filter(request.sources) if request.sources else registry.all()
+        if request.sources:
+            sources = registry.filter(request.sources)
+        else:
+            # Usar fuentes por defecto (electrónica) si no se especifican
+            default_source_names = [name.strip() for name in settings.default_sources.split(",") if name.strip()]
+            sources = registry.filter(default_source_names)
 
         if not sources:
-            logger.warning(
-                "[%s] Sin fuentes registradas para la búsqueda '%s'",
-                request.search_id, request.query,
-            )
+            logger.warning("[%s] Sin fuentes registradas para la búsqueda '%s'",
+                           request.search_id, request.query)
             await self._publisher.publish_search_completed(
                 search_id=request.search_id,
                 product_ref=request.product_ref,
@@ -81,7 +188,6 @@ class ScraperWorker(BaseConsumer):
             )
             return
 
-        # Construir un ScrapingJob por fuente
         jobs = [
             ScrapingJob(
                 search_id=request.search_id,
@@ -89,50 +195,153 @@ class ScraperWorker(BaseConsumer):
                 source_name=source.source_name,
                 product_ref=request.product_ref,
                 priority=request.priority,
+                is_update=request.is_update,
                 metadata={**request.metadata, "query": request.query},
             )
             for source in sources
         ]
 
         logger.info(
-            "[%s] Iniciando scraping paralelo de '%s' en %d fuentes: %s",
+            "[%s] Iniciando scraping paralelo (streaming) de '%s' en %d fuentes: %s",
             request.search_id, request.query, len(jobs),
             ", ".join(j.source_name for j in jobs),
         )
 
-        # Scraping paralelo — return_exceptions=True evita que un fallo aislado
-        # cancele los demás; PlaywrightScraper ya maneja excepciones internamente.
-        # Cada elemento es list[RawScrapingResult] (uno por producto encontrado).
-        raw_results: list[list[RawScrapingResult] | BaseException] = await asyncio.gather(
-            *[self._scraper.scrape(job) for job in jobs],
-            return_exceptions=True,
+        # Cada _scrape_and_publish corre en paralelo y publica en cuanto termina.
+        counts: list[int] = await asyncio.gather(
+            *[self._scrape_and_publish(job, request) for job in jobs],
         )
 
-        # Publicar un ScrapingMessage por producto (contrato de cola sin cambios)
-        published = 0
-        for job, results in zip(jobs, raw_results):
-            if isinstance(results, BaseException):
-                logger.error(
-                    "[%s] Excepción no capturada en fuente '%s': %s",
-                    request.search_id, job.source_name, results,
-                )
-            else:
-                for result in results:
-                    await self._publisher.publish_result(result)
-                    published += 1
-                logger.info(
-                    "[%s] Fuente '%s': %d producto(s) encontrado(s)",
-                    request.search_id, job.source_name, len(results),
-                )
+        products_published = sum(counts)
+        total_messages = products_published
 
-        # Sentinel: informa al Normalizer cuántos ScrapingMessages esperar
+        # Sentinel: el Normalizer sabe exactamente cuántos mensajes esperar.
         await self._publisher.publish_search_completed(
             search_id=request.search_id,
             product_ref=request.product_ref,
-            total_jobs=published,
+            total_jobs=total_messages,
+            is_update=request.is_update,
         )
 
         logger.info(
-            "[%s] Completado: %d/%d resultados publicados para '%s'",
-            request.search_id, published, len(jobs), request.query,
+            "[%s] Completado: %d producto(s) publicados, total=%d mensajes para '%s'",
+            request.search_id, products_published, total_messages, request.query,
         )
+
+    async def _handle_documented_scraping(self, payload: dict[str, Any]) -> None:
+        """
+        Recibe un DocumentedScrapingRequest, detecta la tienda y ejecuta scraping
+        específico para esa URL.
+        """
+        request = DocumentedScrapingRequest.model_validate(payload)
+        
+        # Detectar la tienda usando el detector de dominios
+        source_name = detector.detect(request.product_url)
+        
+        logger.info(
+            "[%s] Detected store '%s' for URL: %s",
+            request.search_id, source_name, request.product_url
+        )
+        
+        # Obtener el source específico para la tienda detectada
+        source = registry.get(source_name)
+        
+        if not source:
+            logger.warning(
+                "[%s] No source registered for detected store '%s'. Using generic scraping.",
+                request.search_id, source_name
+            )
+            # Publicar mensaje de fallo ya que no hay source específico
+            await self._publisher.publish_result(
+                result=None,
+                query=None,
+                job_id=request.search_id,
+                search_id=request.search_id,
+                product_ref=request.product_ref,
+                source_name=source_name,
+                state="failed",
+                error_message=f"No scraper available for store: {source_name}",
+                store_url=request.product_url,
+                is_update=request.is_update
+            )
+            return
+        
+        # Crear ScrapingJob para la URL específica
+        job = ScrapingJob(
+            search_id=request.search_id,
+            source_url=request.product_url,
+            source_name=source_name,
+            product_ref=request.product_ref,
+            priority=request.priority,
+            is_update=request.is_update,
+            metadata={**request.metadata, "product_url": request.product_url},
+        )
+        
+        logger.info(
+            "[%s] Iniciando scraping específico para '%s' en tienda '%s'",
+            request.search_id, request.product_url, source_name
+        )
+        
+        # Ejecutar scraping para esta URL específica
+        products_published = await self._scrape_and_publish_documented(job, request)
+        
+        # Publicar mensaje de completado (sentinel)
+        await self._publisher.publish_search_completed(
+            search_id=request.search_id,
+            product_ref=request.product_ref,
+            total_jobs=products_published,
+            is_update=request.is_update,
+        )
+        
+        logger.info(
+            "[%s] Completado scraping documentado: %d producto(s) para URL %s",
+            request.search_id, products_published, request.product_url
+        )
+
+    async def _scrape_and_publish_documented(self, job: ScrapingJob, request: DocumentedScrapingRequest) -> int:
+        """
+        Scraping de una URL específica + publicación con store_url.
+        Retorna cuántos productos reales se publicaron.
+        """
+        products_published = 0
+        try:
+            async for result in self._scraper.scrape(job):
+                if result.status == "failed":
+                    logger.info(
+                        "[%s] Fuente '%s': resultado FAILED omitido (%s)",
+                        request.search_id,
+                        job.source_name,
+                        result.error_message or "sin detalle",
+                    )
+                    continue
+
+                raw_price = result.raw_fields.get("raw_price") if result.raw_fields else None
+                if raw_price in (None, ""):
+                    logger.info(
+                        "[%s] Fuente '%s': producto omitido por raw_price nulo/vacío",
+                        request.search_id,
+                        job.source_name,
+                    )
+                    continue
+
+                # Publicar resultado con store_url incluido
+                await self._publisher.publish_result(
+                    result=result,
+                    query=None,  # No hay query en scraping documentado
+                    store_url=request.product_url,  # Pasar la URL de la tienda
+                    is_update=request.is_update
+                )
+                products_published += 1
+        except Exception as exc:
+            logger.error("[%s] Excepción no capturada en fuente '%s': %s",
+                         request.search_id, job.source_name, exc)
+            return 0
+
+        if products_published == 0:
+            logger.info("[%s] Fuente '%s': 0 productos (sin mensaje en cola)",
+                        request.search_id, job.source_name)
+            return 0
+
+        logger.info("[%s] Fuente '%s': %d producto(s) publicado(s) en tiempo real",
+                    request.search_id, job.source_name, products_published)
+        return products_published

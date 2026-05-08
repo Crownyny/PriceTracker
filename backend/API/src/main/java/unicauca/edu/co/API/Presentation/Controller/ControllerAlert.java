@@ -1,0 +1,151 @@
+package unicauca.edu.co.API.Presentation.Controller;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.google.firebase.database.annotations.NotNull;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.AlertStatusDTO;
+import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
+
+/**
+ * Controlador REST para la gestión de alertas de precios.
+ * Proporciona endpoints para crear, consultar, actualizar y eliminar alertas.
+ */
+@RestController
+@Validated
+@RequestMapping("/api")
+public class ControllerAlert {
+
+    private final IAlertService alertService;
+
+    public ControllerAlert(IAlertService alertService) {
+        this.alertService = alertService;
+    }
+
+
+
+    /**
+     * Crea una nueva alerta de precio.
+     * 
+     * @param alertDTO Datos de la alerta a crear
+     * @return ResponseEntity con el AlertDTO creado y estado 201 (Created)
+     */
+    @PostMapping("/{productId}/alert")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AlertDTO> createAlert( 
+        @PathVariable  @NotBlank String productId,
+        @Valid @RequestBody AlertRequestDTO frequency) {
+        System.out.println(SecurityContextHolder.getContext().getAuthentication());    
+        System.out.println(frequency);
+        AlertDTO createdAlert = alertService.createAlert(frequency.getFrequency(), productId);
+        return new ResponseEntity<>(createdAlert, HttpStatus.CREATED);
+    }
+
+    /**
+     * Obtiene una alerta por el ID del producto.
+     * Valida que la alerta pertenezca al usuario autenticado.
+     * 
+     * @param productId ID del producto asociado a la alerta
+     * @return ResponseEntity con el AlertDTO si existe, estado 200 (OK) o 404 (Not Found)
+     */
+    @GetMapping("/{alertId}/alert")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AlertDTO> getAlertById(@PathVariable @NotNull UUID alertId) {
+        AlertDTO alert = alertService.getAlertById(alertId);
+
+        if (alert == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(alert, HttpStatus.OK);
+    }
+
+    /**
+     * Obtiene todas las alertas activas del usuario autenticado.
+     * 
+     * @return ResponseEntity con una lista de AlertDTO activos del usuario
+     */
+    @GetMapping("/alert")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AlertDTO>> getAllAlerts() {
+        List<AlertDTO> alerts = alertService.getAllAlerts();
+        return new ResponseEntity<>(alerts, HttpStatus.OK);
+    }
+
+    /**
+     * Actualiza una alerta existente.
+     * Valida que la alerta pertenezca al usuario autenticado.
+     * 
+     * @param alertId ID de la alerta a actualizar
+     * @param alertDTO Datos actualizados de la alerta
+     * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
+     */
+    @PutMapping("/{alertId}/alert")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AlertDTO> updateAlert(
+            @PathVariable @NotNull UUID alertId,
+            @RequestBody @Valid  AlertRequestDTO frequency) {
+        AlertDTO updatedAlert = alertService.updateAlert(alertId, frequency);
+        if (updatedAlert == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(updatedAlert, HttpStatus.OK);
+    }
+
+    /**
+     * Actualiza el estado (activa/inactiva) de una alerta.
+     * Valida que la alerta pertenezca al usuario autenticado.
+     * 
+     * @param alertId ID de la alerta a actualizar
+     * @param isActive Nuevo estado de la alerta
+     * @return ResponseEntity con el AlertDTO actualizado, estado 200 (OK) o 404 (Not Found)
+     */
+    @PatchMapping("/{alertId}/alert")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AlertDTO> updateAlertStatus(
+            @PathVariable @NotNull UUID alertId,
+            @RequestBody @Valid AlertStatusDTO isActive) {
+        AlertDTO updatedAlert = alertService.updateAlertStatus(alertId, isActive.getIsActive());
+        if (updatedAlert == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(updatedAlert, HttpStatus.OK);
+    }
+
+    /**
+     * Elimina una alerta (soft delete).
+     * Valida que la alerta pertenezca al usuario autenticado.
+     * 
+     * @param productId ID del producto asociado a la alerta
+     * @return ResponseEntity con el AlertDTO eliminado, estado 200 (OK) o 404 (Not Found)
+     */
+    @DeleteMapping("/{alertId}/alert")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AlertDTO> deleteAlert(@PathVariable @NotNull UUID alertId) {
+        AlertDTO deletedAlert = alertService.deleteAlert(alertId);
+        if (deletedAlert == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(deletedAlert, HttpStatus.OK);
+    }
+}

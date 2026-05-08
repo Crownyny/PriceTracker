@@ -1,0 +1,55 @@
+(function initConstants(global) {
+  const PriceTracker = (global.PriceTracker = global.PriceTracker || {});
+
+  PriceTracker.constants = {
+    LOG_PREFIX: '[PRICE TRACKER]',
+    STORAGE_KEYS: {
+      EXTENSION_ACTIVE: 'extensionActive',
+    },
+    MESSAGE_TYPES: {
+      TOGGLE_EXTENSION: 'TOGGLE_EXTENSION',
+      EXTENSION_STATE_CHANGED: 'EXTENSION_STATE_CHANGED',
+      OPEN_DASHBOARD: 'OPEN_DASHBOARD',
+      SHOW_PRICE_OVERLAY: 'SHOW_PRICE_OVERLAY',
+    },
+    GOOGLE_SEARCH: {
+      // Tipos de búsqueda no permitidos (solo "Todo"/All está permitido)
+      RESTRICTED_TYPES: ['isch', 'vid', 'nws', 'lcl', 'shop', 'bks', 'flm'], // Imágenes, Videos, Noticias, Locales, Compras, Libros, Películas
+    },
+    REFRESH: {
+      CACHE_TTL_MS: 60 * 1000,
+      POLL_INTERVAL_MS: 45 * 1000,
+    },
+    SEARCH: {
+      TIMEOUT_MS: 90 * 1000,
+      DEFAULT_SOURCES: 'amazon,mercadolibre,walmart',
+    },
+    UI: {
+      INITIAL_STORES_DISPLAY: 8,
+      STORES_PAGE_STEP: 8,
+      MAX_STORES_CANDIDATES: 240,
+      RENDER_DEBOUNCE_MS: 250,
+    },
+    API: {
+      USE_MOCK: false,
+      BASE_URL: 'http://localhost:8080',
+      REST_SEARCH_PATH: '/api/products/search',
+      REST_INTENT_PATH: '/api/intent/intent',
+      RELAY_ALLOWED_METHODS: ['POST'],
+      RELAY_ALLOWED_ENDPOINTS: ['/api/intent/intent', '/api/products/search'],
+      REST_FALLBACK_ENABLED: true,
+    },
+    WS: {
+      BASE_URL: 'ws://localhost:8080',
+      ENDPOINT: '/ws',
+      SEARCH_DESTINATION: '/app/search',
+      USER_PRODUCTS_QUEUE: '/user/queue/products',
+      USER_ERRORS_QUEUE: '/user/queue/errors',
+      USER_STATUS_QUEUE: '/user/queue/status',
+      RECONNECT_BASE_MS: 1000,
+      RECONNECT_MAX_MS: 30000,
+      AUTH_TOKEN: '',
+      DEBUG: true,
+    },
+  };
+})(window);

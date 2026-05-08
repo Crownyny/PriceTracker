@@ -1,0 +1,189 @@
+<div class="pd-shell">
+
+  <!-- Back -->
+  <div class="pd-topbar">
+    <a routerLink="/search" class="pd-back">← Volver a búsqueda</a>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="pd-loading">
+    <span class="pd-spinner"></span>
+    <p>Cargando producto…</p>
+  </div>
+
+  <!-- Not found -->
+  <div *ngIf="!loading && !product && !error" class="pd-empty">
+    <span class="pd-empty-icon">😕</span>
+    <h3>Producto no encontrado</h3>
+    <p>No pudimos cargar el producto solicitado</p>
+    <a routerLink="/search" class="pd-btn-primary">Volver a búsqueda</a>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="pd-error-banner">
+    <span>⚠️</span>
+    <div>
+      <strong>Error al cargar</strong>
+      <p>{{ error }}</p>
+    </div>
+  </div>
+
+  <!-- ── CONTENT ─────────────────────────────────────────────────────────── -->
+  <div *ngIf="!loading && product" class="pd-content">
+
+    <!-- LEFT: image + tags -->
+    <div class="pd-left">
+
+      <div class="pd-image-card">
+        <img *ngIf="product.image" [src]="product.image" [alt]="product.name" class="pd-image" />
+        <div *ngIf="!product.image" class="pd-image-placeholder">📦</div>
+      </div>
+
+      <div class="pd-tags">
+        <span *ngIf="product.category" class="pd-tag">{{ product.category }}</span>
+        <span *ngIf="product.ean" class="pd-tag pd-tag-muted">EAN: {{ product.ean }}</span>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: hero + info + chart (solo si tiene alerta) -->
+    <div class="pd-right">
+
+      <!-- Hero card -->
+      <div class="pd-hero-card">
+        <p class="pd-hero-label">Mejor Precio</p>
+
+        <div class="pd-hero-price-row">
+          <span class="pd-hero-price">${{ bestPrice() | number:'1.0-0' }}</span>
+          <span *ngIf="savingsPercent() > 0" class="pd-hero-badge">
+            ↘ -{{ savingsPercent() | number:'1.0-1' }}%
+          </span>
+        </div>
+
+        <p class="pd-hero-store">en {{ bestSource() }}</p>
+        <p *ngIf="savings() > 0" class="pd-hero-savings">
+          Ahorras ${{ savings() | number:'1.0-0' }} vs. el precio más alto
+        </p>
+
+        <div class="pd-hero-actions">
+          <a *ngIf="bestUrl()" [href]="bestUrl()" target="_blank" rel="noopener"
+             class="pd-btn-primary pd-btn-store">
+            ↗ Ir a la tienda
+          </a>
+          <button class="pd-btn-icon-save"
+                  [class.pd-btn-saved]="isSaved"
+                  [disabled]="savingProduct"
+                  (click)="saveProduct()"
+                  [title]="isSaved ? 'Quitar de guardados' : 'Guardar producto'">
+            🔖
+          </button>
+        </div>
+
+        <button class="pd-btn-alert" [disabled]="alertLoading" (click)="createAlert()">
+          🔔 {{ hasAlert ? 'Gestionar Alerta' : (alertLoading ? 'Creando…' : 'Crear Alerta de Precio') }}
+        </button>
+
+        <!-- Banner upgrade (HE-4 HU-1 CA-2) -->
+        <div *ngIf="alertError === 'UPGRADE_REQUIRED'" class="pd-upgrade-banner">
+          <div class="pd-upgrade-left">
+            <span>⭐</span>
+            <div>
+              <strong>Límite de alertas alcanzado</strong>
+              <p>El plan gratuito permite hasta 3 alertas activas.</p>
+            </div>
+          </div>
+          <a routerLink="/account" class="pd-upgrade-cta">Ver Premium →</a>
+        </div>
+        <div *ngIf="alertError && alertError !== 'UPGRADE_REQUIRED'" class="pd-feedback pd-feedback-error">{{ alertError }}</div>
+        <div *ngIf="alertCreated" class="pd-feedback pd-feedback-ok">✓ Alerta creada correctamente.</div>
+        <div *ngIf="hasAlert && !alertCreated && !alertError" class="pd-feedback pd-feedback-info">
+          Alerta activa — haz clic en "Gestionar Alerta" para editarla.
+        </div>
+      </div>
+
+      <!-- Product name / description -->
+      <div class="pd-info-card">
+        <h1 class="pd-product-name">{{ product.name }}</h1>
+        <p *ngIf="product.description" class="pd-product-desc">{{ product.description }}</p>
+      </div>
+
+      <!-- Price History Chart — solo si el producto tiene alerta activa -->
+      <div class="pd-chart-card" *ngIf="hasAlert">
+        <div class="pd-chart-header">
+          <div>
+            <h3 class="pd-section-title">Historial de Precios</h3>
+            <p class="pd-chart-subtitle">{{ chartRangeLabel() }}</p>
+          </div>
+          <div class="pd-chart-controls">
+            <button *ngFor="let r of ranges"
+                    class="pd-range-btn"
+                    [class.pd-range-active]="selectedRange === r.value"
+                    (click)="setRange(r.value)">
+              {{ r.label }}
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="historyLoading" class="pd-chart-loading">
+          <span class="pd-spinner pd-spinner-sm"></span> Cargando historial…
+        </div>
+
+        <div *ngIf="!historyLoading && chartSeries.length === 0" class="pd-chart-empty">
+          Sin datos para el rango seleccionado.
+        </div>
+
+        <div *ngIf="!historyLoading && chartSeries.length > 0" class="pd-chart-wrap">
+          <svg [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+               class="pd-chart-svg" preserveAspectRatio="xMidYMid meet">
+
+            <defs>
+              <linearGradient id="pdAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#4f46e5" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+
+            <line *ngFor="let y of gridYs"
+                  [attr.x1]="paddingLeft" [attr.y1]="y"
+                  [attr.x2]="chartW - paddingRight" [attr.y2]="y"
+                  class="pd-grid-line" />
+
+            <text *ngFor="let item of gridLabels"
+                  [attr.x]="paddingLeft - 8" [attr.y]="item.y + 4"
+                  class="pd-axis-label pd-axis-label-y">
+              ${{ item.label }}
+            </text>
+
+            <text *ngFor="let item of xLabels"
+                  [attr.x]="item.x" [attr.y]="chartH - 6"
+                  class="pd-axis-label pd-axis-label-x">
+              {{ item.label }}
+            </text>
+
+            <g *ngFor="let series of chartSeries; let si = index">
+              <polyline
+                [attr.points]="series.points"
+                [style.stroke]="seriesColor(si)"
+                fill="none" stroke-width="2"
+                stroke-linejoin="round" stroke-linecap="round"
+                class="pd-line" />
+              <circle *ngFor="let dot of series.dots"
+                      [attr.cx]="dot.x" [attr.cy]="dot.y" r="3.5"
+                      [style.fill]="seriesColor(si)"
+                      class="pd-dot" />
+            </g>
+          </svg>
+
+          <div class="pd-legend">
+            <span *ngFor="let series of chartSeries; let si = index" class="pd-legend-item">
+              <span class="pd-legend-dot" [style.background]="seriesColor(si)"></span>
+              {{ series.sourceName }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

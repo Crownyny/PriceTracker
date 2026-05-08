@@ -16,5 +16,24 @@ class Settings(BaseSettings):
     user_agent: str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     http_timeout: float = 30.0
 
+    # Proxy residencial rotativo (opcional).
+    # Formato: http://usuario:password@host:puerto
+    # Ejemplo Smartproxy: http://user:pass@gate.smartproxy.com:10000
+    # Dejar vacío para no usar proxy.
+    residential_proxy_url: str = ""
+
+    # Concurrencia: cuantos SearchRequest puede atender este worker en paralelo.
+    # Ajusta según capacidad de Playwright + CPU/memoria.
+    worker_prefetch_count: int = 5
+
+    # Fuentes por defecto a usar cuando no se especifican en la request.
+    # Lista de nombres de fuentes separadas por coma.
+    # Por defecto: solo fuentes de electrónica.
+    default_sources: str = "aliexpress,alkomprar,alkosto,amazon,computienda,enjoyvideogames,exito,falabella,homecenter,ishop,jumbo,lenovo,mercadolibre,olimpica,tecnoplaza"
+
+    # Relevancia de resultados (fácil de desactivar por env var)
+    enable_relevance_guard: bool = True
+    relevance_min_score: float = 0.35
+
 
 settings = Settings()

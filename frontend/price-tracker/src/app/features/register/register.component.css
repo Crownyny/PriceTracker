@@ -1,0 +1,150 @@
+/* ── Shell ─────────────────────────────────────────────────────────────────── */
+.rg-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px 16px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.rg-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+.rg-header { text-align: center; margin-bottom: 28px; }
+.rg-logo {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 1.0625rem; font-weight: 700;
+  color: #374151; text-decoration: none; margin-bottom: 20px;
+}
+.rg-logo strong { color: #667eea; }
+.rg-header h1 { font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0 0 6px; }
+.rg-header p  { font-size: .9rem; color: #6b7280; margin: 0; }
+
+/* ── Form ──────────────────────────────────────────────────────────────────── */
+.rg-form  { display: flex; flex-direction: column; gap: 18px; }
+.rg-field { display: flex; flex-direction: column; gap: 6px; }
+
+.rg-field label {
+  font-size: .875rem; font-weight: 600; color: #374151;
+}
+.rg-optional { font-weight: 400; color: #9ca3af; font-size: .8rem; }
+
+.rg-input-wrap { position: relative; }
+
+.rg-input {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid #e5e7eb; border-radius: 10px;
+  font-size: .9375rem; color: #111827;
+  outline: none; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s;
+  background: #fff;
+}
+.rg-input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.12); }
+.rg-input-icon  { padding-right: 44px; }
+.rg-input-error { border-color: #ef4444 !important; }
+.rg-input-ok    { border-color: #22c55e !important; }
+
+.rg-eye {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; font-size: 1rem; padding: 2px;
+  line-height: 1;
+}
+
+.rg-field-error { font-size: .8rem; color: #ef4444; font-weight: 500; }
+.rg-field-ok    { font-size: .8rem; color: #16a34a; font-weight: 500; }
+
+/* ── Password strength bar ─────────────────────────────────────────────────── */
+.rg-strength {
+  display: flex; align-items: center; gap: 8px; margin-top: 6px;
+}
+.rg-strength-bars { display: flex; gap: 4px; flex: 1; }
+.rg-strength-bar {
+  flex: 1; height: 4px; border-radius: 99px;
+  background: #e5e7eb; transition: background .2s;
+}
+.rg-bar-active { /* color set inline */ }
+.rg-strength-label { font-size: .75rem; font-weight: 700; min-width: 64px; text-align: right; }
+
+/* ── Requirements list ─────────────────────────────────────────────────────── */
+.rg-requirements {
+  list-style: none; padding: 10px 12px; margin: 4px 0 0;
+  background: #f9fafb; border-radius: 8px; border: 1px solid #f3f4f6;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.rg-requirements li {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .8125rem; color: #9ca3af;
+  transition: color .2s;
+}
+.rg-req-ok  { color: #16a34a !important; }
+.rg-req-bad { color: #9ca3af; }
+.rg-req-icon {
+  width: 16px; text-align: center; font-size: .875rem;
+  font-weight: 700;
+}
+.rg-req-ok  .rg-req-icon { color: #16a34a; }
+.rg-req-bad .rg-req-icon { color: #d1d5db; }
+
+/* ── Error box ─────────────────────────────────────────────────────────────── */
+.rg-error-box {
+  background: #fef2f2; border: 1px solid #fecaca;
+  border-radius: 8px; padding: 12px 14px;
+  font-size: .875rem; color: #b91c1c; font-weight: 500;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.rg-btn-submit {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff; border: none; border-radius: 10px;
+  font-size: 1rem; font-weight: 700; cursor: pointer;
+  margin-top: 4px; transition: opacity .15s, transform .1s;
+}
+.rg-btn-submit:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+.rg-btn-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+.rg-spinner-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.rg-spin {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Divider ───────────────────────────────────────────────────────────────── */
+.rg-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0; color: #9ca3af; font-size: .8125rem;
+}
+.rg-divider::before, .rg-divider::after {
+  content: ''; flex: 1; height: 1px; background: #e5e7eb;
+}
+
+/* ── Google button ─────────────────────────────────────────────────────────── */
+.rg-btn-google {
+  width: 100%; padding: 11px 14px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  border: 1.5px solid #e5e7eb; border-radius: 10px;
+  background: #fff; color: #374151;
+  font-size: .9375rem; font-weight: 600; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.rg-btn-google:hover:not(:disabled) { border-color: #667eea; background: #f5f3ff; }
+.rg-btn-google:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── Login link ────────────────────────────────────────────────────────────── */
+.rg-login-link {
+  text-align: center; margin: 20px 0 0;
+  font-size: .875rem; color: #6b7280;
+}
+.rg-login-link a { color: #667eea; font-weight: 700; text-decoration: none; }
+.rg-login-link a:hover { text-decoration: underline; }

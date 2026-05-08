@@ -1,0 +1,223 @@
+<div class="ph-shell">
+
+  <!-- Header -->
+  <div class="ph-header">
+    <h2>Historial de Precios</h2>
+    <p>Analiza tendencias de los productos con alertas activadas</p>
+  </div>
+
+  <!-- Loading inicial -->
+  <div *ngIf="loading && !priceData" class="ph-state">
+    <span class="ph-spin"></span><span>Cargando datos…</span>
+  </div>
+
+  <!-- Sin alertas -->
+  <div *ngIf="!loading && productsWithAlerts.length === 0" class="ph-empty">
+    <span class="ph-empty-icon">📈</span>
+    <h3>Sin alertas activas</h3>
+    <p>Crea una alerta para comenzar a ver el historial de precios de tus productos.</p>
+    <button class="ph-btn-green" (click)="goToAlerts()">Crear primera alerta</button>
+  </div>
+
+  <!-- Contenido principal -->
+  <div *ngIf="productsWithAlerts.length > 0" class="ph-content">
+
+    <!-- ── Selector + rangos ── -->
+    <div class="ph-controls">
+      <div class="ph-control-group">
+        <label>Producto</label>
+        <select class="ph-select"
+                [(ngModel)]="selectedProductId"
+                (change)="onProductChange()"
+                [disabled]="loading">
+          <option value="">-- Selecciona --</option>
+          <option *ngFor="let p of productsWithAlerts" [value]="p.id">{{ p.productName }}</option>
+        </select>
+      </div>
+
+      <div class="ph-range-group">
+        <button *ngFor="let r of ranges"
+                class="ph-range-btn"
+                [class.ph-range-active]="selectedRange === r.value"
+                [class.ph-range-locked]="r.premiumOnly && !isPremium"
+                (click)="onRangeClick(r)">
+          <span *ngIf="r.premiumOnly && !isPremium" class="ph-range-lock">🔒</span>
+          {{ r.label }}
+        </button>
+      </div>
+
+      <!-- Banner upgrade Premium (HE-3 HU-2 CA-2) -->
+      <div *ngIf="showUpgradeBanner" class="ph-upgrade-banner">
+        <div class="ph-upgrade-banner-content">
+          <span class="ph-upgrade-icon">⭐</span>
+          <div>
+            <strong>Historial limitado a 7 días</strong>
+            <p>Con Premium accedes a 3 meses de historial y todo el período.</p>
+          </div>
+        </div>
+        <a routerLink="/account" class="ph-upgrade-btn">Mejorar a Premium →</a>
+      </div>
+
+      <button class="ph-btn-green" (click)="goToAlerts()">+ Crear Alerta</button>
+    </div>
+
+    <!-- ── Tarjeta de producto (arriba de la gráfica) ── -->
+    <div *ngIf="selectedItem?.product" class="ph-product-card">
+
+      <!-- Imagen -->
+      <div class="ph-product-img-wrap">
+        <img *ngIf="selectedItem!.product!.image"
+             [src]="selectedItem!.product!.image"
+             [alt]="selectedItem!.productName"
+             class="ph-product-img" />
+        <div *ngIf="!selectedItem!.product!.image" class="ph-product-img-ph">📦</div>
+      </div>
+
+      <!-- Info central -->
+      <div class="ph-product-body">
+        <h3 class="ph-product-name">{{ selectedItem!.productName }}</h3>
+
+        <div class="ph-price-row">
+          <div>
+            <p class="ph-price-label">Mejor Precio</p>
+            <div class="ph-price-value-row">
+              <span class="ph-price-value">${{ fmtPrice(selectedItem!.product!.currentPrice) }}</span>
+              <span *ngIf="savings(selectedItem!) > 0" class="ph-badge-green">
+                ↘ -{{ savingsPct(selectedItem!) | number:'1.0-1' }}%
+              </span>
+            </div>
+            <p class="ph-price-store">en {{ selectedItem!.product!.source || '—' }}</p>
+            <p *ngIf="savings(selectedItem!) > 0" class="ph-savings-text">
+              Ahorras ${{ fmtPrice(savings(selectedItem!)) }} vs. el precio más alto
+            </p>
+          </div>
+        </div>
+
+        <!-- Mini comparación de tiendas -->
+        <div class="ph-mini-stores" *ngIf="selectedItem!.allVariants.length > 0">
+          <div *ngFor="let v of selectedItem!.allVariants.slice(0, 4); let i = index"
+               class="ph-mini-store"
+               [class.ph-mini-best]="i === 0">
+            <span class="ph-mini-store-name">{{ v.source || '—' }}</span>
+            <span *ngIf="i === 0" class="ph-mini-badge">Mejor Precio</span>
+            <div class="ph-mini-right">
+              <span class="ph-mini-price">${{ fmtPrice(v.currentPrice) }}</span>
+              <span *ngIf="i > 0" class="ph-mini-diff">
+                +${{ fmtPrice(v.currentPrice - selectedItem!.allVariants[0].currentPrice) }}
+              </span>
+              <a *ngIf="v.url" [href]="v.url" target="_blank" rel="noopener"
+                 class="ph-mini-link">Ver tienda ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="ph-product-actions">
+        <a *ngIf="selectedItem!.product!.url"
+           [href]="selectedItem!.product!.url"
+           target="_blank" rel="noopener"
+           class="ph-btn-primary">
+          ↗ Ir a la tienda
+        </a>
+        <button class="ph-btn-alert-outline" (click)="goToAlerts()">
+          ⚙ Gestionar Alerta
+        </button>
+        <button class="ph-btn-outline" (click)="goToProduct(selectedItem!)">
+          Ver detalle completo
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Error ── -->
+    <div *ngIf="error && !loading" class="ph-error">⚠️ {{ error }}</div>
+
+    <!-- ── Sin producto seleccionado ── -->
+    <div *ngIf="!loading && !priceData && !error" class="ph-state ph-state-hint">
+      Selecciona un producto para ver su historial
+    </div>
+
+    <!-- ── Tarjeta de gráfica ── -->
+    <div *ngIf="!loading && priceData" class="ph-chart-card">
+
+      <!-- Stats -->
+      <div class="ph-stats">
+        <div class="ph-stat">
+          <span class="ph-stat-label">PRECIO ACTUAL</span>
+          <span class="ph-stat-value">${{ fmtPrice(currentPrice) }}</span>
+        </div>
+        <div class="ph-stat ph-stat-min">
+          <span class="ph-stat-label">PRECIO MÍNIMO</span>
+          <span class="ph-stat-value">${{ fmtPrice(getMinPrice()) }}</span>
+        </div>
+        <div class="ph-stat ph-stat-max">
+          <span class="ph-stat-label">PRECIO MÁXIMO</span>
+          <span class="ph-stat-value">${{ fmtPrice(getMaxPrice()) }}</span>
+        </div>
+        <div class="ph-stat ph-stat-avg">
+          <span class="ph-stat-label">PRECIO PROMEDIO</span>
+          <span class="ph-stat-value">${{ fmtPrice(getAveragePrice()) }}</span>
+        </div>
+      </div>
+
+      <!-- Chart header -->
+      <div class="ph-chart-header">
+        <h3 class="ph-chart-title">Historial de Precios</h3>
+        <p class="ph-chart-sub">{{ rangeLabel() }}</p>
+      </div>
+
+      <!-- Sin datos -->
+      <div *ngIf="priceData.history.length === 0" class="ph-state">
+        Sin datos para el rango seleccionado.
+      </div>
+
+      <!-- SVG -->
+      <div *ngIf="priceData.history.length > 0" class="ph-chart-wrap">
+        <svg [attr.viewBox]="'0 0 ' + chartW + ' ' + chartH"
+             class="ph-svg" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#4f46e5" stop-opacity="0.18"/>
+              <stop offset="100%" stop-color="#4f46e5" stop-opacity="0.01"/>
+            </linearGradient>
+          </defs>
+
+          <path *ngIf="areaPath" [attr.d]="areaPath" fill="url(#areaGrad)" />
+
+          <line *ngFor="let y of gridYs"
+                [attr.x1]="pL" [attr.y1]="y"
+                [attr.x2]="chartW - pR" [attr.y2]="y"
+                class="ph-grid-line" />
+
+          <text *ngFor="let g of gridLabels"
+                [attr.x]="pL - 8" [attr.y]="g.y + 4"
+                class="ph-axis-y">{{ g.label }}</text>
+
+          <text *ngFor="let x of xLabels"
+                [attr.x]="x.x" [attr.y]="chartH - 6"
+                class="ph-axis-x">{{ x.label }}</text>
+
+          <polyline *ngIf="polyline" [attr.points]="polyline" class="ph-line" fill="none"/>
+
+          <g *ngFor="let dot of dots">
+            <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="5"
+                    class="ph-dot"
+                    (mouseenter)="setHovered(dot)"
+                    (mouseleave)="setHovered(null)" />
+            <g *ngIf="hoveredDot === dot">
+              <rect [attr.x]="dot.x - 52" [attr.y]="dot.y - 50"
+                    width="104" height="40" rx="6" class="ph-tooltip-bg"/>
+              <text [attr.x]="dot.x" [attr.y]="dot.y - 33" class="ph-tooltip-price">
+                ${{ fmtPrice(dot.price) }}
+              </text>
+              <text [attr.x]="dot.x" [attr.y]="dot.y - 18" class="ph-tooltip-date">
+                {{ dot.date }}
+              </text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+</div>
