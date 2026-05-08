@@ -353,7 +353,8 @@ public class UserService implements IUserService {
                 .createdAt(LocalDateTime.now())
                 .build();
     }
-    private UUID getCurrentUserId() {
+    @Override
+    public UUID getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext()
             .getAuthentication()
             .getPrincipal();
