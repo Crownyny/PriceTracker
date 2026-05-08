@@ -14,8 +14,19 @@
         <a href="#download">Descargar</a>
       </div>
       <div class="lp-nav-ctas">
-        <a routerLink="/login" class="lp-btn-ghost">Iniciar Sesión</a>
-        <a routerLink="/register" class="lp-btn-solid">Crear cuenta gratis</a>
+        <ng-container *ngIf="!isLoggedIn">
+          <a routerLink="/login" class="lp-btn-ghost">Iniciar Sesión</a>
+          <a routerLink="/register" class="lp-btn-solid">Crear cuenta gratis</a>
+        </ng-container>
+        <ng-container *ngIf="isLoggedIn">
+          <a routerLink="/dashboard" class="lp-btn-solid lp-btn-dashboard">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            Ir al Dashboard
+          </a>
+        </ng-container>
       </div>
     </div>
   </nav>
@@ -38,7 +49,14 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Descargar extensión
         </a>
-        <a routerLink="/register" class="lp-btn-outline">Crear cuenta gratis →</a>
+        <a *ngIf="!isLoggedIn" routerLink="/register" class="lp-btn-outline">Crear cuenta gratis →</a>
+        <a *ngIf="isLoggedIn" routerLink="/dashboard" class="lp-btn-outline lp-btn-outline-dashboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+          Ir al Dashboard →
+        </a>
       </div>
       <div class="lp-hero-stats">
         <div class="lp-stat"><span class="lp-stat-num">$50K+</span><span>Ahorrados</span></div>

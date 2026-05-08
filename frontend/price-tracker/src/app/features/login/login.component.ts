@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -145,8 +145,9 @@ export class LoginComponent {
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
-    private route: ActivatedRoute,
-    private router: Router
+    private route:  ActivatedRoute,
+    private router: Router,
+    private cdr:    ChangeDetectorRef
   ) {
     this.form = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -166,11 +167,12 @@ export class LoginComponent {
     this.authService.login(this.form.getRawValue() as { email: string; password: string }).pipe(
       catchError((err) => {
         this.error = 'No fue posible iniciar sesion con Firebase. Verifica email y contraseña.';
-        console.error('Login error:', err);
+        this.cdr.markForCheck();
         return of(null);
       }),
       finalize(() => {
         this.loading = false;
+        this.cdr.markForCheck();
       })
     ).subscribe((response) => {
       if (!response) {
@@ -193,11 +195,12 @@ export class LoginComponent {
         } else {
           this.error = 'No fue posible iniciar sesión con Google.';
         }
-        console.error('Google login error:', err);
+        this.cdr.markForCheck();
         return of(null);
       }),
       finalize(() => {
         this.loading = false;
+        this.cdr.markForCheck();
       })
     ).subscribe((response) => {
       if (!response) return;

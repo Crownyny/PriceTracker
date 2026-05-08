@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -249,22 +249,20 @@ export class AccountComponent implements OnInit {
       error: (err) => {
         this.applying = false;
 
-        // Si el backend dice que ya tiene ese rol, lo tratamos como éxito
         if (err?.error?.code === 'USER_ROLE_CONFLICT' ||
             String(err?.error?.message ?? '').toLowerCase().includes('ya tiene') ||
             String(err?.error?.message ?? '').toLowerCase().includes('already has')) {
-          // El backend confirma que el usuario YA tiene ese rol — sincronizar localStorage
           this.tokenService.setUserRole(this.selectedRole);
           this.currentRole = this.selectedRole;
           this.message = `Rol sincronizado a: ${this.currentRole}`;
-          console.warn('[PriceTracker] Backend confirma rol existente — localStorage actualizado');
-          this.load();  // refrescar vista para que el badge y debug info reflejen el nuevo rol
-          setTimeout(() => this.message = '', 3500);
+          this.load();
+          this.cdr.markForCheck();
+          setTimeout(() => { this.message = ''; this.cdr.markForCheck(); }, 3500);
           return;
         }
 
         this.error = err?.error?.message ?? 'Error al cambiar el rol. Intenta de nuevo.';
-        console.error('[PriceTracker] Error al cambiar rol:', err);
+        this.cdr.markForCheck();
       }
     });
   }

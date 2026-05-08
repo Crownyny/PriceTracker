@@ -213,21 +213,29 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
 
       this.stompService.sendSearchCommand(trimmed, productRef);
 
-      // Escuchar productos en tiempo real solo para esta búsqueda
+      // Escuchar productos en tiempo real solo para esta búsqueda.
+      // El backend envía UN NormalizedProductDTO por mensaje (no un array).
       this.stompService.products$
         .pipe(takeUntil(merge(this.destroy$, this.searchSession$)))
         .subscribe((message: any) => {
-          const msgRef = String(message?.productRef ?? message?.product_ref ?? '').trim();
+          // Filtrar por productRef si viene — normalizar a lowercase sin espacios
+          const msgRef = String(message?.product_ref ?? message?.productRef ?? '').replace(/\s+/g, '').toLowerCase().trim();
           if (msgRef && msgRef !== this.lastSearchRef) return;
 
-          const raw: any[]      = message?.products ?? [];
-          const incoming: Product[] = raw.map(p => this.productsService.mapBackendProduct(p));
+          // El backend envía un producto individual, no un array
+          const product: Product | null = message?.id
+            ? this.productsService.mapBackendProduct(message)
+            : null;
 
-          if (incoming.length > 0) {
-            this.filteredProducts = incoming;
-            this.uiState          = 'found';
-            this.searching        = false;
-            this.searchStatus     = '';
+          if (product) {
+            // Acumular productos — pueden llegar varios mensajes (uno por tienda)
+            const alreadyExists = this.filteredProducts.some(p => p.id === product.id);
+            if (!alreadyExists) {
+              this.filteredProducts = [...this.filteredProducts, product];
+            }
+            this.uiState      = 'found';
+            this.searching    = false;
+            this.searchStatus = '';
             this.cdr.markForCheck();
           }
         });
