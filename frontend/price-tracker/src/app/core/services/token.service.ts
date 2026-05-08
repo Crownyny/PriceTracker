@@ -20,8 +20,13 @@ export class TokenService {
   private readonly TOKEN_KEY = 'access_token';
   private readonly USER_KEY = 'user_profile';
   private readonly authStateSubject = new BehaviorSubject<boolean>(this.hasStoredSession());
+  private readonly roleSubject = new BehaviorSubject<'registered' | 'premium'>(
+    this.getUserProfile()?.role === 'premium' ? 'premium' : 'registered'
+  );
 
   public readonly authState$ = this.authStateSubject.asObservable();
+  /** Emite el rol actualizado cada vez que cambia (útil para componentes reactivos). */
+  public readonly role$ = this.roleSubject.asObservable();
 
   /**
    * Obtiene el token de acceso
@@ -89,6 +94,7 @@ export class TokenService {
     // Notify any subscribers that auth/profile state may have changed
     try {
       this.authStateSubject.next(this.hasStoredSession());
+      this.roleSubject.next(role);
     } catch (e) {
       // noop
     }
