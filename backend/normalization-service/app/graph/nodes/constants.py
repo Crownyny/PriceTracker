@@ -44,6 +44,7 @@ CURRENCY_MAP: dict[str, str] = {
 # Moneda por defecto según fuente conocida.
 # Si la fuente no está aquí, se usa "USD" como fallback global.
 SOURCE_DEFAULT_CURRENCY: dict[str, str] = {
+    "aliexpress": "COP",
     "mercadolibre": "COP",
     "exito": "COP",
     "falabella": "COP",

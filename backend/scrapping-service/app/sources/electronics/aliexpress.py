@@ -18,7 +18,7 @@ Estrategia (DOM confirmado por inspección — marzo 2026):
   - Precio:  div[tabindex="0"][aria-label^="$"]
   - Imagen:  primer img[src^="//"] → prefijo https:
   - Link:    a[href*="/item/"] → limpiado de tracking params
-  - Moneda:  USD
+   - Moneda:  COP (AliExpress Colombia usa $ para COP en es-CO)
 """
 from typing import Any, Optional
 from urllib.parse import quote_plus, urlparse, urlunparse
@@ -123,8 +123,8 @@ class AliexpressSource(BeautifulSoupSource):
             if label.startswith("US$"):
                 return "USD"
             if label.startswith("$"):
-                return "USD"
-        return "USD"
+                return "COP"
+        return "COP"
 
     def _extract_availability(self, card: Tag, soup: BeautifulSoup) -> Optional[str]:
         return "available"

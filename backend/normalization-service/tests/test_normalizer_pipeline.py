@@ -302,6 +302,29 @@ async def test_moneda_defecto_fuente_exito(pipeline):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 12b – AliExpress Colombia: '$800.671' → 800671 COP
+# ─────────────────────────────────────────────────────────────────────────────
+@pytest.mark.asyncio
+async def test_precio_aliexpress_cop_con_punto_de_miles(pipeline):
+    """AliExpress es-CO usa '$' para COP y el punto actúa como separador de miles."""
+    state = _initial_state(
+        {
+            "raw_title": "Apple iPhone 12 64GB/128GB 5G Face ID NFC 6,1\"",
+            "raw_price": "$800.671",
+            "raw_currency": "$",
+            "raw_availability": "available",
+            "raw_url": "https://es.aliexpress.com/item/1005010171681292.html",
+        },
+        source="aliexpress",
+        product_ref="iphone12.001",
+    )
+    result = await pipeline.ainvoke(state)
+
+    assert result["final_product"]["currency"] == "COP"
+    assert result["final_product"]["price"] == pytest.approx(800671.0)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 13 – Heurística: marca Gildan detectada
 # ─────────────────────────────────────────────────────────────────────────────
 @pytest.mark.asyncio
