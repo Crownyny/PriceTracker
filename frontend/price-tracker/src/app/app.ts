@@ -71,6 +71,7 @@ export class App implements OnInit, OnDestroy {
   protected readonly title = 'price-traker';
   isConnected = false;
   isAuthenticated = false;
+  private roleSynced = false;  // evita loop authState$ ↔ setUserRole
   showAccountMenu = false;
   userDisplayName = 'Mi cuenta';
   userEmail = '';
@@ -100,11 +101,9 @@ export class App implements OnInit, OnDestroy {
       .subscribe((isAuthenticated) => {
         this.isAuthenticated = isAuthenticated;
         this.refreshUserInfo();
-        if (isAuthenticated) {
-          const role = this.userRoleService.getCurrentRole();
-          console.log(`[PriceTracker] Usuario autenticado — rol: ${role.toUpperCase()}`);
-        } else {
+        if (!isAuthenticated) {
           this.showAccountMenu = false;
+          this.roleSynced = false;  // permitir re-sync en el próximo login
           console.log('[PriceTracker] Sesión cerrada');
         }
       });
@@ -138,11 +137,8 @@ export class App implements OnInit, OnDestroy {
   private syncAuthState(): void {
     this.isAuthenticated = this.tokenService.hasToken() && !!this.tokenService.getUserProfile();
     this.refreshUserInfo();
-    if (this.isAuthenticated) {
-      // Sincronizar rol con el backend una vez al cargar la app.
-      // Usa PUT /user/role con el rol actual — el backend devuelve el rol real en BD.
-      // Si el rol local y el de BD difieren (ej: cambiado por Postman), se actualiza localStorage.
-      // El 400 ocurre cuando el rol ya es el mismo — fetchAndSyncRole lo silencia con catchError.
+    if (this.isAuthenticated && !this.roleSynced) {
+      this.roleSynced = true;  // ejecutar solo una vez — evita el loop authState$ ↔ setUserRole
       this.userRoleService.fetchAndSyncRole().subscribe(role => {
         console.log(`[PriceTracker] Sesión activa — rol: ${role.toUpperCase()}`);
       });
