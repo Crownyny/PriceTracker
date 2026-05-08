@@ -237,15 +237,9 @@ export class AccountComponent implements OnInit {
         this.currentRole = response.role ?? this.selectedRole;
         this.tokenService.setUserRole(this.currentRole);
         this.message = `Rol actualizado a: ${this.currentRole}`;
-
-        console.log(
-          `%c[PriceTracker] Rol cambiado a ${this.currentRole.toUpperCase()}`,
-          this.currentRole === 'premium'
-            ? 'color:#16a34a;font-weight:bold'
-            : 'color:#6b7280;font-weight:bold'
-        );
-
-        setTimeout(() => this.message = '', 3500);
+        console.log(`[PriceTracker] Rol cambiado — nuevo rol: ${this.currentRole.toUpperCase()}`);
+        this.cdr.markForCheck();
+        setTimeout(() => { this.message = ''; this.cdr.markForCheck(); }, 3500);
       },
       error: (err) => {
         this.applying = false;
