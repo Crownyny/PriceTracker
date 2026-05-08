@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
+import unicauca.edu.co.API.Exception.BusinessException;
+import unicauca.edu.co.API.Exception.UserNotFoundException;
 import unicauca.edu.co.API.Presentation.DTO.IN.GoogleSignInDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
@@ -39,4 +41,10 @@ public interface IUserService {
      * @throws UserNotFoundException Si no se encuentra el usuario con el ID proporcionado.
      */
     UserDTO updateUserRole(UserRole newRole);
+
+    /**
+     * Obtiene el ID del usuario actualmente autenticado en el contexto de seguridad.
+     * @return
+     */
+    UUID getCurrentUserId();
 }
