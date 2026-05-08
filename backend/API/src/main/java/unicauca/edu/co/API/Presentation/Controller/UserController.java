@@ -1,6 +1,8 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
 
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,22 +12,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import unicauca.edu.co.API.DataAccess.Entity.UserEntity.UserRole;
 import unicauca.edu.co.API.Presentation.DTO.IN.GoogleSignInDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserCreateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.IN.UserRoleUpdateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.UserRoleDTO;
 import unicauca.edu.co.API.Presentation.Mapper.UserMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
+import unicauca.edu.co.API.Services.Interfaces.OUT.IUserRoleService;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/v1/user")
 public class UserController {
 
     private final IUserService userService;
+    private final IUserRoleService userRoleService;
     private final UserMapper userMapper;
 
-    public UserController(IUserService userService, UserMapper userMapper) {
+    public UserController(IUserService userService, IUserRoleService userRoleService, UserMapper userMapper) {
         this.userService = userService;
+        this.userRoleService = userRoleService;
         this.userMapper = userMapper;
     }
 
@@ -69,4 +80,11 @@ public class UserController {
         UserDTO updatedUser = userService.updateUserRole( updateRequest.getNewRole());
         return ResponseEntity.ok(updatedUser);
     }
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/role")
+    public ResponseEntity<UserRoleDTO> getUserRole() {
+        UserRoleDTO userRole = userRoleService.getUserRole();
+        return ResponseEntity.ok(userRole);
+    }
+
 }
