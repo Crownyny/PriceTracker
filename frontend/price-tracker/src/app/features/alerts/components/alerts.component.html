@@ -23,8 +23,8 @@
   <div *ngIf="alerts.length > 0" class="alerts-list">
     <div *ngFor="let alert of alerts" class="alert-card" [class.alert-inactive]="!alert.isActive">
 
-      <!-- Imagen del producto -->
-      <div class="alert-card-img">
+      <!-- Imagen del producto — clic va al detalle -->
+      <div class="alert-card-img alert-card-img-link" (click)="goToProduct(alert)" title="Ver producto">
         <img *ngIf="productImages[alert.productId]"
              [src]="productImages[alert.productId]"
              [alt]="productNames[alert.productId]"
@@ -34,8 +34,9 @@
 
       <!-- Info del producto -->
       <div class="alert-card-body">
-        <div class="alert-product-name">
+        <div class="alert-product-name alert-product-name-link" (click)="goToProduct(alert)">
           {{ productNames[alert.productId] || alert.productRef || alert.productId.slice(0, 8) + "…" }}
+          <span class="alert-go-arrow">↗</span>
         </div>
         <div class="alert-product-price" *ngIf="productPrices[alert.productId]">
           ${{ productPrices[alert.productId] | number:'1.0-0' }}

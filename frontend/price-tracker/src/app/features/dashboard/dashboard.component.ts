@@ -60,6 +60,12 @@ export class DashboardComponent implements OnInit {
     this.userRoleLabel = this.userRoleService.getCurrentRole();
     this.premiumLocked = !this.userRoleService.canUsePremiumFeatures();
     this.isPremium     = this.userRoleService.canUsePremiumFeatures();
+    // Detecta cambios externos de rol (Postman, admin)
+    this.userRoleService.fetchAndSyncRole().subscribe(role => {
+      this.isPremium     = role === 'premium';
+      this.premiumLocked = !this.isPremium;
+      this.cdr.markForCheck();
+    });
 
     const userId = this.getCurrentUserId();
 
