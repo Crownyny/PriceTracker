@@ -90,7 +90,16 @@ export class UserRoleService {
         }
         return backendRole;
       }),
-      catchError(() => of(currentRole))
+      catchError(err => {
+        // 400 "User already has role X" — el rol en BD coincide con el local, no es error real
+        const msg = String(err?.error?.message ?? '').toLowerCase();
+        if (err?.status === 400 && msg.includes('already has role')) {
+          // El rol local es correcto — devolver sin cambios
+          return of(currentRole);
+        }
+        // Cualquier otro error (red, auth) — usar rol local como fallback silencioso
+        return of(currentRole);
+      })
     );
   }
 

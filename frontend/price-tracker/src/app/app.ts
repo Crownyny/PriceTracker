@@ -139,8 +139,13 @@ export class App implements OnInit, OnDestroy {
     this.isAuthenticated = this.tokenService.hasToken() && !!this.tokenService.getUserProfile();
     this.refreshUserInfo();
     if (this.isAuthenticated) {
-      const role = this.userRoleService.getCurrentRole();
-      console.log(`[PriceTracker] Sesión activa — rol: ${role.toUpperCase()}`);
+      // Sincronizar rol con el backend una vez al cargar la app.
+      // Usa PUT /user/role con el rol actual — el backend devuelve el rol real en BD.
+      // Si el rol local y el de BD difieren (ej: cambiado por Postman), se actualiza localStorage.
+      // El 400 ocurre cuando el rol ya es el mismo — fetchAndSyncRole lo silencia con catchError.
+      this.userRoleService.fetchAndSyncRole().subscribe(role => {
+        console.log(`[PriceTracker] Sesión activa — rol: ${role.toUpperCase()}`);
+      });
     }
   }
 
