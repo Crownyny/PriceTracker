@@ -1,9 +1,9 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin, of, switchMap } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { forkJoin, of, Subject, switchMap } from 'rxjs';
+import { catchError, map, takeUntil } from 'rxjs/operators';
 import { PriceHistoryService } from '../services/price-history.service';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { ProductsService } from '../../products/services/products.service';
@@ -33,7 +33,9 @@ interface ProductWithAlert {
   templateUrl: './price-history.component.html',
   styleUrl: './price-history.component.css'
 })
-export class PriceHistoryComponent implements OnInit {
+export class PriceHistoryComponent implements OnInit, OnDestroy {
+
+  private readonly destroy$ = new Subject<void>();
 
   // ── State ─────────────────────────────────────────────────────────────────
   selectedRange: PriceHistoryRange = 'W3';
@@ -84,10 +86,26 @@ export class PriceHistoryComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.isPremium     = this.userRoleService.canUsePremiumFeatures();
-    this.selectedRange = this.isPremium ? 'W3' : 'W1';
+    this.isPremium         = this.userRoleService.canUsePremiumFeatures();
+    this.selectedRange     = this.isPremium ? 'W3' : 'W1';
     this.showUpgradeBanner = !this.isPremium;
+
+    // Reaccionar cuando el rol cambia (ej: fetchAndSyncRole actualiza localStorage)
+    this.tokenService.role$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(role => {
+        this.isPremium         = role === 'premium';
+        this.selectedRange     = this.isPremium ? 'W3' : 'W1';
+        this.showUpgradeBanner = !this.isPremium;
+        this.cdr.markForCheck();
+      });
+
     this.loadAlertsWithProducts();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   // ── Load ──────────────────────────────────────────────────────────────────
