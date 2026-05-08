@@ -42,7 +42,10 @@ import { AuthResponse } from '../../shared/models/auth.model';
           <a routerLink="/forgot-password">¿Olvidaste tu contraseña?</a>
         </p>
 
-        <p class="back-link"><a routerLink="/dashboard">Ir al dashboard</a></p>
+        <p class="signup-link">
+          ¿No tienes cuenta? <a routerLink="/register">Regístrate</a>
+        </p>
+
       </article>
     </section>
   `,
@@ -121,6 +124,10 @@ import { AuthResponse } from '../../shared/models/auth.model';
       }
 
       .links {
+        margin-top: 10px;
+      }
+
+      .signup-link {
         margin-top: 10px;
       }
 
