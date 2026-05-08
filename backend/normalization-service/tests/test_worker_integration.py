@@ -264,6 +264,37 @@ async def test_fuente_mercadolibre_moneda_defecto_cop():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 6b – AliExpress Colombia: '$800.671' debe persistirse como 800671 COP
+# ─────────────────────────────────────────────────────────────────────────────
+@pytest.mark.asyncio
+async def test_fuente_aliexpress_moneda_y_precio_cop():
+    """
+    AliExpress es-CO usa '$' para COP. El worker debe persistir 800671 COP,
+    no 800.671 USD.
+    """
+    worker, repo, publisher = _make_worker()
+    msg = _make_scraping_msg(
+        {
+            "raw_title": "Apple iPhone 12 64GB 5G Face ID NFC 6,1\"",
+            "raw_price": "$800.671",
+            "raw_currency": "$",
+            "raw_availability": "available",
+        },
+        source="aliexpress",
+        product_ref="iphone12.001",
+        job_id="ali-currency-job-006",
+    )
+
+    await worker._handle_scraping_message(msg.model_dump(mode="json"))
+
+    repo.upsert_product.assert_called_once()
+    saved_product = repo.upsert_product.call_args[0][0]
+    assert saved_product.currency == "COP"
+    assert saved_product.price == pytest.approx(800671.0)
+    assert publisher.publish.call_args[0][1]["state"] == "normalized"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 7 – Producto fashion: atributos de dominio en extra del producto persistido
 # ─────────────────────────────────────────────────────────────────────────────
 @pytest.mark.asyncio

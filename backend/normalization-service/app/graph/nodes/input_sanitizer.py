@@ -60,21 +60,14 @@ async def input_sanitizer_node(state: NormalizationState) -> NormalizationState:
 
     # Normalización de precio
     source_name = state.get("source_name", "")
-    raw_currency_val = str(sanitized.get("raw_currency") or "").upper()
+    raw_currency_val = str(sanitized.get("raw_currency") or "").strip()
     
     # Determinar moneda inicial (prioridad: campo raw > currency map > default)
-    inferred_currency = ""
-    if raw_currency_val:
-        inferred_currency = _normalize_currency(raw_currency_val)
-    
-    if not inferred_currency:
-        # Intentar inferir del precio string si no vino en raw_currency
-        _, detected_curr = _parse_price_full(raw_price_str, context_currency=None)
-        if detected_curr:
-            inferred_currency = detected_curr
-    
-    if not inferred_currency:
-         inferred_currency = SOURCE_DEFAULT_CURRENCY.get(source_name, "COP")
+    inferred_currency = _infer_currency(
+        raw_currency_val=raw_currency_val,
+        source_name=source_name,
+        raw_price=raw_price_str,
+    )
 
     # Parsear precio usando la moneda inferida como contexto para separadores
     price_value, _ = _parse_price_full(
@@ -221,6 +214,38 @@ def _parse_price_full(raw_price: str, context_currency: str = None) -> tuple[flo
 def _normalize_currency(raw: str) -> str:
     key = raw.lower().strip()
     return CURRENCY_MAP.get(key, raw.upper().strip() or "USD")
+
+
+def _infer_currency(raw_currency_val: str, source_name: str, raw_price: str) -> str:
+    """Resuelve moneda explícita, desambiguando símbolos compartidos como '$'."""
+    source_default = SOURCE_DEFAULT_CURRENCY.get(source_name, "")
+
+    if raw_currency_val:
+        normalized = _normalize_currency(raw_currency_val)
+        currency_key = raw_currency_val.lower().strip()
+
+        # '$' es ambiguo en AliExpress Colombia y otras fuentes LATAM: preferir
+        # la moneda por defecto del source antes que asumir USD.
+        if currency_key == "$" and source_default and source_default != "USD":
+            return source_default
+
+        # Si la fuente ya define una moneda distinta de USD, no permitimos que
+        # '$' o valores equivalentes la degraden a USD.
+        if source_default and source_default != "USD" and normalized == "USD":
+            if currency_key in {"$", "us$", "usd", "usd$"}:
+                return source_default
+
+        return normalized
+
+    if source_default:
+        return source_default
+
+    # Último recurso: intentar detectar moneda desde el texto bruto del precio.
+    _, detected_curr = _parse_price_full(raw_price, context_currency=None)
+    if detected_curr:
+        return detected_curr
+
+    return "USD"
 
 
 def _map_availability(raw: str) -> str:
