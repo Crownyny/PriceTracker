@@ -64,6 +64,15 @@ export class DashboardComponent implements OnInit {
     this.userRoleService.fetchAndSyncRole().subscribe(role => {
       this.isPremium     = role === 'premium';
       this.premiumLocked = !this.isPremium;
+      this.userRoleLabel = role;
+      this.cdr.markForCheck();
+    });
+
+    // Reaccionar en tiempo real a cambios de rol (Mi Cuenta, Postman)
+    this.tokenService.role$.subscribe(role => {
+      this.isPremium     = role === 'premium';
+      this.premiumLocked = !this.isPremium;
+      this.userRoleLabel = role;
       this.cdr.markForCheck();
     });
 
