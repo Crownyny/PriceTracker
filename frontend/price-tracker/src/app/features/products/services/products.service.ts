@@ -182,14 +182,31 @@ export class ProductsService {
    * Busca por productRef + filtra por productId. Devuelve { best, all } | null.
    * Nota: POST /api/products/search filtra updatedAt >= now-20min.
    */
+  /**
+   * Busca un producto por ID y ref.
+   * Intenta POST /search primero (solo productos recientes, < 20min).
+   * Si no hay resultados, usa GET /products/{id}/product como fallback
+   * (sin filtro de tiempo, siempre devuelve si existe en BD).
+   */
   getProductByIdAndRef(productId: string, productRef: string): Observable<{ best: Product; all: Product[] } | null> {
     return this.getSearchFromDb(productRef).pipe(
-      map(resp => {
-        if (!resp.products.length) return null;
-        const best = resp.products[0];
-        return { best, all: resp.products };
+      switchMap(resp => {
+        if (resp.products.length > 0) {
+          const best = resp.products.find(p => p.id === productId) ?? resp.products[0];
+          return of({ best, all: resp.products });
+        }
+        // Fallback: producto existe pero tiene más de 20 min → endpoint sin filtro de tiempo
+        return this.getProduct(productId).pipe(
+          map(product => ({ best: product, all: [product] })),
+          rxCatchError(() => of(null))
+        );
       }),
-      rxCatchError(() => of(null))
+      rxCatchError(() =>
+        this.getProduct(productId).pipe(
+          map(product => ({ best: product, all: [product] })),
+          rxCatchError(() => of(null))
+        )
+      )
     );
   }
 
