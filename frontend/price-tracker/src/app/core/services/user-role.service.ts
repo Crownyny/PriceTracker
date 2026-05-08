@@ -72,17 +72,15 @@ export class UserRoleService {
   }
 
   /**
-   * Sincroniza el rol con el backend usando PUT /user/role.
-   * Envía el rol actual como payload — el backend devuelve el rol real en BD.
-   * Si alguien cambió el rol externamente (Postman, admin), se actualiza localStorage.
-   * Si el request falla, mantiene el rol local como fallback silencioso.
+   * Consulta el rol real del usuario desde el backend.
+   * GET /api/v1/user/role → { role: "premium" | "registered" }
+   * Actualiza localStorage si difiere del valor local.
+   * Si falla (sin red, token expirado), usa el rol local como fallback silencioso.
    */
   fetchAndSyncRole(): Observable<UserRole> {
     const currentRole = this.getCurrentRole();
     const url = `${this.httpConfig.getApiUrl()}/user/role`;
-    return this.http.put<{ id?: string; email?: string; role?: string }>(
-      url, { newRole: currentRole }
-    ).pipe(
+    return this.http.get<{ role?: string }>(url).pipe(
       map(response => {
         const backendRole = this.normalizeRole(response?.role) ?? currentRole;
         if (backendRole !== this.tokenService.getUserRole()) {
@@ -90,16 +88,7 @@ export class UserRoleService {
         }
         return backendRole;
       }),
-      catchError(err => {
-        // 400 "User already has role X" — el rol en BD coincide con el local, no es error real
-        const msg = String(err?.error?.message ?? '').toLowerCase();
-        if (err?.status === 400 && msg.includes('already has role')) {
-          // El rol local es correcto — devolver sin cambios
-          return of(currentRole);
-        }
-        // Cualquier otro error (red, auth) — usar rol local como fallback silencioso
-        return of(currentRole);
-      })
+      catchError(() => of(currentRole))
     );
   }
 
