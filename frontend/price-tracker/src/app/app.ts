@@ -6,6 +6,7 @@ import { ExtensionAuthBridgeService } from './core/services/extension-auth-bridg
 import { StompWebSocketService } from './core/services/stomp-websocket.service';
 import { Subject, skip, takeUntil } from 'rxjs';
 import { TokenService, UserProfile } from './core/services/token.service';
+import { UserRoleService } from './core/services/user-role.service';
 
 @Component({
   selector: 'app-root',
@@ -82,7 +83,8 @@ export class App implements OnInit, OnDestroy {
     private router: Router,
     private extensionAuthBridge: ExtensionAuthBridgeService,
     private stompService: StompWebSocketService,
-    private tokenService: TokenService
+    private tokenService:    TokenService,
+    private userRoleService: UserRoleService
   ) {
     console.log('🚀 Inicializando PriceTracker App');
   }
@@ -98,8 +100,12 @@ export class App implements OnInit, OnDestroy {
       .subscribe((isAuthenticated) => {
         this.isAuthenticated = isAuthenticated;
         this.refreshUserInfo();
-        if (!isAuthenticated) {
+        if (isAuthenticated) {
+          const role = this.userRoleService.getCurrentRole();
+          console.log(`[PriceTracker] Usuario autenticado — rol: ${role.toUpperCase()}`);
+        } else {
           this.showAccountMenu = false;
+          console.log('[PriceTracker] Sesión cerrada');
         }
       });
   }
@@ -132,6 +138,10 @@ export class App implements OnInit, OnDestroy {
   private syncAuthState(): void {
     this.isAuthenticated = this.tokenService.hasToken() && !!this.tokenService.getUserProfile();
     this.refreshUserInfo();
+    if (this.isAuthenticated) {
+      const role = this.userRoleService.getCurrentRole();
+      console.log(`[PriceTracker] Sesión activa — rol: ${role.toUpperCase()}`);
+    }
   }
 
   private refreshUserInfo(): void {
@@ -158,4 +168,3 @@ export class App implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 }
-

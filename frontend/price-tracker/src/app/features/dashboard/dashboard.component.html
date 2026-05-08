@@ -5,8 +5,7 @@
     <p class="text-blue-100 text-lg">Compara precios en tiempo real y ahorra en cada compra</p>
     <div class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm">
       <span>Plan actual: {{ userRoleLabel }}</span>
-      <span *ngIf="premiumLocked">• Premium bloqueado</span>
-      <span *ngIf="!premiumLocked">• Premium activo</span>
+      <span *ngIf="premiumLocked">• Plan gratuito</span>
     </div>
   </div>
 
