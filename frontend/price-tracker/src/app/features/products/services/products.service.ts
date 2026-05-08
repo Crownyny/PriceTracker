@@ -4,7 +4,7 @@ import { Observable, forkJoin, of } from 'rxjs';
 import { filter, map, switchMap, timeout, take, catchError as rxCatchError } from 'rxjs/operators';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { StompWebSocketService } from '../../../core/services/stomp-websocket.service';
-import { BackendProductDTO, Product, ProductSearchResponse } from '../../../shared/models/product.model';
+import { Product, ProductSearchResponse } from '../../../shared/models/product.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductsService {
@@ -22,7 +22,7 @@ export class ProductsService {
   // id, product_ref, source_name, canonical_name, price, currency,
   // category, availability, source_url, image_url, description
 
-  mapBackendProduct(raw: BackendProductDTO): Product {
+  mapBackendProduct(raw: any): Product {
     return {
       id:             String(raw.id ?? raw.product_id ?? raw.productId ?? ''),
       productRef:     raw.product_ref    ?? raw.productRef   ?? '',
@@ -144,10 +144,10 @@ export class ProductsService {
    * canonical_name, price, currency, category, availability, source_url, image_url.
    */
   getProduct(productId: string): Observable<Product> {
-    return this.http.get<BackendProductDTO>(
+    return this.http.get<any>(
       `${this.httpConfig.getApiBaseUrl()}/products/${encodeURIComponent(productId)}/product`
     ).pipe(
-      map((r: BackendProductDTO) => {
+      map(r => {
         const product = this.mapBackendProduct(r);
         if (product.id) this.cacheFullProduct(product);
         return product;
@@ -163,10 +163,10 @@ export class ProductsService {
     const cached = this.getCachedName(productId);
     if (cached) return of(cached);
 
-    return this.http.get<BackendProductDTO>(
+    return this.http.get<any>(
       `${this.httpConfig.getApiBaseUrl()}/products/${encodeURIComponent(productId)}/product`
     ).pipe(
-      map((raw: BackendProductDTO) => {
+      map((raw: any) => {
         const name = raw?.canonical_name ?? raw?.canonicalName ?? raw?.name ?? '';
         if (name) {
           this.cacheProductName(productId, name);
@@ -182,32 +182,14 @@ export class ProductsService {
    * Busca por productRef + filtra por productId. Devuelve { best, all } | null.
    * Nota: POST /api/products/search filtra updatedAt >= now-20min.
    */
-  /**
-   * Busca un producto por ID y ref.
-   * Estrategia: intenta POST /api/products/search primero (filtra por 20min).
-   * Si no encuentra, usa GET /api/products/{id}/product como fallback
-   * (sin filtro de tiempo, siempre devuelve el producto si existe).
-   */
   getProductByIdAndRef(productId: string, productRef: string): Observable<{ best: Product; all: Product[] } | null> {
     return this.getSearchFromDb(productRef).pipe(
-      switchMap(resp => {
-        if (resp.products.length > 0) {
-          const best = resp.products.find(p => p.id === productId) ?? resp.products[0];
-          return of({ best, all: resp.products });
-        }
-        // Fallback: el producto existe en BD pero tiene más de 20 minutos
-        // GET /api/products/{id}/product no tiene filtro de tiempo
-        return this.getProduct(productId).pipe(
-          map(product => ({ best: product, all: [product] })),
-          rxCatchError(() => of(null))
-        );
+      map(resp => {
+        if (!resp.products.length) return null;
+        const best = resp.products[0];
+        return { best, all: resp.products };
       }),
-      rxCatchError(() =>
-        this.getProduct(productId).pipe(
-          map(product => ({ best: product, all: [product] })),
-          rxCatchError(() => of(null))
-        )
-      )
+      rxCatchError(() => of(null))
     );
   }
 
@@ -221,12 +203,12 @@ export class ProductsService {
     const ref = String(productRef ?? '').trim();
     if (!ref) return of({ productRef: '', products: [], totalResults: 0 });
 
-    return this.http.post<BackendProductDTO[]>(
+    return this.http.post<any[]>(
       `${this.httpConfig.getApiBaseUrl()}/products/search`,
       { product_ref: ref }
     ).pipe(
-      map((response: BackendProductDTO[]) => {
-        const products = (response ?? []).map((r: BackendProductDTO) => this.mapBackendProduct(r));
+      map(response => {
+        const products = (response ?? []).map(r => this.mapBackendProduct(r));
         products.sort((a, b) => a.currentPrice - b.currentPrice);
         if (products.length) this.trackRef(ref);
         return { productRef: ref, products, totalResults: products.length };
