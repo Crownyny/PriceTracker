@@ -78,15 +78,17 @@ export class AuthService {
     return from(signInWithEmailAndPassword(this.auth, credentials.email, credentials.password)).pipe(
       switchMap((credential) =>
         from(credential.user.getIdToken()).pipe(
-          map((token) => {
+          switchMap((token) => {
             const response = this.toAuthResponse(credential.user, token);
             this.tokenService.setTokens(response.accessToken);
             this.tokenService.setUserProfile(response.user);
             this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
-            // El rol se sincroniza desde Mi Cuenta (PUT /api/v1/user/role).
-            // No llamamos createUser aquí porque ese endpoint solo crea usuarios
-            // nuevos y rechaza con 400 si el email ya existe.
-            return response;
+            // Sincronizar el rol real desde el backend inmediatamente al hacer login
+            // Evita que el usuario vea "REGISTERED" si su rol real es "premium"
+            return this.userRoleService.fetchAndSyncRole().pipe(
+              map(() => response),
+              catchError(() => of(response))
+            );
           })
         )
       )
@@ -138,11 +140,15 @@ export class AuthService {
               email: response.user.email,
               name: response.user.name
             }).pipe(
-              map((created) => {
+              switchMap((created) => {
                 if (created.role) {
                   this.tokenService.setUserRole(created.role);
                 }
-                return response;
+                // Sincronizar rol real desde backend (usuario puede ser premium)
+                return this.userRoleService.fetchAndSyncRole().pipe(
+                  map(() => response),
+                  catchError(() => of(response))
+                );
               }),
               catchError(() => of(response))
             );
