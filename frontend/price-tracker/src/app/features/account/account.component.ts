@@ -190,10 +190,11 @@ export class AccountComponent implements OnInit {
   tokenPreview = '';
 
   constructor(
-    private tokenService: TokenService,
+    private tokenService:    TokenService,
     private userRoleService: UserRoleService,
-    private authService: AuthService,
-    private router: Router
+    private authService:     AuthService,
+    private router:          Router,
+    private cdr:             ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
