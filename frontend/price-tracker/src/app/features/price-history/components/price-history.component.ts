@@ -90,6 +90,12 @@ export class PriceHistoryComponent implements OnInit, OnDestroy {
     this.selectedRange     = this.isPremium ? 'W3' : 'W1';
     this.showUpgradeBanner = !this.isPremium;
 
+    // Consultar rol real al backend — detecta cambios externos (Postman, admin)
+    this.userRoleService.fetchAndSyncRole()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe();
+
+    this.loadAlertsWithProducts();
     // Reaccionar cuando el rol cambia (ej: fetchAndSyncRole actualiza localStorage)
     this.tokenService.role$
       .pipe(takeUntil(this.destroy$))

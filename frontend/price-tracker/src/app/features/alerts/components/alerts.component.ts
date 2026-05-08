@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AlertService } from '../services/alert.service';
 import { Alert, AlertFrequency } from '../../../shared/models/alert.model';
 import { UserRoleService } from '../../../core/services/user-role.service';
@@ -49,11 +49,12 @@ export class AlertsComponent implements OnInit {
   private searchSubject = new Subject<string>();
 
   constructor(
-    private alertService: AlertService,
+    private alertService:    AlertService,
     private userRoleService: UserRoleService,
     private productsService: ProductsService,
-    private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
+    private route:  ActivatedRoute,
+    private router: Router,
+    private cdr:    ChangeDetectorRef
   ) {
     // Debounce de búsqueda de productos
     this.searchSubject.pipe(
@@ -85,6 +86,11 @@ export class AlertsComponent implements OnInit {
 
   ngOnInit(): void {
     this.isPremium = this.userRoleService.canUsePremiumFeatures();
+    // Detecta cambios externos de rol (Postman, admin) — actualiza isPremium reactivamente via role$
+    this.userRoleService.fetchAndSyncRole().subscribe(role => {
+      this.isPremium = role === 'premium';
+      this.cdr.markForCheck();
+    });
     this.loadAlerts();
 
     // Si viene ?productId=... desde otra pantalla, pre-seleccionar ese producto
@@ -396,5 +402,12 @@ export class AlertsComponent implements OnInit {
     if (idx !== -1) {
       this.alerts[idx] = { ...alert };
     }
+  }
+
+  goToProduct(alert: Alert): void {
+    const productRef = alert.productRef || this.productNames[alert.productId] || '';
+    this.router.navigate(['/product', alert.productId], {
+      queryParams: productRef ? { productRef } : {}
+    });
   }
 }

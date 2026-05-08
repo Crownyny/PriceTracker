@@ -96,6 +96,11 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit(): void {
     // Freemium solo puede usar W1 — evita el 400 del backend
     this.selectedRange = this.userRoleService.canUsePremiumFeatures() ? 'W3' : 'W1';
+    // Detecta cambios externos de rol — actualiza el rango del historial
+    this.userRoleService.fetchAndSyncRole().subscribe(role => {
+      this.selectedRange = role === 'premium' ? 'W3' : 'W1';
+      this.cdr.markForCheck();
+    });
     this.route.params.subscribe(params => {
       this.productId  = params['id'];
       this.productRef = this.route.snapshot.queryParamMap.get('productRef') ?? '';

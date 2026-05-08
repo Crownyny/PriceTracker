@@ -665,3 +665,35 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── Product link styles ─────────────────────────────────────────────────── */
+.alert-card-img-link {
+  cursor: pointer;
+  transition: opacity .15s, transform .15s;
+}
+.alert-card-img-link:hover {
+  opacity: .85;
+  transform: scale(1.04);
+}
+
+.alert-product-name-link {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color .15s;
+}
+.alert-product-name-link:hover {
+  color: #1d4ed8;
+}
+
+.alert-go-arrow {
+  font-size: .75rem;
+  opacity: 0;
+  transition: opacity .15s;
+  color: #1d4ed8;
+  flex-shrink: 0;
+}
+.alert-product-name-link:hover .alert-go-arrow {
+  opacity: 1;
+}
