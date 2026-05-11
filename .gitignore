@@ -53,8 +53,6 @@ junit*.xml
 temp/
 
 # ── Scraping: dumps HTML y resultados locales ─────────────────────────────────
-*.html
-!frontend/price-tracker/src/**/*.html
 results.json
 dump_*.json
 
