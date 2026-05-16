@@ -23,6 +23,7 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IUserRoleService;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -72,7 +73,7 @@ public class UserController {
      * @param updateRequest DTO con el nuevo rol
      * @return ResponseEntity con el usuario actualizado
      */
-    @PutMapping("/role")
+    @PatchMapping("/role")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> updateUserRole(
             @RequestBody UserRoleUpdateDTOIN updateRequest) {
