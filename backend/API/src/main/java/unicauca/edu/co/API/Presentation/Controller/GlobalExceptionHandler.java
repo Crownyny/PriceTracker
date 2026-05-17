@@ -3,6 +3,7 @@ package unicauca.edu.co.API.Presentation.Controller;
 import com.google.firebase.auth.AuthErrorCode;
 import com.google.firebase.auth.FirebaseAuthException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -101,6 +102,28 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorDTO);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorDTO> handleDataIntegrityViolation(
+            DataIntegrityViolationException e, HttpServletRequest request) {
+        String message = e.getMessage();
+        if (message != null && message.contains("wishlist_item_product_id_foreign")) {
+            message = "The specified product does not exist in the database.";
+        } else {
+            message = "Data integrity violation: "
+                + (message != null ? message : "A database constraint was violated.");
+        }
+
+        ApiErrorDTO errorDTO = ApiErrorDTO.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error("Data Integrity Violation")
+                .message(message)
+                .path(request.getRequestURI())
+                .timestamp(System.currentTimeMillis())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorDTO);
     }
 
     private String mapFirebaseError(FirebaseAuthException e) {

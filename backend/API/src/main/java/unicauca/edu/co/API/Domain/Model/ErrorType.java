@@ -49,7 +49,12 @@ public enum ErrorType {
     /**
      * Error cuando el rol de usuario es requerido pero no se proporciona
      */
-    MISSING_USER_ROLE("MISSING_USER_ROLE", "El rol del usuario es obligatorio");
+    MISSING_USER_ROLE("MISSING_USER_ROLE", "El rol del usuario es obligatorio"),
+
+    /**
+     * Error cuando se intenta agregar un producto a la lista de deseos que ya existe
+     */
+    PRODUCT_ALREADY_IN_WISHLIST("PRODUCT_IN_WISHLIST", "El producto ya se encuentra en la lista de deseos");
 
     private final String code;
     private final String description;
