@@ -19,7 +19,7 @@ export interface UserProfile {
   email: string;
   name?: string;
   avatar?: string;
-  createdAt: Date;
+  createdAt?: string | Date;
   role?: UserRole;
 }
 

@@ -3,9 +3,6 @@
   const PriceTracker = (global.PriceTracker = global.PriceTracker || {});
   const { constants, state, monitorController } = PriceTracker;
 
-  console.log(`${constants.LOG_PREFIX} Content Script cargado`);
-  console.log(`${constants.LOG_PREFIX} URL actual:`, window.location.href);
-
   /**
    * Valida que estemos en la pestaña "Todo" (All) de Google Search
    * Retorna false si estamos en Imágenes, Videos, Noticias, etc.
@@ -50,11 +47,6 @@
 
       const result = await chrome.storage.local.get([constants.STORAGE_KEYS.EXTENSION_ACTIVE]);
       state.extensionActive = result[constants.STORAGE_KEYS.EXTENSION_ACTIVE] ?? false;
-
-      console.log(
-        `${constants.LOG_PREFIX} Estado inicial:`,
-        state.extensionActive ? 'ACTIVADA' : 'DESACTIVADA'
-      );
 
       if (state.extensionActive) {
         monitorController.start();

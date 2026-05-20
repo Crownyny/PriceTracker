@@ -185,12 +185,12 @@
           <path *ngIf="areaPath" [attr.d]="areaPath" fill="url(#areaGrad)" />
 
           <line *ngFor="let y of gridYs"
-                [attr.x1]="pL" [attr.y1]="y"
-                [attr.x2]="chartW - pR" [attr.y2]="y"
+                [attr.x1]="paddingLeft" [attr.y1]="y"
+                [attr.x2]="chartW - paddingRight" [attr.y2]="y"
                 class="ph-grid-line" />
 
           <text *ngFor="let g of gridLabels"
-                [attr.x]="pL - 8" [attr.y]="g.y + 4"
+                [attr.x]="paddingLeft - 8" [attr.y]="g.y + 4"
                 class="ph-axis-y">{{ g.label }}</text>
 
           <text *ngFor="let x of xLabels"

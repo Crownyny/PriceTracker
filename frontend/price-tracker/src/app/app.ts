@@ -5,7 +5,7 @@ import { AuthService } from './core/services/auth.service';
 import { ExtensionAuthBridgeService } from './core/services/extension-auth-bridge.service';
 import { StompWebSocketService } from './core/services/stomp-websocket.service';
 import { Subject, skip, takeUntil } from 'rxjs';
-import { TokenService, UserProfile } from './core/services/token.service';
+import { TokenService } from './core/services/token.service';
 import { UserRoleService } from './core/services/user-role.service';
 
 @Component({
@@ -51,7 +51,7 @@ import { UserRoleService } from './core/services/user-role.service';
               <a routerLink="/saved" (click)="closeAccountMenu()" class="account-menu-item">Mis guardados</a>
               <a routerLink="/email-notifications" (click)="closeAccountMenu()" class="account-menu-item">Notificaciones email</a>
               <a routerLink="/price-history" (click)="closeAccountMenu()" class="account-menu-item">Historial de precios</a>
-              <a routerLink="/docs" (click)="closeAccountMenu()" class="account-menu-item">Documentación</a>
+              <a routerLink="/documentation" (click)="closeAccountMenu()" class="account-menu-item">Documentación</a>
 
               <button type="button" class="account-logout" (click)="logout()">Cerrar sesión</button>
             </div>
@@ -68,10 +68,9 @@ import { UserRoleService } from './core/services/user-role.service';
   styleUrl: './app.css'
 })
 export class App implements OnInit, OnDestroy {
-  protected readonly title = 'price-traker';
   isConnected = false;
   isAuthenticated = false;
-  private roleSynced = false;  // evita loop authState$ ↔ setUserRole
+  private roleFetchedForSession = false;
   showAccountMenu = false;
   userDisplayName = 'Mi cuenta';
   userEmail = '';
@@ -86,9 +85,7 @@ export class App implements OnInit, OnDestroy {
     private stompService: StompWebSocketService,
     private tokenService:    TokenService,
     private userRoleService: UserRoleService
-  ) {
-    console.log('🚀 Inicializando PriceTracker App');
-  }
+  ) {}
 
   ngOnInit(): void {
     this.syncAuthState();
@@ -103,8 +100,7 @@ export class App implements OnInit, OnDestroy {
         this.refreshUserInfo();
         if (!isAuthenticated) {
           this.showAccountMenu = false;
-          this.roleSynced = false;  // permitir re-sync en el próximo login
-          console.log('[PriceTracker] Sesión cerrada');
+          this.roleFetchedForSession = false;
         }
       });
   }
@@ -114,39 +110,28 @@ export class App implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Conecta el servicio STOMP y monitorea estado de conexión
-   */
   private connectToWebSocket(): void {
-    console.log('🔌 Conectando a WebSocket STOMP...');
-    
-    // Conectar
     this.stompService.connect();
-
-    // Escuchar cambios de estado de conexión
-    this.stompService.connected$.pipe(skip(1)).subscribe((isConnected: boolean) => {
-      this.isConnected = isConnected;
-      if (isConnected) {
-        console.log('✅ WebSocket conectado - listo para búsquedas en tiempo real');
-      } else {
-        console.log('⚠️ WebSocket desconectado - usando REST como fallback');
-      }
-    });
+    this.stompService.connected$
+      .pipe(skip(1), takeUntil(this.destroy$))
+      .subscribe((isConnected: boolean) => {
+        this.isConnected = isConnected;
+      });
   }
 
   private syncAuthState(): void {
     this.isAuthenticated = this.tokenService.hasToken() && !!this.tokenService.getUserProfile();
     this.refreshUserInfo();
-    if (this.isAuthenticated && !this.roleSynced) {
-      this.roleSynced = true;  // ejecutar solo una vez — evita el loop authState$ ↔ setUserRole
-      this.userRoleService.fetchAndSyncRole().subscribe(role => {
-        console.log(`[PriceTracker] Sesión activa — rol: ${role.toUpperCase()}`);
-      });
+    if (this.isAuthenticated && !this.roleFetchedForSession) {
+      this.roleFetchedForSession = true;
+      this.userRoleService.fetchAndSyncRole()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe();
     }
   }
 
   private refreshUserInfo(): void {
-    const profile = this.tokenService.getUserProfile() as UserProfile | null;
+    const profile = this.tokenService.getUserProfile();
     const email = profile?.email || '';
     const name = profile?.name || email || 'Mi cuenta';
 

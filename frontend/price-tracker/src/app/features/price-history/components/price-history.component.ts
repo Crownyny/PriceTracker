@@ -13,6 +13,7 @@ import { AlertService } from '../../alerts/services/alert.service';
 import { PriceHistoryResponse, PriceHistoryRange, PriceHistoryPoint } from '../../../shared/models/price-history.model';
 import { Product } from '../../../shared/models/product.model';
 import { Alert } from '../../../shared/models/alert.model';
+import { formatChartPrice } from '../../../shared/utils/chart.utils';
 
 interface ChartDot  { x: number; y: number; price: number; date: string; }
 interface XLabel    { x: number; label: string; }
@@ -62,7 +63,8 @@ export class PriceHistoryComponent implements OnInit, OnDestroy {
 
   readonly chartW = 900;
   readonly chartH = 280;
-  readonly pL = 72; readonly pR = 20; readonly pT = 20; readonly pB = 36;
+  readonly paddingLeft = 72; readonly paddingRight = 20;
+  readonly paddingTop  = 20; readonly paddingBottom = 36;
 
   readonly ranges = [
     { value: 'W1'  as PriceHistoryRange, label: 'Última semana',    premiumOnly: false },
@@ -105,8 +107,6 @@ export class PriceHistoryComponent implements OnInit, OnDestroy {
         this.showUpgradeBanner = !this.isPremium;
         this.cdr.markForCheck();
       });
-
-    this.loadAlertsWithProducts();
   }
 
   ngOnDestroy(): void {
@@ -249,39 +249,39 @@ export class PriceHistoryComponent implements OnInit, OnDestroy {
     const minP = Math.min(...prices), maxP = Math.max(...prices);
     const minT = Math.min(...times),  maxT = Math.max(...times);
     const rangeP = maxP - minP || 1,  rangeT = maxT - minT || 1;
-    const plotW = this.chartW - this.pL - this.pR;
-    const plotH = this.chartH - this.pT - this.pB;
-    const toX = (t: number) => this.pL + ((t - minT) / rangeT) * plotW;
-    const toY = (p: number) => this.pT + plotH - ((p - minP) / rangeP) * plotH;
+    const plotW = this.chartW - this.paddingLeft - this.paddingRight;
+    const plotH = this.chartH - this.paddingTop - this.paddingBottom;
+    const toX = (t: number) => this.paddingLeft + ((t - minT) / rangeT) * plotW;
+    const toY = (p: number) => this.paddingTop + plotH - ((p - minP) / rangeP) * plotH;
 
     const pts = sorted.map(pt => {
-      const t = new Date(pt.updatedAt ?? (pt as any).recordedAt).getTime();
-      const d = new Date(t);
+      const timestamp = new Date(pt.updatedAt ?? (pt as any).recordedAt).getTime();
+      const date = new Date(timestamp);
       return {
-        x: toX(t), y: toY(Number(pt.price)),
+        x: toX(timestamp), y: toY(Number(pt.price)),
         price: Number(pt.price),
-        date: `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
+        date: `${date.getDate()}/${date.getMonth()+1} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`
       };
     });
 
     this.dots     = pts;
     this.polyline = pts.map(d => `${d.x},${d.y}`).join(' ');
 
-    const baseY = this.pT + plotH;
+    const baseY = this.paddingTop + plotH;
     this.areaPath = `M${pts[0].x},${baseY} ` + pts.map(d => `L${d.x},${d.y}`).join(' ') + ` L${pts[pts.length-1].x},${baseY} Z`;
 
     for (let i = 0; i <= 5; i++) {
       const price = minP + rangeP * i / 5;
       const y = toY(price);
       this.gridYs.push(y);
-      this.gridLabels.push({ y, label: this.fmtChartPrice(price) });
+      this.gridLabels.push({ y, label: formatChartPrice(price) });
     }
 
     const count = Math.min(6, sorted.length);
     for (let i = 0; i < count; i++) {
-      const t = minT + rangeT * i / Math.max(count - 1, 1);
-      const d = new Date(t);
-      this.xLabels.push({ x: toX(t), label: `${d.getDate()}/${d.getMonth()+1}` });
+      const timestamp = minT + rangeT * i / Math.max(count - 1, 1);
+      const date = new Date(timestamp);
+      this.xLabels.push({ x: toX(timestamp), label: `${date.getDate()}/${date.getMonth()+1}` });
     }
   }
 
@@ -313,12 +313,6 @@ export class PriceHistoryComponent implements OnInit, OnDestroy {
 
   fmtPrice(p: number): string {
     return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(p);
-  }
-
-  private fmtChartPrice(p: number): string {
-    if (p >= 1_000_000) return `$${(p/1_000_000).toFixed(1)}M`;
-    if (p >= 1_000)     return `$${(p/1_000).toFixed(0)}k`;
-    return `$${p.toFixed(0)}`;
   }
 
   savings(item: ProductWithAlert): number {

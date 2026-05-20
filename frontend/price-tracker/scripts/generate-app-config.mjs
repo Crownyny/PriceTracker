@@ -46,7 +46,7 @@ async function loadEnvConfig() {
 
     const content = await readFile(envPath, 'utf8');
     const config = parseEnvFile(content);
-    if (config.FIREBASE_API_KEY && !config.FIREBASE_API_KEY.includes('your_')) {
+    if (config.FIREBASE_API_KEY && !config.FIREBASE_API_KEY.includes('your_') && config.API_URL) {
       return config;
     }
   }
@@ -56,6 +56,7 @@ async function loadEnvConfig() {
 
 function buildRuntimeConfig(envConfig) {
   return {
+    apiUrl: envConfig.API_URL,
     firebase: {
       apiKey: envConfig.FIREBASE_API_KEY,
       authDomain: envConfig.FIREBASE_AUTH_DOMAIN,

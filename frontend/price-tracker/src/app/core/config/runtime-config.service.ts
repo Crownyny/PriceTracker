@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { FirebaseOptions } from 'firebase/app';
 
 export type AppRuntimeConfig = {
+  apiUrl: string;
   firebase: FirebaseOptions;
 };
 
@@ -27,6 +28,10 @@ export class RuntimeConfigService {
       throw new Error('La configuración runtime de Firebase es inválida');
     }
 
+    if (!loadedConfig?.apiUrl) {
+      throw new Error('La configuración runtime no incluye apiUrl');
+    }
+
     this.config = loadedConfig;
   }
 
@@ -36,5 +41,13 @@ export class RuntimeConfigService {
     }
 
     return this.config.firebase;
+  }
+
+  getApiUrl(): string {
+    if (!this.config) {
+      throw new Error('La configuración runtime aún no fue cargada');
+    }
+
+    return this.config.apiUrl;
   }
 }

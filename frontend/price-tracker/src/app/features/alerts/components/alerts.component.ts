@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -10,6 +10,7 @@ import { ProductsService } from '../../products/services/products.service';
 import { Product } from '../../../shared/models/product.model';
 import { catchError, debounceTime, distinctUntilChanged, Subject, switchMap, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { getFrequencyLabel } from '../../../shared/utils/alert.utils';
 
 @Component({
   selector: 'app-alerts',
@@ -20,7 +21,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 })
 export class AlertsComponent implements OnInit {
 
-  // ── Estado de alertas ──────────────────────────────────────────────────────
   alerts: Alert[] = [];
   productNames:  Record<string, string> = {};
   productImages: Record<string, string> = {};
@@ -29,7 +29,6 @@ export class AlertsComponent implements OnInit {
   error: string | null = null;
   isPremium = false;
 
-  // ── Modal crear/gestionar alerta ───────────────────────────────────────────
   modalOpen = false;
   modalMode: 'create' | 'manage' = 'create';
   modalProduct: Product | null = null;
@@ -39,13 +38,13 @@ export class AlertsComponent implements OnInit {
   modalError: string | null = null;
   modalSuccess: string | null = null;
 
-  // ── Búsqueda de productos (para crear alerta) ─────────────────────────────
   productSearchQuery = '';
   productSearchResults: Product[] = [];
   productSearchLoading = false;
   productSearchError: string | null = null;
   productSearchDone = false;
 
+  private readonly destroyRef = inject(DestroyRef);
   private searchSubject = new Subject<string>();
 
   constructor(
@@ -86,11 +85,12 @@ export class AlertsComponent implements OnInit {
 
   ngOnInit(): void {
     this.isPremium = this.userRoleService.canUsePremiumFeatures();
-    // Detecta cambios externos de rol (Postman, admin) — actualiza isPremium reactivamente via role$
-    this.userRoleService.fetchAndSyncRole().subscribe(role => {
-      this.isPremium = role === 'premium';
-      this.cdr.markForCheck();
-    });
+    this.userRoleService.fetchAndSyncRole()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(role => {
+        this.isPremium = role === 'premium';
+        this.cdr.markForCheck();
+      });
     this.loadAlerts();
 
     // Si viene ?productId=... desde otra pantalla, pre-seleccionar ese producto
@@ -120,18 +120,17 @@ export class AlertsComponent implements OnInit {
     });
   }
 
-  /** Resuelve en paralelo nombre, imagen y precio de cada producto */
   private resolveProductNames(alerts: Alert[]): void {
     for (const alert of alerts) {
       if (!alert.productId || this.productNames[alert.productId]) continue;
-      // Placeholder inmediato
+
       this.productNames[alert.productId] = alert.productRef || alert.productId.slice(0, 8) + '…';
-      // Resolver datos reales en segundo plano
+
       this.productsService.resolveProductName(alert.productId).subscribe(name => {
         this.productNames[alert.productId] = name;
         this.cdr.markForCheck();
       });
-      // Obtener imagen y precio del caché o del backend
+
       const cached = this.productsService.getCachedProduct(alert.productId);
       if (cached) {
         if (cached.image) this.productImages[alert.productId] = cached.image;
@@ -183,17 +182,14 @@ export class AlertsComponent implements OnInit {
     this.modalOpen = true;
   }
 
-  /** Cuando viene un productId por queryParam (flujo desde Dashboard / ProductDetail) */
   private openCreateModalWithProductId(productId: string): void {
     this.productsService.getProduct(productId).pipe(
       catchError(() => of(null))
     ).subscribe((product) => {
       if (!product) {
-        // Si no se puede resolver el producto, abrir modal vacío con búsqueda
         this.openCreateModal();
         return;
       }
-      // Ver si ya existe alerta para ese producto
       this.alertService.findAlertByProductId(productId).pipe(
         catchError(() => of(null))
       ).subscribe((existing) => {
@@ -234,7 +230,6 @@ export class AlertsComponent implements OnInit {
     this.productSearchResults = [];
     this.productSearchDone = false;
 
-    // Verificar si ya existe alerta para este producto
     this.alertService.findAlertByProductId(product.id).pipe(
       catchError(() => of(null))
     ).subscribe((existing) => {
@@ -384,12 +379,7 @@ export class AlertsComponent implements OnInit {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  getFrequencyLabel(frequency: string): string {
-    const labels: Record<string, string> = {
-      instant: 'Inmediata', daily: 'Diaria', weekly: 'Semanal'
-    };
-    return labels[frequency] ?? frequency;
-  }
+  readonly getFrequencyLabel = getFrequencyLabel;
 
   setModalFrequency(value: string): void {
     if (value === 'instant' || value === 'daily' || value === 'weekly') {

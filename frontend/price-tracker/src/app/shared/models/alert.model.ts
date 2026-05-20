@@ -36,7 +36,6 @@ export interface CreateAlertRequest {
   targetPrice?: number;
   currency?: string;
   condition?: string;
-  frecuency?: AlertFrequency;
   frequency: AlertFrequency;
   notificationMethod?: NotificationMethod;
 }
@@ -47,7 +46,6 @@ export interface CreateAlertRequest {
 export interface UpdateAlertRequest {
   targetPrice?: number;
   condition?: string;
-  frecuency?: AlertFrequency;
   frequency?: AlertFrequency;
   notificationMethod?: NotificationMethod;
 }

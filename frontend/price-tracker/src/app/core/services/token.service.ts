@@ -1,18 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { UserProfile } from '../../shared/models/auth.model';
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  name?: string;
-  avatar?: string;
-  createdAt?: string | Date;
-  role?: 'registered' | 'premium';
-}
+export type { UserProfile };
 
-/**
- * Token Service - Maneja almacenamiento y recuperación de tokens
- */
 @Injectable({
   providedIn: 'root'
 })
@@ -25,49 +16,27 @@ export class TokenService {
   );
 
   public readonly authState$ = this.authStateSubject.asObservable();
-  /** Emite el rol actualizado cada vez que cambia (útil para componentes reactivos). */
   public readonly role$ = this.roleSubject.asObservable();
 
-  /**
-   * Obtiene el token de acceso
-   */
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
-  /**
-   * Obtiene el token de refresco
-   */
-  getRefreshToken(): string | null {
-    return null;
-  }
-
-  /**
-   * Guarda los tokens
-   */
-  setTokens(accessToken: string, refreshToken?: string): void {
+  setTokens(accessToken: string): void {
     localStorage.setItem(this.TOKEN_KEY, accessToken);
     this.authStateSubject.next(true);
   }
 
-  /**
-   * Guarda el perfil del usuario
-   */
   setUserProfile(user: UserProfile): void {
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
   }
 
-  /**
-   * Obtiene el perfil del usuario
-   */
   getUserProfile(): UserProfile | null {
-    const user = localStorage.getItem(this.USER_KEY);
-    if (!user) {
-      return null;
-    }
+    const stored = localStorage.getItem(this.USER_KEY);
+    if (!stored) return null;
 
     try {
-      return JSON.parse(user) as UserProfile;
+      return JSON.parse(stored) as UserProfile;
     } catch {
       return null;
     }
@@ -75,29 +44,12 @@ export class TokenService {
 
   setUserRole(role: 'registered' | 'premium'): void {
     const profile = this.getUserProfile();
-    if (!profile) {
-      return;
-    }
+    if (!profile) return;
 
-    const updated = {
-      ...profile,
-      role
-    };
-
-    this.setUserProfile(updated);
-    try {
-      console.info('[TokenService] setUserRole -> updated role to', role, 'for user', profile.id);
-    } catch (e) {
-      // noop
-    }
-
-    // Notify any subscribers that auth/profile state may have changed
-    try {
-      this.authStateSubject.next(this.hasStoredSession());
-      this.roleSubject.next(role);
-    } catch (e) {
-      // noop
-    }
+    this.setUserProfile({ ...profile, role });
+    console.info('[TokenService] rol actualizado a', role, 'para el usuario', profile.id);
+    this.authStateSubject.next(this.hasStoredSession());
+    this.roleSubject.next(role);
   }
 
   getUserRole(): 'registered' | 'premium' {
@@ -108,32 +60,17 @@ export class TokenService {
     return this.getUserRole() === 'premium';
   }
 
-  /**
-   * Verifica si hay un token válido
-   */
   hasToken(): boolean {
     return !!this.getToken();
   }
 
-  /**
-   * Limpia todos los tokens y datos de usuario
-   */
   clearTokens(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.authStateSubject.next(false);
   }
 
-  /**
-   * Realiza logout del usuario
-   */
-  logout(): void {
-    this.clearTokens();
-  }
-
-  /**
-   * Decodifica el token JWT (sin validación)
-   */
+  /** Decodifica el payload del token JWT sin verificar firma. */
   decodeToken(token: string): any {
     try {
       const parts = token.split('.');
@@ -141,25 +78,20 @@ export class TokenService {
 
       const base64Url = parts[1].replace(/-/g, '+').replace(/_/g, '/');
       const padding = '='.repeat((4 - (base64Url.length % 4)) % 4);
-      const decoded = JSON.parse(atob(base64Url + padding));
-      return decoded;
-    } catch (error) {
+      return JSON.parse(atob(base64Url + padding));
+    } catch {
       return null;
     }
   }
 
-  /**
-   * Verifica si el token está expirado
-   */
   isTokenExpired(token?: string): boolean {
-    const tkn = token || this.getToken();
+    const tkn = token ?? this.getToken();
     if (!tkn) return true;
 
     const decoded = this.decodeToken(tkn);
-    if (!decoded || !decoded.exp) return true;
+    if (!decoded?.exp) return true;
 
-    const expirationDate = new Date(decoded.exp * 1000);
-    return expirationDate <= new Date();
+    return new Date(decoded.exp * 1000) <= new Date();
   }
 
   private hasStoredSession(): boolean {

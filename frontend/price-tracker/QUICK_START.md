@@ -1,150 +1,57 @@
-# 🚀 Quick Start - Dashboard Angular
+# Quick Start
 
-## ⚡ 5 Minutos para Comenzar
+## Dashboard Angular
 
-### 1. Instalar
 ```bash
-cd frontend/price-traker
+cd frontend/price-tracker
 npm install
+npm start
 ```
 
-### 2. Configurar Backend (opcional)
-El dashboard intenta conectar a `http://localhost:8080/api/v1` por defecto.
-
-Si tu backend está en otra URL, edita:
-```typescript
-// src/app/core/services/http-config.service.ts
-private readonly API_BASE_URL = 'http://tu-backend-url/api';
-```
-
-### 3. Ejecutar
-```bash
-npm run dev
-```
-
-Abre: `http://localhost:4200`
+Abre `http://localhost:4200`. Si el backend no está corriendo, la app carga igualmente pero las peticiones fallarán con errores de red — es el comportamiento esperado.
 
 ---
 
-## 🔑 Token de Autenticación
+## Simular sesión sin backend
 
-El dashboard requiere un token JWT. Para simularlo localmente:
+Si necesitas trabajar en el frontend sin el backend disponible, puedes inyectar un token y perfil manualmente en la consola del navegador (F12):
 
-```typescript
-// En browser console (F12):
-localStorage.setItem('access_token', 'tu-token-aqui');
+```js
+localStorage.setItem('access_token', 'token-de-prueba');
 localStorage.setItem('user_profile', JSON.stringify({
   id: 'user-123',
-  email: 'user@example.com',
-  name: 'Juan'
+  email: 'dev@example.com',
+  name: 'Dev'
 }));
 ```
 
-Luego recarga la página.
+Recarga la página. El `AuthGuard` leerá el token y permitirá el acceso a las rutas protegidas. Las peticiones al backend seguirán fallando si no está activo.
 
 ---
 
-## 📱 Rutas Disponibles
-
-| Ruta | Descripción |
-|------|------------|
-| `/dashboard` | Panel principal con estadísticas |
-| `/price-history` | Historial y análisis de precios |
-| `/alerts` | Gestión de alertas |
-
----
-
-## 🔗 Endpoints Esperados del Backend
-
-El dashboard consume estos endpoints:
-
-```
-GET  /api/v1/products/{productId}/priceHistory?range=M1
-GET  /api/v1/products/{productId}/alert?frequency=1d
-POST /api/v1/products/{productId}/alert
-PUT  /api/v1/products/{productId}/alert/{alertId}
-PATCH /api/v1/products/{productId}/alert/{alertId}
-DELETE /api/v1/products/{productId}/alert/{alertId}
-GET  /api/v1/products/search?q=iphone
-GET  /api/v1/users/{userId}/saved-products
-```
-
----
-
-## 💡 Ejemplos de Uso
-
-### Buscar Productos
-```typescript
-import { ProductsService } from './services/products.service';
-
-@Component({...})
-export class MyComponent {
-  constructor(private products: ProductsService) {}
-
-  search(query: string) {
-    this.products.searchProducts(query).subscribe(result => {
-      console.log(result.products);
-    });
-  }
-}
-```
-
-### Crear Alerta
-```typescript
-import { AlertService } from './services/alert.service';
-
-this.alertService.createAlert('product-123', {
-  productId: 'product-123',
-  targetPrice: 99.99,
-  currency: 'USD',
-  frequency: '1d',
-  notificationMethod: 'email'
-}).subscribe(response => {
-  console.log('Alerta creada:', response.alert);
-});
-```
-
-### Obtener Historial de Precios
-```typescript
-import { PriceHistoryService } from './services/price-history.service';
-
-this.priceHistory.getPriceHistory('product-123', 'M1')
-  .subscribe(data => {
-    console.log(data.history);
-  });
-```
-
----
-
-## 🎨 Personalizar Colores
-
-Los colores están en `src/styles.css`:
-
-```css
-:root {
-  --primary-color: #667eea;  /* Color principal */
-  --danger: #c53030;         /* Rojo */
-  --success: #2e7d32;        /* Verde */
-}
-```
-
----
-
-## 🐛 Debug
-
-Activa logs en la consola (F12):
+## Cambiar la URL del backend
 
 ```typescript
-// En cualquier servicio, añade:
-console.log('Response:', response);
+// src/app/core/services/http-config.service.ts
+private readonly API_BASE_URL = 'http://localhost:8080/api';
 ```
 
 ---
 
-## 📚 Más Información
+## Extensión Chrome
 
-Ver [DASHBOARD_README.md](./DASHBOARD_README.md) para documentación completa.
+1. Abre `chrome://extensions/` y activa **Modo desarrollador**
+2. **Cargar extensión sin empaquetar** → selecciona la carpeta `chrome/`
+3. Crea `chrome/.env.local` con tus credenciales de Firebase (ver `chrome/REFACTOR_SECURITY.md`)
+
+Para recargar la extensión después de cambios en `background.js` o `manifest.json`, haz clic en el ícono de recarga en `chrome://extensions/`. Los cambios en `content.js` se aplican al recargar la pestaña donde está activo.
 
 ---
 
-**Listo para empezar 🎉**
+## Debugging
+
+**Dashboard:** DevTools del navegador → pestaña Network para ver peticiones HTTP, pestaña Application → Local Storage para ver el token y perfil guardados.
+
+**Extensión background.js:** `chrome://extensions/` → clic en "Service Worker" bajo la extensión → abre DevTools del service worker.
+
+**Extensión content.js:** DevTools de la pestaña donde está activa la extensión → consola normal.

@@ -83,8 +83,6 @@ export class AuthService {
             this.tokenService.setTokens(response.accessToken);
             this.tokenService.setUserProfile(response.user);
             this.extensionAuthBridge.publishAuthUpdate(response.accessToken, response.user.email);
-            // Sincronizar el rol real desde el backend inmediatamente al hacer login
-            // Evita que el usuario vea "REGISTERED" si su rol real es "premium"
             return this.userRoleService.fetchAndSyncRole().pipe(
               map(() => response),
               catchError(() => of(response))
@@ -144,7 +142,7 @@ export class AuthService {
                 if (created.role) {
                   this.tokenService.setUserRole(created.role);
                 }
-                // Sincronizar rol real desde backend (usuario puede ser premium)
+                // Sincronizar rol — el usuario puede ya ser premium en el backend
                 return this.userRoleService.fetchAndSyncRole().pipe(
                   map(() => response),
                   catchError(() => of(response))
