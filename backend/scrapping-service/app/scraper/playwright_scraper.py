@@ -208,7 +208,7 @@ class PlaywrightScraper(BaseScraper):
                     product_ref=job.product_ref,
                     source_name=job.source_name,
                     scraped_at=now,
-                    raw_fields={**fields, "scraping_job_id": job.job_id},
+                    raw_fields={**fields, "scraping_job_id": job.job_id, "alert_priority": job.priority},
                     html_content=None,
                     status="success",
                 )
@@ -243,7 +243,7 @@ class PlaywrightScraper(BaseScraper):
             product_ref=job.product_ref,
             source_name=job.source_name,
             scraped_at=datetime.datetime.now(tz=datetime.timezone.utc),
-            raw_fields=_empty_fields(),
+            raw_fields={**_empty_fields(), "alert_priority": job.priority},
             html_content=None,
             status="failed",
             error_message=error,

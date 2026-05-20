@@ -31,24 +31,27 @@ CREATE OR REPLACE FUNCTION sync_product_alert_priority(target_product_id VARCHAR
 RETURNS VOID
 LANGUAGE plpgsql
 AS '
+DECLARE
+    new_priority INT;
 BEGIN
-    UPDATE "normalized_products" p
-    SET "alert_priority" = COALESCE(
-        (
-            SELECT MAX(
-                CASE a."frequency"
-                    WHEN ''instant'' THEN 3
-                    WHEN ''daily'' THEN 2
-                    WHEN ''weekly'' THEN 1
-                    ELSE 0
-                END
-            )
-            FROM "alert" a
-            WHERE a."product_id" = target_product_id
-              AND a."is_active" = TRUE
+    SELECT COALESCE(
+        MAX(
+            CASE a."frequency"
+                WHEN ''instant'' THEN 3
+                WHEN ''daily'' THEN 2
+                WHEN ''weekly'' THEN 1
+                ELSE 0
+            END
         ),
         0
-    )
+    ) INTO new_priority
+    FROM "alert" a
+    WHERE a."product_id" = target_product_id
+      AND a."is_active" = TRUE;
+
+    UPDATE "normalized_products" p
+    SET "alert_priority" = new_priority,
+        "next_scrape_at" = CURRENT_TIMESTAMP
     WHERE p."id" = target_product_id;
 END;
 ';

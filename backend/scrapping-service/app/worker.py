@@ -148,6 +148,10 @@ class ScraperWorker(BaseConsumer):
                         )
                         continue
 
+                if result.raw_fields is None:
+                    result.raw_fields = {}
+                result.raw_fields["alert_priority"] = job.priority
+
                 await self._publisher.publish_result(result, query=request.query, is_update=request.is_update)
                 products_published += 1
         except Exception as exc:
@@ -323,6 +327,10 @@ class ScraperWorker(BaseConsumer):
                         job.source_name,
                     )
                     continue
+
+                if result.raw_fields is None:
+                    result.raw_fields = {}
+                result.raw_fields["alert_priority"] = job.priority
 
                 # Publicar resultado con store_url incluido
                 await self._publisher.publish_result(
