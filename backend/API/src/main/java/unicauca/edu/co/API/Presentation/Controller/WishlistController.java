@@ -16,6 +16,14 @@ import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.WishlistItemDTO;
 import unicauca.edu.co.API.Services.Interfaces.IN.IWishlistService;
 
+/**
+ * Controlador REST del m&oacute;dulo Wishlist.
+ * Expone los endpoints para gestionar la lista de deseos del usuario autenticado.
+ * <p>
+ * Todos los endpoints requieren autenticaci&oacute;n ({@code @PreAuthorize("isAuthenticated()")}).
+ * <p>
+ * Base URL: {@code /api/v1/wishlist}
+ */
 @RestController
 @RequestMapping("/api/v1/wishlist")
 public class WishlistController {
@@ -26,6 +34,18 @@ public class WishlistController {
         this.wishlistService = wishlistService;
     }
 
+    /**
+     * Agrega un producto a la wishlist del usuario autenticado.
+     * <p>
+     * Validaciones:
+     * <ul>
+     *   <li>Si el producto ya existe en la wishlist → {@code 400 PRODUCT_IN_WISHLIST}</li>
+     *   <li>Si el usuario es registered y ya tiene 5 productos → {@code 400 WISHLIST_LIMIT}</li>
+     * </ul>
+     *
+     * @param idProduct ID del producto a agregar
+     * @return {@code 201 Created} con el {@link WishlistItemDTO} del item creado
+     */
     @PostMapping("/product/{idProduct}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<WishlistItemDTO> addProductToWishlist(@PathVariable String idProduct) {
@@ -33,6 +53,20 @@ public class WishlistController {
         return ResponseEntity.status(HttpStatus.CREATED).body(wishlistItem);
     }
 
+    /**
+     * Obtiene los productos normalizados de la wishlist del usuario autenticado.
+     * <p>
+     * Query params:
+     * <ul>
+     *   <li>{@code sort} — {@code "recent"} (default, m&aacute;s recientes primero)
+     *       o {@code "old"} (m&aacute;s antiguos primero)</li>
+     *   <li>{@code limit} — n&uacute;mero m&aacute;ximo de productos a retornar (opcional)</li>
+     * </ul>
+     *
+     * @param limit cantidad m&aacute;xima de productos (opcional)
+     * @param sort  criterio de ordenamiento
+     * @return {@code 200 OK} con la lista de productos normalizados
+     */
     @GetMapping("/products")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<NormalizedProductDTO>> getNormalizedWishlistProducts(
