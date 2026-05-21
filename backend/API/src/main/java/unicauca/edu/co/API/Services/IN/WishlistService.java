@@ -25,6 +25,23 @@ import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IWishlistService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IWishlistPersistencePort;
 
+/**
+ * Servicio de dominio para el m&oacute;dulo Wishlist.
+ * Implementa los casos de uso definidos en {@link IWishlistService}.
+ * <p>
+ * Dependencias:
+ * <ul>
+ *   <li>{@link IWishlistPersistencePort} — puerto de salida para persistencia</li>
+ *   <li>{@link IUserService} — para obtener el usuario autenticado y su rol</li>
+ * </ul>
+ * <p>
+ * Reglas de negocio:
+ * <ul>
+ *   <li>Usuarios <b>registered</b> pueden tener hasta 5 productos en su wishlist</li>
+ *   <li>Usuarios <b>premium</b> no tienen l&iacute;mite</li>
+ *   <li>No se permite duplicar un producto en la misma wishlist</li>
+ * </ul>
+ */
 @Service
 @Transactional
 public class WishlistService implements IWishlistService {
@@ -94,6 +111,13 @@ public class WishlistService implements IWishlistService {
         return wishlistMapper.toDTO(savedItem);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Obtiene los wishlist items del usuario, los empareja con sus productos normalizados
+     * (saltando aquellos cuyo producto no exista en la BD), aplica el filtro de cantidad
+     * y devuelve los DTOs enriquecidos con confianza y fecha de scrap.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<NormalizedProductDTO> getNormalizedWishlistProducts(Integer limit, String sort) {
@@ -130,6 +154,13 @@ public class WishlistService implements IWishlistService {
         return resultList;
     }
 
+    /**
+     * Construye un {@link NormalizedProductDTO} enriquecido con metadatos adicionales:
+     * fecha del &uacute;ltimo scrapeo y nivel de confianza.
+     *
+     * @param entity entidad del producto normalizado
+     * @return DTO enriquecido
+     */
     private NormalizedProductDTO buildProductDTO(NormalizedProductEntity entity) {
         NormalizedProductDTO dto = normalizedProductMapper.toDTO(entity);
         dto.setScrapedAt(entity.getLastScrapedAt() != null
@@ -139,6 +170,18 @@ public class WishlistService implements IWishlistService {
         return dto;
     }
 
+    /**
+     * Calcula el nivel de confianza del precio en base a cu&aacute;ntos d&iacute;as
+     * pasaron desde el &uacute;ltimo scrapeo.
+     * <ul>
+     *   <li>&le; 1 d&iacute;a → {@code HIGH}</li>
+     *   <li>&le; 7 d&iacute;as → {@code MEDIUM}</li>
+     *   <li>&gt; 7 d&iacute;as o null → {@code LOW}</li>
+     * </ul>
+     *
+     * @param entity entidad del producto normalizado
+     * @return nivel de confianza como String
+     */
     private String calculateConfidence(NormalizedProductEntity entity) {
         if (entity.getLastScrapedAt() == null) {
             return "LOW";
