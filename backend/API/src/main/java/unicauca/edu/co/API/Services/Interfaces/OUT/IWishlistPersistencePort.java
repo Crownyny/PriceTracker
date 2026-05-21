@@ -13,4 +13,12 @@ public interface IWishlistPersistencePort {
     Optional<WishlistItem> findByUserIdAndProductId(UUID userId, String productId);
 
     List<WishlistItem> findByUserId(UUID userId, String sort);
+
+    /**
+     * Cuenta los productos en la wishlist de un usuario.
+     * Utilizado para validar el límite de 5 productos para usuarios registered.
+     * @param userId ID del usuario
+     * @return cantidad de productos en la wishlist
+     */
+    long countByUserId(UUID userId);
 }
