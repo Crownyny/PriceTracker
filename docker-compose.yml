@@ -77,13 +77,16 @@ services:
       OPENAI_BASE_URL: "http://ollama:11434/v1"
       ENABLE_SEMANTIC_VALIDATOR: "true"
       SEMANTIC_EMBEDDINGS_MODEL: "/models/all-MiniLM-L6-v2"
-      HF_HUB_OFFLINE: "1"
-      TRANSFORMERS_OFFLINE: "1"
+      HF_HUB_OFFLINE: "0"
+      TRANSFORMERS_OFFLINE: "0"
       SENTENCE_TRANSFORMERS_HOME: "/models"
       # Concurrencia del worker
       NORMALIZER_PREFETCH_COUNT: "1"
     ports:
       - "8002:8002"
+    volumes:
+      - normalizer_models:/models
+      - /home/crwy/.cache/huggingface:/root/.cache/huggingface
     restart: unless-stopped
 
   # ── microServiceModelProduct ─────────────────────────────────────────────────
@@ -172,4 +175,5 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  normalizer_models:
 #  ollama_data:

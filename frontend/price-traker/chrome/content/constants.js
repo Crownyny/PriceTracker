@@ -12,10 +12,6 @@
       OPEN_DASHBOARD: 'OPEN_DASHBOARD',
       SHOW_PRICE_OVERLAY: 'SHOW_PRICE_OVERLAY',
     },
-    GOOGLE_SEARCH: {
-      // Tipos de búsqueda no permitidos (solo "Todo"/All está permitido)
-      RESTRICTED_TYPES: ['isch', 'vid', 'nws', 'lcl', 'shop', 'bks', 'flm'], // Imágenes, Videos, Noticias, Locales, Compras, Libros, Películas
-    },
     REFRESH: {
       CACHE_TTL_MS: 60 * 1000,
       POLL_INTERVAL_MS: 45 * 1000,
@@ -32,13 +28,13 @@
     },
     API: {
       USE_MOCK: false,
-      BASE_URL: 'http://localhost:8080',
+      BASE_URL: 'https://api.mangelcvivas.tech',
       REST_SEARCH_PATH: '/api/products/search',
       REST_INTENT_PATH: '/api/intent/intent',
       REST_FALLBACK_ENABLED: true,
     },
     WS: {
-      BASE_URL: 'ws://localhost:8080',
+      BASE_URL: 'wss://api.mangelcvivas.tech',
       ENDPOINT: '/ws',
       SEARCH_DESTINATION: '/app/search',
       USER_PRODUCTS_QUEUE: '/user/queue/products',

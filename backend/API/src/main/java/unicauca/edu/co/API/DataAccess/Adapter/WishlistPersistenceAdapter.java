@@ -1,7 +1,9 @@
 package unicauca.edu.co.API.DataAccess.Adapter;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -29,6 +31,19 @@ public class WishlistPersistenceAdapter implements IWishlistPersistencePort {
     public Optional<WishlistItem> findByUserIdAndProductId(UUID userId, String productId) {
         return wishlistItemRepository.findByUserIdAndProductId(userId, productId)
                 .map(this::toDomain);
+    }
+
+    @Override
+    public List<WishlistItem> findByUserId(UUID userId, String sort) {
+        List<WishlistItemEntity> entities;
+        if ("old".equalsIgnoreCase(sort)) {
+            entities = wishlistItemRepository.findByUserIdOrderByCreatedAtAsc(userId);
+        } else {
+            entities = wishlistItemRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        }
+        return entities.stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
     }
 
     private WishlistItem toDomain(WishlistItemEntity entity) {
