@@ -55,7 +55,7 @@ public class ProductRestController {
 	 */
 	@GetMapping("/{productId}/product")
 	public ResponseEntity<NormalizedProductDTO> getProductById(@PathVariable String productId) {
-		NormalizedProductDTO product = normalizerProductService.getNormalizedProductById(productId);
+		NormalizedProductDTO product = productService.getProductById(productId);
 		
 		if (product == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -63,5 +63,10 @@ public class ProductRestController {
 		
 		return ResponseEntity.ok(product);
 	}
+	@GetMapping("/trending")
+	public List<NormalizedProductDTO> getTrendingProducts() {
+		return productService.getProductMostSearch();
+	}
+
 
 }

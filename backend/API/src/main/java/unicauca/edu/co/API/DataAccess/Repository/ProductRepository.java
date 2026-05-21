@@ -82,6 +82,13 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
     Optional<NormalizedProductEntity> findBySourceUrl(String sourceUrl);
 
     /**
+     * Encuentra el último producto normalizado por URL de fuente, ordenado por fecha de actualización descendente.
+     * @param sourceUrl
+     * @return
+     */
+    Optional<NormalizedProductEntity> findFirstBySourceUrlOrderByUpdatedAtDesc(String sourceUrl);
+
+    /**
      * Encuentra el último producto normalizado por referencia.
      * @param productRef La referencia del producto para la cual se desea encontrar el último producto normalizado.
      * @return Un Optional que contiene el último producto normalizado encontrado, o vacío si no se encontró ninguno.

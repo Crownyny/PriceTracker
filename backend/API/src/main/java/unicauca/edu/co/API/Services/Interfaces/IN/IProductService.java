@@ -3,6 +3,8 @@ package unicauca.edu.co.API.Services.Interfaces.IN;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.validator.constraints.Normalized;
+
 import unicauca.edu.co.API.Presentation.DTO.IN.FilterParamsDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
@@ -44,6 +46,12 @@ public interface IProductService {
      * @return Un objeto NormalizedProductDTO que corresponde al ID del producto especificado. Si el producto no existe, se devuelve null.
      */
     NormalizedProductDTO getProductById(String id);
+
+    /**
+     * Obtiene un producto normalizado mas buscados duratne el ultimo 
+     * @return
+     */
+    List<NormalizedProductDTO> getProductMostSearch();
 
 
 }
