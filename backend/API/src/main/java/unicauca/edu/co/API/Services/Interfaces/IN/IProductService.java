@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.hibernate.validator.constraints.Normalized;
 
-import unicauca.edu.co.API.Presentation.DTO.IN.FilterParamsDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.FilterProductsParamsDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 /**
@@ -29,7 +29,7 @@ public interface IProductService {
      * @param filterParamsDTO Objeto que contiene los parámetros de filtrado para los productos, como el rango de precios, la categoría, etc.
      * @return Una lista de objetos NormalizedProductDTO que corresponden a la referencia del producto especificada.
      */
-    List<NormalizedProductDTO> getProductByProductRef(QueryDTOIN query , FilterParamsDTO filterParamsDTO);
+    List<NormalizedProductDTO> getProductByProductRef(QueryDTOIN query , FilterProductsParamsDTO filterParamsDTO);
 
 
     /**

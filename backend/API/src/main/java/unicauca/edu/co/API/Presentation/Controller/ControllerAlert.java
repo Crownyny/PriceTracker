@@ -7,15 +7,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.firebase.database.annotations.NotNull;
@@ -26,6 +29,7 @@ import jakarta.validation.constraints.NotBlank;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertStatusDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.FilterAlertParamsDTO;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
 /**
@@ -87,11 +91,12 @@ public class ControllerAlert {
      */
     @GetMapping("/alert")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<AlertDTO>> getAllAlerts() {
-        List<AlertDTO> alerts = alertService.getAllAlerts();
-        return new ResponseEntity<>(alerts, HttpStatus.OK);
+    public ResponseEntity<List<AlertDTO>> getAllAlerts(
+            @ModelAttribute FilterAlertParamsDTO params
+    ) {
+        List<AlertDTO> alerts = alertService.getAllAlerts(params);
+        return ResponseEntity.ok(alerts);
     }
-
     /**
      * Actualiza una alerta existente.
      * Valida que la alerta pertenezca al usuario autenticado.

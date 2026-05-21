@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FilterParamsDTO {
+public class FilterProductsParamsDTO {
     // Filtros que vienen por QueryParams
     private String sortBy;        // name, price, createdAt
     private String order;         // asc, desc

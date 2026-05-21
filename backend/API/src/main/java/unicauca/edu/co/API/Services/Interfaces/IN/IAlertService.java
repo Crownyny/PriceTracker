@@ -6,6 +6,7 @@ import java.util.UUID;
 import unicauca.edu.co.API.DataAccess.Entity.AlertEntity.AlertFrequency;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.FilterAlertParamsDTO;
 
 public interface IAlertService {
     /**
@@ -48,7 +49,7 @@ public interface IAlertService {
      * Obtiene todas las alertas existentes. El usuario debe estar autenticado para obtener las alertas.
      * @return Lista de alertas existentes, o una lista vacía si no se encuentran alertas
      */
-    List<AlertDTO> getAllAlerts();
+    List<AlertDTO> getAllAlerts(FilterAlertParamsDTO params);
 
     /**
      * Desactiva todas las alertas de un usuario. dejando solo las 3 primeras cuando
