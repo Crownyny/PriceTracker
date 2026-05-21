@@ -1,13 +1,18 @@
 package unicauca.edu.co.API.Services.IN;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.google.firebase.database.annotations.NotNull;
 
@@ -24,6 +29,7 @@ import unicauca.edu.co.API.Domain.Model.ErrorType;
 import unicauca.edu.co.API.Exception.BusinessException;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.AlertRequestDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.FilterAlertParamsDTO;
 import unicauca.edu.co.API.Presentation.Mapper.AlertMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 
@@ -123,12 +129,27 @@ public class AlertService implements IAlertService {
     }
 
     @Override
-    public List<AlertDTO> getAllAlerts() {
+    public List<AlertDTO> getAllAlerts(FilterAlertParamsDTO params) {
         UUID userId = getCurrentUserId();
-        List<AlertEntity> alerts = alertRepository.findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(userId);
-        return alerts.stream()
-            .map(alertMapper::toDTO)
-            .collect(Collectors.toList());
+        List<AlertEntity> alertas = alertRepository.findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(userId);
+        if (params.getState() != null && !params.getState().isBlank()) {
+            boolean isActive = "active".equalsIgnoreCase(params.getState());
+            alertas = alertas.stream()
+                    .filter(a -> a.getIsActive().equals(isActive))
+                    .collect(Collectors.toList());
+        }
+        if ("old".equalsIgnoreCase(params.getSort())) {
+            Collections.reverse(alertas);
+        }
+        if (params.getLimit() != null) {
+            alertas = alertas.stream()
+                    .limit(params.getLimit())
+                    .collect(Collectors.toList());
+        }
+    
+        return alertas.stream()
+                .map(alertMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -175,7 +196,7 @@ public class AlertService implements IAlertService {
      * @param userId El ID del usuario para el cual se desea validar el límite de alertas
      */
     private void validateAlertLimit(UUID userId) {
-        List<AlertDTO> userAlerts = getAllAlerts();
+        List<AlertEntity> userAlerts = alertRepository.findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(userId);  
         if (userAlerts.size() >= LIMIT_FREE && userRepository.getReferenceById(userId).getRole() == UserEntity.UserRole.registered) {
             throw new BusinessException(
                 "Maximum number of alerts reached for freemium users", 

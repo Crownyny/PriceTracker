@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -48,19 +50,6 @@ public interface AlertRepository extends JpaRepository<AlertEntity, UUID> {
      */
     Optional<AlertEntity> findByProductIdAndUserId(String productId, UUID userId);
     
-    /**
-     * Encuentra todas las alertas activas para un usuario específico.
-     * @param userId ID del usuario propietario
-     * @return Lista de alertas activas del usuario
-     */
-    List<AlertEntity> findByUserIdAndIsActiveTrue(UUID userId);
-    
-    /**
-     * Encuentra todas las alertas para un usuario específico.
-     * @param userId ID del usuario propietario
-     * @return Lista de alertas del usuario
-     */
-    List<AlertEntity> findByUserIdOrderByCreateAtDesc(UUID userId);
 
     /**
      * Verifica si existe una alerta para un producto específico y un usuario específico.
@@ -89,5 +78,7 @@ public interface AlertRepository extends JpaRepository<AlertEntity, UUID> {
      * @param userId id del usuario
      * @return lista de AlertEntity
      */
-    List<AlertEntity> findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(UUID userId);;
+    List<AlertEntity> findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(UUID userId);
+
+
 }

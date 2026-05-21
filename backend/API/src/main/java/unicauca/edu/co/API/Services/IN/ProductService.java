@@ -17,7 +17,7 @@ import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.Domain.Model.ErrorType;
 import unicauca.edu.co.API.Exception.BusinessException;
-import unicauca.edu.co.API.Presentation.DTO.IN.FilterParamsDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.FilterProductsParamsDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
@@ -62,7 +62,7 @@ public class ProductService implements IProductService {
     @Override
     public List<NormalizedProductDTO> getProductByProductRef(
             QueryDTOIN query,
-            FilterParamsDTO filterParamsDTO
+            FilterProductsParamsDTO filterParamsDTO
     ) {
 
         LocalDateTime twentyMinutesAgo =
@@ -88,7 +88,7 @@ public class ProductService implements IProductService {
                 .collect(Collectors.toList());
     }
 
-    private void validateFilters(FilterParamsDTO filter) {
+    private void validateFilters(FilterProductsParamsDTO filter) {
 
     if (filter.getMinPrice() != null &&
         filter.getMinPrice() < 0) {
