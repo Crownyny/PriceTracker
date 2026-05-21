@@ -89,5 +89,5 @@ public interface AlertRepository extends JpaRepository<AlertEntity, UUID> {
      * @param userId id del usuario
      * @return lista de AlertEntity
      */
-    List<AlertEntity> findByUserIdAndDeletedAtIsNull(UUID userId);
+    List<AlertEntity> findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(UUID userId);;
 }

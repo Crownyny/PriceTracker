@@ -38,7 +38,7 @@ public class AlertService implements IAlertService {
     private final AlertMapper alertMapper;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-
+    private static final int LIMIT_FREE = 3;
     public AlertService(
         AlertRepository alertRepository,
          AlertMapper alertMapper,
@@ -125,7 +125,7 @@ public class AlertService implements IAlertService {
     @Override
     public List<AlertDTO> getAllAlerts() {
         UUID userId = getCurrentUserId();
-        List<AlertEntity> alerts = alertRepository.findByUserIdAndDeletedAtIsNull(userId);
+        List<AlertEntity> alerts = alertRepository.findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(userId);
         return alerts.stream()
             .map(alertMapper::toDTO)
             .collect(Collectors.toList());
@@ -176,7 +176,7 @@ public class AlertService implements IAlertService {
      */
     private void validateAlertLimit(UUID userId) {
         List<AlertDTO> userAlerts = getAllAlerts();
-        if (userAlerts.size() >= 3 && userRepository.getReferenceById(userId).getRole() == UserEntity.UserRole.registered) {
+        if (userAlerts.size() >= LIMIT_FREE && userRepository.getReferenceById(userId).getRole() == UserEntity.UserRole.registered) {
             throw new BusinessException(
                 "Maximum number of alerts reached for freemium users", 
                 ErrorType.INVALID_PARAMETER
@@ -216,6 +216,17 @@ public class AlertService implements IAlertService {
                 ErrorType.INVALID_PARAMETER
             );
         }
+    }
+
+    @Override
+    public void disableAlertsStatus(UUID userId) {
+        List<AlertEntity> activeAlerts = 
+            alertRepository.findByUserIdAndDeletedAtIsNullOrderByCreateAtDesc(userId);
+        activeAlerts.stream()
+                .skip(LIMIT_FREE) 
+                .forEach(alert ->
+                     deleteAlert(alert.getId()));
+        alertRepository.saveAll(activeAlerts);
     }
 
 }

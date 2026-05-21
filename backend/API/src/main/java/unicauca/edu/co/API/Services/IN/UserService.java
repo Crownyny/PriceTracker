@@ -20,6 +20,7 @@ import unicauca.edu.co.API.Presentation.DTO.IN.UserUpdateDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.GoogleUserInfoDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.UserDTO;
 import unicauca.edu.co.API.Presentation.Mapper.UserMapper;
+import unicauca.edu.co.API.Services.Interfaces.IN.IAlertService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IFirebaseAuth;
 import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.IUserPersistencePort;
@@ -34,17 +35,20 @@ public class UserService implements IUserService {
     private final IFirebaseAuth firebaseAuthPort;
     private final UserMapper userMapper;
     private final UserValidationChain userValidationChain;
+    private final IAlertService alertService;
 
     public UserService(
         IUserPersistencePort userPersistencePort,
         IFirebaseAuth firebaseAuthPort,
         UserMapper userMapper,
-        UserValidationChain userValidationChain
+        UserValidationChain userValidationChain,
+        IAlertService alertService
     ) {
         this.userPersistencePort = userPersistencePort;
         this.firebaseAuthPort = firebaseAuthPort;
-        this.userMapper = userMapper;  
-        this.userValidationChain = userValidationChain; 
+        this.userMapper = userMapper;
+        this.userValidationChain = userValidationChain;
+        this.alertService = alertService;
     }
     @Override
     public UserDTO createUser(UserCreateDTOIN createRequest) {
@@ -303,6 +307,9 @@ public class UserService implements IUserService {
 
         if (user.getRole() == newRole) {
             throw new BusinessException("User already has role: " + newRole, ErrorType.USER_ALREADY_HAS_ROLE);
+        }
+        if(newRole == UserRole.premium){
+            alertService.disableAlertsStatus(userId);
         }
 
         user.setRole(newRole);
