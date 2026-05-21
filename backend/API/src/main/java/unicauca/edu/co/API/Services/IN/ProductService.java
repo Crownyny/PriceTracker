@@ -10,10 +10,13 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.data.domain.Sort;
 import unicauca.edu.co.API.Config.WebSocketConfig;
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
+import unicauca.edu.co.API.Domain.Model.ErrorType;
+import unicauca.edu.co.API.Exception.BusinessException;
+import unicauca.edu.co.API.Presentation.DTO.IN.FilterParamsDTO;
 import unicauca.edu.co.API.Presentation.DTO.IN.QueryDTOIN;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
@@ -52,19 +55,87 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    public List<NormalizedProductDTO> getProductByProductRef(QueryDTOIN query) {
-        LocalDateTime twentyMinutesAgo = LocalDateTime.now().minusMinutes(20);
+    public List<NormalizedProductDTO> getProductByProductRef(
+            QueryDTOIN query,
+            FilterParamsDTO filterParamsDTO
+    ) {
+
+        LocalDateTime twentyMinutesAgo =
+                LocalDateTime.now().minusMinutes(20);
+        validateFilters(filterParamsDTO);   
+        Sort sort = createSort(
+                filterParamsDTO.getSortBy(),
+                filterParamsDTO.getOrder()
+        );
+
         List<NormalizedProductEntity> entities =
-            productRepository.findRecentProducts(
-                query.getProduct_ref(),
-                twentyMinutesAgo
-            );
+                productRepository.searchProduct(
+                        query.getProduct_ref(),
+                        twentyMinutesAgo,
+                        filterParamsDTO.getMinPrice(),
+                        filterParamsDTO.getMaxPrice(),
+                        filterParamsDTO.getSourceName(),
+                        sort
+                );
 
         return entities.stream()
-            .map(mapperProduct::toDTO)
-            .collect(Collectors.toList());
+                .map(mapperProduct::toDTO)
+                .collect(Collectors.toList());
     }
 
+    private void validateFilters(FilterParamsDTO filter) {
+
+    if (filter.getMinPrice() != null &&
+        filter.getMinPrice() < 0) {
+
+        throw new BusinessException(
+            "minPrice no puede ser negativo",
+            ErrorType.INVALID_PARAMETER
+        );
+    }
+
+    if (filter.getMaxPrice() != null &&
+        filter.getMaxPrice() < 0) {
+
+        throw new BusinessException(
+            "maxPrice no puede ser negativo",
+            ErrorType.INVALID_PARAMETER
+        );
+    }
+
+    if (filter.getMinPrice() != null &&
+        filter.getMaxPrice() != null &&
+        filter.getMinPrice() > filter.getMaxPrice()) {
+
+        throw new BusinessException(
+            "minPrice no puede ser mayor que maxPrice",
+            ErrorType.INVALID_PARAMETER
+        );
+    }
+
+    if (filter.getSortBy() != null &&
+        !List.of(
+            "canonicalName",
+            "price",
+            "updatedAt"
+        ).contains(filter.getSortBy())) {
+
+        throw new BusinessException(
+            "sortBy inválido",
+            ErrorType.INVALID_PARAMETER
+        );
+    }
+
+    if (filter.getOrder() != null &&
+        !List.of("asc", "desc")
+                .contains(filter.getOrder().toLowerCase())) {
+
+        throw new BusinessException(
+            "order debe ser asc o desc",
+            ErrorType.INVALID_PARAMETER
+        );
+    }
+}
     @Override
     public QueryDTOIN createProductRef(QueryDTOIN query){
         String baseRef = query.getQuery().trim().replaceAll(" ", "").toLowerCase(Locale.ROOT);
@@ -83,7 +154,17 @@ public class ProductService implements IProductService {
         return mapperProduct.toDTO(entity.get());
     }
 
-    
+    private Sort createSort(String sortBy, String order) {
 
+        if (sortBy == null) {
+            return Sort.by("updatedAt").descending();
+        }
 
+        Sort.Direction direction =
+                "desc".equalsIgnoreCase(order)
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+
+        return Sort.by(direction, sortBy);
+    }
 }

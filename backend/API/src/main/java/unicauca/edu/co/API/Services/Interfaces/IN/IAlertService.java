@@ -49,4 +49,12 @@ public interface IAlertService {
      * @return Lista de alertas existentes, o una lista vacía si no se encuentran alertas
      */
     List<AlertDTO> getAllAlerts();
+
+    /**
+     * Desactiva todas las alertas de un usuario. dejando solo las 3 primeras cuando
+     * pasa de premium a freemium,  
+     * @param userId El ID del usuario cuyas alertas se desactivarán
+     */
+    void disableAlertsStatus(UUID userId);
+
 }
