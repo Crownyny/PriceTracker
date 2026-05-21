@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
+import org.springframework.data.domain.Sort;
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 
 import java.time.LocalDateTime;
@@ -29,8 +29,28 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
     /**
      * Encuentra productos por referencia.
      */
-    List<NormalizedProductEntity> findByProductRef(String productRef);
-
+    Optional<NormalizedProductEntity> findByProductRef(String productRef);
+    
+    /**
+     * Busca productos con filtros opcionales
+     */
+    @Query("""
+    SELECT p
+    FROM NormalizedProductEntity p
+    WHERE p.productRef = :productRef
+    AND p.updatedAt >= :dateTime
+    AND (:minPrice IS NULL OR p.price >= :minPrice)
+    AND (:maxPrice IS NULL OR p.price <= :maxPrice)
+    AND (:sourceName IS NULL OR p.sourceName = :sourceName)
+    """)
+    List<NormalizedProductEntity> searchProduct(
+        @Param("productRef") String productRef,
+        @Param("dateTime") LocalDateTime dateTime,
+        @Param("minPrice") Double minPrice,
+        @Param("maxPrice") Double maxPrice,
+        @Param("sourceName") String sourceName,
+        Sort sort
+    );
     /**
      * Encuentra productos por nombre de fuente (tienda).
      */
@@ -78,19 +98,6 @@ public interface ProductRepository extends JpaRepository<NormalizedProductEntity
      */
     long countByCategory(String category);
 
-    /**
-     * Encuentra productos recientes por referencia y fecha.
-     * @param productRef La referencia del producto para la cual se desea encontrar productos recientes.
-     * @param dateTime La fecha y hora a partir de la cual se consideran los productos como recientes. Solo se devolverán productos que hayan sido actualizados después de esta fecha y hora.
-     * @return Una lista de productos normalizados que coinciden con los criterios de búsqueda.
-     */
-    @Query("SELECT p FROM NormalizedProductEntity p " +
-       "WHERE p.productRef = :productRef " +
-       "AND p.updatedAt >= :dateTime")
-    List<NormalizedProductEntity> findRecentProducts(
-        @Param("productRef") String productRef,
-        @Param("dateTime") LocalDateTime dateTime
-    );
 
         /**
          * Cuenta productos elegibles para scraping en el instante indicado.
