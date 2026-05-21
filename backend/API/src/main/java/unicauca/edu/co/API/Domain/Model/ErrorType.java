@@ -54,7 +54,13 @@ public enum ErrorType {
     /**
      * Error cuando se intenta agregar un producto a la lista de deseos que ya existe
      */
-    PRODUCT_ALREADY_IN_WISHLIST("PRODUCT_IN_WISHLIST", "El producto ya se encuentra en la lista de deseos");
+    PRODUCT_ALREADY_IN_WISHLIST("PRODUCT_IN_WISHLIST", "El producto ya se encuentra en la lista de deseos"),
+
+    /**
+     * Error cuando un usuario registrado (no premium) intenta agregar un sexto producto
+     * a su lista de deseos, que tiene un límite de 5.
+     */
+    WISHLIST_LIMIT_REACHED("WISHLIST_LIMIT", "Has alcanzado el límite de 5 productos en tu lista de deseos. Actualiza a premium para agregar más.");
 
     private final String code;
     private final String description;

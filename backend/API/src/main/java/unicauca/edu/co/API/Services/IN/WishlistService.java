@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import unicauca.edu.co.API.DataAccess.Entity.NormalizedProductEntity;
 import unicauca.edu.co.API.DataAccess.Repository.ProductRepository;
 import unicauca.edu.co.API.Domain.Model.ErrorType;
+import unicauca.edu.co.API.Domain.Model.User;
+import unicauca.edu.co.API.Domain.Model.UserRole;
 import unicauca.edu.co.API.Domain.Model.WishlistItem;
 import unicauca.edu.co.API.Exception.BusinessException;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
@@ -46,9 +48,33 @@ public class WishlistService implements IWishlistService {
         this.normalizedProductMapper = normalizedProductMapper;
     }
 
+    /**
+     * Agrega un producto a la wishlist del usuario autenticado.
+     * <p>
+     * Validaciones:
+     * <ul>
+     *   <li>Si el usuario es <b>registered</b> y ya tiene 5 productos, lanza {@link ErrorType#WISHLIST_LIMIT_REACHED}</li>
+     *   <li>Si el producto ya existe en la wishlist, lanza {@link ErrorType#PRODUCT_ALREADY_IN_WISHLIST}</li>
+     *   <li>Los usuarios <b>premium</b> no tienen límite de productos</li>
+     * </ul>
+     *
+     * @param productId ID del producto a agregar
+     * @return WishlistItemDTO del item creado
+     * @throws BusinessException si se viola alguna regla de negocio
+     */
     @Override
     public WishlistItemDTO addProductToWishlist(String productId) {
         UUID userId = userService.getCurrentUserId();
+
+        User user = userService.findById(userId);
+        if (user.getRole() == UserRole.registered) {
+            long currentCount = wishlistPersistencePort.countByUserId(userId);
+            if (currentCount >= 5) {
+                throw new BusinessException(
+                        "Has alcanzado el límite de 5 productos en tu lista de deseos. Actualiza a premium para agregar más.",
+                        ErrorType.WISHLIST_LIMIT_REACHED);
+            }
+        }
 
         var existingItem = wishlistPersistencePort.findByUserIdAndProductId(userId, productId);
         if (existingItem.isPresent()) {

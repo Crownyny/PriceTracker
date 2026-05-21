@@ -33,6 +33,15 @@ public class WishlistPersistenceAdapter implements IWishlistPersistencePort {
                 .map(this::toDomain);
     }
 
+    /**
+     * {@inheritDoc}
+     * Delega el conteo al repositorio JPA.
+     */
+    @Override
+    public long countByUserId(UUID userId) {
+        return wishlistItemRepository.countByUserId(userId);
+    }
+
     @Override
     public List<WishlistItem> findByUserId(UUID userId, String sort) {
         List<WishlistItemEntity> entities;
