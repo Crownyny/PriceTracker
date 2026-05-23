@@ -10,6 +10,7 @@ import { UserRoleService } from '../../../core/services/user-role.service';
 import { Product, ProductSource } from '../../../shared/models/product.model';
 import { AlertFrequency } from '../../../shared/models/alert.model';
 import { PriceHistoryRange, PriceHistoryPoint } from '../../../shared/models/price-history.model';
+import { formatChartPrice } from '../../../shared/utils/chart.utils';
 
 interface ChartSeries {
   sourceName: string;
@@ -46,6 +47,9 @@ export class ProductDetailComponent implements OnInit {
   // ── Save state ────────────────────────────────────────────────────────────
   isSaved      = false;
   savingProduct = false;
+  saveError: 'UPGRADE_REQUIRED' | null = null;
+
+  private readonly FREE_PRODUCT_LIMIT = 5;
 
   // ── Alert state ───────────────────────────────────────────────────────────
   hasAlert     = false;
@@ -227,6 +231,18 @@ export class ProductDetailComponent implements OnInit {
 
   saveProduct(): void {
     if (!this.product?.id || this.savingProduct) return;
+
+    const isPremium = this.userRoleService.canUsePremiumFeatures();
+    if (!this.isSaved && !isPremium) {
+      const savedCount = this.productsService.getSavedCount();
+      if (savedCount >= this.FREE_PRODUCT_LIMIT) {
+        this.saveError = 'UPGRADE_REQUIRED';
+        this.cdr.markForCheck();
+        return;
+      }
+    }
+
+    this.saveError = null;
     this.savingProduct = true;
 
     const action$ = this.isSaved
@@ -379,7 +395,7 @@ export class ProductDetailComponent implements OnInit {
       const price = minP + (priceRange * i / steps);
       const y     = toY(price);
       this.gridYs.push(y);
-      this.gridLabels.push({ y, label: this.formatChartPrice(price) });
+      this.gridLabels.push({ y, label: formatChartPrice(price) });
     }
 
     // X axis labels (up to 6 dates)
@@ -393,12 +409,6 @@ export class ProductDetailComponent implements OnInit {
         label: `${date.getDate()}/${date.getMonth() + 1}`
       });
     }
-  }
-
-  private formatChartPrice(price: number): string {
-    if (price >= 1_000_000) return `$${(price / 1_000_000).toFixed(1)}M`;
-    if (price >= 1_000)     return `$${(price / 1_000).toFixed(0)}k`;
-    return `$${price.toFixed(0)}`;
   }
 
   // ── Alert state ───────────────────────────────────────────────────────────

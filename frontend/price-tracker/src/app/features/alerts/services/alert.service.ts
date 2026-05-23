@@ -17,11 +17,11 @@ import {
  * Alert Service - Gestiona alertas de precios
  *
  * Fuente de verdad (Postman / enunciado):
- * - POST   /api/{userId}/alert?productId={productId}   body: { frequency }
+ * - POST   /api/{productId}/alert   body: { frequency }
  * - GET    /api/{alertId}/alert
  * - GET    /api/alert
- * - PUT    /api/{alertId}/alert                        body: { frequency }
- * - PATCH  /api/{alertId}/alert                        body: { isActive }
+ * - PUT    /api/{alertId}/alert    body: { frequency }
+ * - PATCH  /api/{alertId}/alert    body: { isActive }
  * - DELETE /api/{alertId}/alert
  */
 @Injectable({
@@ -151,14 +151,12 @@ export class AlertService {
 
   /**
    * Crea una nueva alerta.
-   * Endpoint real del backend: POST /api/{productId}/alert  body: { frequency }
-   * El userId lo obtiene el backend desde el JWT en SecurityContextHolder.
+   * Endpoint: POST /api/{productId}/alert   body: { frequency }
    */
   createAlert(productId: string, request: CreateAlertRequest): Observable<AlertResponse> {
-    const url  = `${this.getApiBaseUrl()}/${encodeURIComponent(productId)}/alert`;
-    const body = { frequency: request.frequency };   // enum lowercase: instant | daily | weekly
+    const url = `${this.getApiBaseUrl()}/${encodeURIComponent(productId)}/alert`;
 
-    return this.http.post<any>(url, body).pipe(
+    return this.http.post<any>(url, { frequency: request.frequency }).pipe(
       map((response) => this.toAlertResponse(response))
     );
   }
@@ -205,13 +203,11 @@ export class AlertService {
   }
 
   /**
-   * Actualiza una alerta (edita precio objetivo o frecuencia)
-   * Endpoint Postman: PUT /api/{alertId}/alert
+   * Actualiza una alerta (edita frecuencia)
+   * Endpoint: PUT /api/{alertId}/alert   body: { frequency }
    */
   updateAlert(alertId: string, request: UpdateAlertRequest): Observable<AlertResponse> {
-    const body = {
-      frequency: request.frequency
-    };
+    const body = { frequency: request.frequency };
 
     return this.http.put<any>(this.buildAlertByIdUrl(alertId), body).pipe(
       map((response) => this.toAlertResponse(response))
@@ -220,7 +216,7 @@ export class AlertService {
 
   /**
    * Cambia el estado de una alerta (activa/desactiva)
-   * Endpoint Postman: PATCH /api/{alertId}/alert body: { isActive }
+   * Endpoint: PATCH /api/{alertId}/alert   body: { isActive }
    */
   updateAlertStatus(alertId: string, request: UpdateAlertStatusRequest): Observable<AlertResponse> {
     const body = { isActive: request.isActive };
@@ -232,7 +228,7 @@ export class AlertService {
 
   /**
    * Elimina una alerta
-   * Endpoint Postman: DELETE /api/{alertId}/alert
+   * Endpoint: DELETE /api/{alertId}/alert
    */
   deleteAlert(alertId: string): Observable<AlertResponse> {
     return this.http.delete<any>(this.buildAlertByIdUrl(alertId)).pipe(

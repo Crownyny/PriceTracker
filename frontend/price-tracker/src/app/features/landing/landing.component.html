@@ -104,6 +104,42 @@
     </div>
   </section>
 
+  <!-- ── TRENDING ── -->
+  <section class="lp-section lp-trending" id="trending">
+    <div class="lp-section-inner">
+      <div class="lp-section-label">🔥 En tendencia</div>
+      <h2 class="lp-section-title">Los más buscados ahora</h2>
+
+      <!-- Skeletons mientras carga -->
+      <div *ngIf="trendingLoading" class="lp-trending-grid">
+        <div *ngFor="let i of [1,2,3,4,5,6,7,8]" class="lp-trend-skeleton"></div>
+      </div>
+
+      <!-- Sin resultados -->
+      <div *ngIf="!trendingLoading && trendingProducts.length === 0" class="lp-trending-empty">
+        <span>📡</span>
+        <p>Recopilando datos de tendencias...</p>
+      </div>
+
+      <!-- Productos trending -->
+      <div *ngIf="!trendingLoading && trendingProducts.length > 0" class="lp-trending-grid">
+        <a *ngFor="let product of trendingProducts"
+           [routerLink]="isLoggedIn ? ['/product', product.id] : ['/login']"
+           class="lp-trend-card">
+          <div class="lp-trend-img">
+            <img *ngIf="product.image" [src]="product.image" [alt]="product.name" loading="lazy" />
+            <span *ngIf="!product.image" class="lp-trend-img-placeholder">📦</span>
+          </div>
+          <div class="lp-trend-info">
+            <p class="lp-trend-name">{{ product.name }}</p>
+            <p *ngIf="product.source" class="lp-trend-source">{{ product.source }}</p>
+            <p class="lp-trend-price">${{ product.currentPrice | number:'1.0-0' }}</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- ── FEATURES ── -->
   <section class="lp-section" id="features">
     <div class="lp-section-inner">

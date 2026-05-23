@@ -79,6 +79,18 @@
           </button>
         </div>
 
+        <!-- Banner límite de productos guardados (HE-03 HU-04) -->
+        <div *ngIf="saveError === 'UPGRADE_REQUIRED'" class="pd-upgrade-banner">
+          <div class="pd-upgrade-left">
+            <span>⭐</span>
+            <div>
+              <strong>Límite de productos alcanzado</strong>
+              <p>El plan gratuito permite guardar hasta 5 productos.</p>
+            </div>
+          </div>
+          <a routerLink="/account" class="pd-upgrade-cta">Ver Premium →</a>
+        </div>
+
         <button class="pd-btn-alert" [disabled]="alertLoading" (click)="createAlert()">
           🔔 {{ hasAlert ? 'Gestionar Alerta' : (alertLoading ? 'Creando…' : 'Crear Alerta de Precio') }}
         </button>

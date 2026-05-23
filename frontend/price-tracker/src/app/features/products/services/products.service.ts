@@ -8,8 +8,9 @@ import { Product, ProductSearchResponse } from '../../../shared/models/product.m
 
 @Injectable({ providedIn: 'root' })
 export class ProductsService {
-  private readonly SAVED_KEY    = 'saved_product_ids_';
-  private readonly SEARCHED_KEY = 'searched_product_refs_';
+  private readonly SAVED_KEY       = 'saved_product_ids_';
+  private readonly SEARCHED_KEY    = 'searched_product_refs_';
+  private readonly FREE_SAVED_LIMIT = 5;
 
   constructor(
     private http: HttpClient,
@@ -56,6 +57,17 @@ export class ProductsService {
 
   isProductSaved(productId: string): boolean {
     return this.readSavedIds().includes(productId);
+  }
+
+  getSavedCount(): number {
+    return this.readSavedIds().length;
+  }
+
+  trimSavedToFreeLimit(): void {
+    const ids = this.readSavedIds();
+    if (ids.length > this.FREE_SAVED_LIMIT) {
+      this.writeSavedIds(ids.slice(-this.FREE_SAVED_LIMIT));
+    }
   }
 
   saveProduct(productId: string): Observable<{ message: string }> {
@@ -137,6 +149,19 @@ export class ProductsService {
   }
 
   // ── Get product by ID ─────────────────────────────────────────────────────
+
+  /**
+   * Obtiene los productos más buscados.
+   * Endpoint: GET /api/products/trending
+   */
+  getTrendingProducts(): Observable<Product[]> {
+    return this.http.get<any[]>(
+      `${this.httpConfig.getApiBaseUrl()}/products/trending`
+    ).pipe(
+      map(response => (response ?? []).map(r => this.mapBackendProduct(r))),
+      rxCatchError(() => of([]))
+    );
+  }
 
   /**
    * GET /api/products/{id}/product

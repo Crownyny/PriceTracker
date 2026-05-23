@@ -258,17 +258,28 @@ export class DashboardComponent implements OnInit {
             this.alertCount++;
           }
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
-        if (err?.status === 403) {
-          this.alertModalError = 'Límite de alertas alcanzado para tu plan actual.';
-        } else if (err?.status === 409) {
+        if (err?.status === 409) {
           this.alertModalError = 'Ya existe una alerta para este producto.';
+        } else if (
+          err?.status === 403 ||
+          (err?.status === 400 &&
+            String(err?.error?.message ?? '').toLowerCase().includes('maximum'))
+        ) {
+          this.alertModalError = this.isPremium
+            ? 'Límite de alertas alcanzado. Contacta soporte.'
+            : 'Alcanzaste el límite de 3 alertas del plan gratuito. Ve a Mi Cuenta para actualizar a Premium.';
         } else {
           this.alertModalError = 'Error al crear la alerta. Intenta de nuevo.';
         }
+        this.cdr.markForCheck();
       },
-      complete: () => { this.alertModalSubmitting = false; }
+      complete: () => {
+        this.alertModalSubmitting = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -279,9 +290,13 @@ export class DashboardComponent implements OnInit {
       next: () => {
         this.alertModalExisting!.isActive = newStatus;
         this.alertsByProductId[this.alertModalProduct!.id] = { ...this.alertModalExisting! };
-        this.alertModalSuccess = newStatus ? 'Alerta activada.' : 'Alerta pausada.';
+        this.alertModalSuccess = newStatus ? 'Alerta activada.' : 'Alerta desactivada.';
+        this.cdr.markForCheck();
       },
-      error: () => { this.alertModalError = 'Error al cambiar estado.'; }
+      error: () => {
+        this.alertModalError = 'Error al cambiar estado.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -294,8 +309,12 @@ export class DashboardComponent implements OnInit {
         this.alertModalExisting!.frequency = this.alertModalFrequency;
         this.alertsByProductId[this.alertModalProduct!.id] = { ...this.alertModalExisting! };
         this.alertModalSuccess = 'Frecuencia actualizada.';
+        this.cdr.markForCheck();
       },
-      error: () => { this.alertModalError = 'Error al actualizar frecuencia.'; }
+      error: () => {
+        this.alertModalError = 'Error al actualizar frecuencia.';
+        this.cdr.markForCheck();
+      }
     });
   }
 
@@ -307,9 +326,13 @@ export class DashboardComponent implements OnInit {
         this.alertCount = Math.max(0, this.alertCount - 1);
         this.alertModalExisting = null;
         this.alertModalSuccess = 'Alerta eliminada.';
+        this.cdr.markForCheck();
         setTimeout(() => this.closeAlertModal(), 1200);
       },
-      error: () => { this.alertModalError = 'Error al eliminar la alerta.'; }
+      error: () => {
+        this.alertModalError = 'Error al eliminar la alerta.';
+        this.cdr.markForCheck();
+      }
     });
   }
 

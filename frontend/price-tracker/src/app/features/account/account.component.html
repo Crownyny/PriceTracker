@@ -1,0 +1,186 @@
+<div class="ac-shell">
+  <div class="ac-card" *ngIf="profile">
+
+    <!-- Header -->
+    <div class="ac-header">
+      <div class="ac-avatar">
+        <img *ngIf="profile.avatar" [src]="profile.avatar" [alt]="profile.name" />
+        <span *ngIf="!profile.avatar">{{ initials() }}</span>
+      </div>
+      <div>
+        <h2 class="ac-name">{{ profile.name || profile.email }}</h2>
+        <p class="ac-email">{{ profile.email }}</p>
+      </div>
+    </div>
+
+    <!-- Role badge -->
+    <div class="ac-role-badge" [class.ac-role-premium]="currentRole === 'premium'">
+      {{ currentRole === 'premium' ? '⭐ Premium' : '🔓 Freemium' }}
+    </div>
+
+    <hr class="ac-divider" />
+
+    <!-- Role change section -->
+    <div class="ac-section">
+      <h3 class="ac-section-title">Cambiar rol</h3>
+      <p class="ac-hint">
+        Usa esto para probar funcionalidades. El cambio se aplica en el backend.
+      </p>
+
+      <div class="ac-role-grid">
+        <button class="ac-role-opt"
+                [class.ac-role-opt-active]="selectedRole === 'registered'"
+                (click)="selectedRole = 'registered'">
+          <span class="ac-role-opt-icon">🔓</span>
+          <span class="ac-role-opt-label">Freemium</span>
+          <span class="ac-role-opt-desc">Hasta 3 alertas</span>
+        </button>
+        <button class="ac-role-opt"
+                [class.ac-role-opt-active]="selectedRole === 'premium'"
+                (click)="selectedRole = 'premium'">
+          <span class="ac-role-opt-icon">⭐</span>
+          <span class="ac-role-opt-label">Premium</span>
+          <span class="ac-role-opt-desc">Alertas ilimitadas</span>
+        </button>
+      </div>
+
+      <button class="ac-btn-primary"
+              [disabled]="applying || selectedRole === currentRole"
+              (click)="requestRoleChange()">
+        {{ applying ? 'Aplicando...' : 'Aplicar rol' }}
+      </button>
+
+      <div *ngIf="message" class="ac-msg ac-msg-ok">✓ {{ message }}</div>
+      <div *ngIf="error"   class="ac-msg ac-msg-err">{{ error }}</div>
+    </div>
+
+    <hr class="ac-divider" />
+
+    <!-- Debug info -->
+    <div class="ac-section ac-debug">
+      <h3 class="ac-section-title">Debug info <span class="ac-debug-badge">DEV</span></h3>
+      <div class="ac-debug-row">
+        <span>User ID</span><code>{{ profile.id }}</code>
+      </div>
+      <div class="ac-debug-row">
+        <span>Rol en localStorage</span>
+        <code [style.color]="currentRole === 'premium' ? '#16a34a' : '#6b7280'">
+          {{ currentRole }}
+        </code>
+      </div>
+      <div class="ac-debug-row">
+        <span>Token (primeros 20 chars)</span>
+        <code>{{ tokenPreview }}</code>
+      </div>
+    </div>
+
+    <hr class="ac-divider" />
+
+    <!-- Logout -->
+    <button class="ac-btn-logout" (click)="logout()">Cerrar sesión</button>
+  </div>
+
+  <!-- ── Modal Upgrade ──────────────────────────────────────────────────── -->
+  <div *ngIf="showUpgradeModal" class="ac-overlay" (click)="cancelRoleChange()">
+    <div class="ac-modal" (click)="$event.stopPropagation()">
+
+      <button class="ac-modal-close" (click)="cancelRoleChange()">✕</button>
+
+      <div class="ac-modal-header-upgrade">
+        <span class="ac-upgrade-icon">👑</span>
+        <div>
+          <h2 class="ac-modal-title-upgrade">Actualizar a Premium</h2>
+          <p class="ac-modal-sub-upgrade">Desbloquea todo el potencial de PriceTracker</p>
+        </div>
+      </div>
+
+      <div class="ac-plans-row">
+        <div class="ac-plan-card ac-plan-free">
+          <p class="ac-plan-name">Plan Free</p>
+          <p class="ac-plan-desc">Límites actuales</p>
+          <ul class="ac-plan-items">
+            <li><span class="ac-item-check ac-item-check-gray">✓</span><div><strong>Productos guardados</strong><span>5 productos</span></div></li>
+            <li><span class="ac-item-check ac-item-check-gray">✓</span><div><strong>Alertas de precio</strong><span>3 alertas</span></div></li>
+            <li><span class="ac-item-check ac-item-check-gray">✓</span><div><strong>Historial de precios</strong><span>7 días</span></div></li>
+          </ul>
+        </div>
+
+        <div class="ac-plan-card ac-plan-premium">
+          <span class="ac-plan-badge">Recomendado</span>
+          <p class="ac-plan-name ac-plan-name-premium">👑 Plan Premium</p>
+          <p class="ac-plan-desc ac-plan-desc-premium">Beneficios ilimitados</p>
+          <ul class="ac-plan-items">
+            <li><span class="ac-item-check ac-item-check-green">✓</span><div><strong>Productos guardados</strong><span class="ac-item-highlight">Ilimitados</span></div></li>
+            <li><span class="ac-item-check ac-item-check-green">✓</span><div><strong>Alertas de precio</strong><span class="ac-item-highlight">10 alertas</span></div></li>
+            <li><span class="ac-item-check ac-item-check-green">✓</span><div><strong>Historial de precios</strong><span class="ac-item-highlight">Acceso completo</span></div></li>
+            <li><span class="ac-item-check ac-item-check-green">✓</span><div><strong>Notificaciones por email</strong><span class="ac-item-highlight">Incluidas</span></div></li>
+            <li><span class="ac-item-check ac-item-check-green">✓</span><div><strong>Análisis avanzado</strong><span class="ac-item-highlight">Incluido</span></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ac-data-note">
+        <span class="ac-data-note-icon">⚡</span>
+        <div>
+          <strong>Tus datos se mantienen intactos</strong>
+          <p>Todos tus productos guardados y alertas actuales permanecerán sin cambios. Solo se eliminarán los límites.</p>
+        </div>
+      </div>
+
+      <div class="ac-modal-actions">
+        <button class="ac-btn-ghost" (click)="cancelRoleChange()">Mantener plan actual</button>
+        <button class="ac-btn-upgrade" (click)="confirmRoleChange()">
+          👑 Activar Premium
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Downgrade ────────────────────────────────────────────────── -->
+  <div *ngIf="showDowngradeModal" class="ac-overlay" (click)="cancelRoleChange()">
+    <div class="ac-modal" (click)="$event.stopPropagation()">
+
+      <button class="ac-modal-close" (click)="cancelRoleChange()">✕</button>
+
+      <div class="ac-modal-header-warn">
+        <span class="ac-warn-icon-header">⚠️</span>
+        <div>
+          <h2 class="ac-modal-title-warn">Volver al plan gratuito</h2>
+          <p class="ac-modal-sub-warn">Al confirmar, se aplicarán estas restricciones:</p>
+        </div>
+      </div>
+
+      <ul class="ac-warn-list">
+        <li>
+          <span class="ac-warn-list-icon">📦</span>
+          <div>
+            <strong>Solo se conservarán tus 5 productos más recientes.</strong>
+            <p>El resto se ocultará de tu lista de guardados.</p>
+          </div>
+        </li>
+        <li>
+          <span class="ac-warn-list-icon">🔔</span>
+          <div>
+            <strong>Solo se conservarán tus 3 alertas más recientes.</strong>
+            <p>Las demás serán eliminadas automáticamente.</p>
+          </div>
+        </li>
+        <li>
+          <span class="ac-warn-list-icon">📈</span>
+          <div>
+            <strong>El historial se limitará a los últimos 7 días.</strong>
+            <p>Los datos anteriores no se borran, pero no serán visibles.</p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="ac-modal-actions">
+        <button class="ac-btn-ghost" (click)="cancelRoleChange()">Mantener Premium</button>
+        <button class="ac-btn-danger" (click)="confirmRoleChange()">
+          Sí, volver al plan gratuito
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

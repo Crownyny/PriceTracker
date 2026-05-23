@@ -43,7 +43,7 @@
         </div>
         <div class="alert-meta">
           <span class="badge" [class.badge-active]="alert.isActive" [class.badge-inactive]="!alert.isActive">
-            {{ alert.isActive ? '🔔 Activa' : '🔕 Pausada' }}
+            {{ alert.isActive ? '🔔 Activa' : '🔕 Desactivada' }}
           </span>
           <span class="alert-freq">{{ getFrequencyLabel(alert.frequency) }}</span>
         </div>
@@ -51,7 +51,7 @@
 
       <!-- Acciones -->
       <div class="alert-card-actions">
-        <button class="btn-icon" [title]="alert.isActive ? 'Pausar' : 'Activar'" (click)="toggleAlertInList(alert)">
+        <button class="btn-icon" [title]="alert.isActive ? 'Desactivar' : 'Activar'" (click)="toggleAlertInList(alert)">
           {{ alert.isActive ? '⏸' : '▶' }}
         </button>
         <button class="btn-icon btn-icon-edit" title="Gestionar" (click)="openManageModal(alert)">✎</button>
@@ -127,10 +127,10 @@
         <ng-container *ngIf="modalMode === 'manage' && modalExistingAlert">
           <div class="existing-alert-status">
             <span class="badge" [class.badge-active]="modalExistingAlert.isActive" [class.badge-inactive]="!modalExistingAlert.isActive">
-              {{ modalExistingAlert.isActive ? '🔔 Alerta activa' : '🔕 Alerta pausada' }}
+              {{ modalExistingAlert.isActive ? '🔔 Alerta activa' : '🔕 Alerta desactivada' }}
             </span>
             <button class="btn-secondary btn-sm" (click)="toggleAlertStatus()">
-              {{ modalExistingAlert.isActive ? 'Pausar' : 'Activar' }}
+              {{ modalExistingAlert.isActive ? 'Desactivar' : 'Activar' }}
             </button>
           </div>
         </ng-container>

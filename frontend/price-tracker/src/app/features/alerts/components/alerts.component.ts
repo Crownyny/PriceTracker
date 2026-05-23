@@ -300,8 +300,8 @@ export class AlertsComponent implements OnInit {
         ) {
           // Backend devuelve 400 con "Maximum number of alerts reached for freemium users"
           this.modalError = this.isPremium
-            ? 'Límite de alertas alcanzado. Contacta soporte.'
-            : 'UPGRADE_REQUIRED';
+            ? 'Límite de alertas alcanzado. Contacta soporte si crees que es un error.'
+            : 'Alcanzaste el límite de 3 alertas del plan gratuito. Ve a Mi Cuenta para actualizar a Premium.';
         } else {
           this.modalError = 'Error al crear la alerta. Intenta de nuevo.';
         }
