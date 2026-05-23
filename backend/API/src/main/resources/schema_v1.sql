@@ -112,3 +112,12 @@ CREATE TABLE IF NOT EXISTS "notification"(
     CONSTRAINT "notification_alert_id_foreign" FOREIGN KEY("alert_id") REFERENCES "alert"("id"),
     CONSTRAINT "notification_listing_id_foreign" FOREIGN KEY("listing_id") REFERENCES "normalized_products"("id")
 );
+
+CREATE TABLE IF NOT EXISTS "product_views"(
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "source_url" VARCHAR(255) NOT NULL,
+    "viewed_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "product_views_pkey"
+        PRIMARY KEY("id")
+);
