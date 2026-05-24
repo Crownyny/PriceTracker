@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import unicauca.edu.co.API.Services.IN.ProductService;
 import unicauca.edu.co.API.Services.Interfaces.IN.IProductService;
 import unicauca.edu.co.API.Services.Interfaces.OUT.INormalizerProductService;
-import unicauca.edu.co.API.Presentation.DTO.IN.FilterParamsDTO;
+import unicauca.edu.co.API.Presentation.DTO.IN.FilterProductsParamsDTO;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,7 +41,7 @@ public class ProductRestController {
 	@PostMapping("/search")
     public List<NormalizedProductDTO> searchProductQuery(
         @RequestBody QueryDTOIN query,
-		@ModelAttribute FilterParamsDTO filterParamsDTO
+		@ModelAttribute FilterProductsParamsDTO filterParamsDTO
     ) {
 		
 		return productService.getProductByProductRef(query,filterParamsDTO);
@@ -55,7 +55,7 @@ public class ProductRestController {
 	 */
 	@GetMapping("/{productId}/product")
 	public ResponseEntity<NormalizedProductDTO> getProductById(@PathVariable String productId) {
-		NormalizedProductDTO product = normalizerProductService.getNormalizedProductById(productId);
+		NormalizedProductDTO product = productService.getProductById(productId);
 		
 		if (product == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -63,5 +63,10 @@ public class ProductRestController {
 		
 		return ResponseEntity.ok(product);
 	}
+	@GetMapping("/trending")
+	public List<NormalizedProductDTO> getTrendingProducts() {
+		return productService.getProductMostSearch();
+	}
+
 
 }

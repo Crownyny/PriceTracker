@@ -308,7 +308,7 @@ public class UserService implements IUserService {
         if (user.getRole() == newRole) {
             throw new BusinessException("User already has role: " + newRole, ErrorType.USER_ALREADY_HAS_ROLE);
         }
-        if(newRole == UserRole.premium){
+        if(newRole == UserRole.registered){
             alertService.disableAlertsStatus(userId);
         }
 
