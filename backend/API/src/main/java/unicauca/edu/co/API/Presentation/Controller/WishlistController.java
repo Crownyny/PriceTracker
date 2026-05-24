@@ -1,7 +1,6 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.WishlistItemDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.WishlistProductDetailDTO;
 import unicauca.edu.co.API.Services.Interfaces.IN.IWishlistService;
 
 /**
@@ -56,29 +56,31 @@ public class WishlistController {
     }
 
     /**
-     * Elimina un producto de la wishlist del usuario autenticado.
+     * Elimina un producto de la wishlist del usuario autenticado por productId
+     * y retorna la informaci&oacute;n del item eliminado con el producto asociado.
      *
-     * @param id ID del wishlist item a eliminar
-     * @return {@code 204 No Content}
+     * @param productId ID del producto a eliminar
+     * @return {@code 200 OK} con el {@link WishlistProductDetailDTO} del item eliminado
      */
-    @DeleteMapping("/item/{id}")
+    @DeleteMapping("/product/{productId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> removeProductFromWishlist(@PathVariable UUID id) {
-        wishlistService.removeProductFromWishlist(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<WishlistProductDetailDTO> removeProductFromWishlist(@PathVariable String productId) {
+        WishlistProductDetailDTO removed = wishlistService.removeProductFromWishlist(productId);
+        return ResponseEntity.ok(removed);
     }
 
     /**
-     * Obtiene un item de la wishlist por su ID.
+     * Obtiene un wishlist item por productId para el usuario autenticado,
+     * incluyendo la informaci&oacute;n del producto asociado.
      *
-     * @param id ID del wishlist item
-     * @return {@code 200 OK} con el {@link WishlistItemDTO}
+     * @param productId ID del producto
+     * @return {@code 200 OK} con el {@link WishlistProductDetailDTO}
      */
-    @GetMapping("/item/{id}")
+    @GetMapping("/product/{productId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<WishlistItemDTO> getWishlistItemById(@PathVariable UUID id) {
-        WishlistItemDTO item = wishlistService.getWishlistItemById(id);
-        return ResponseEntity.ok(item);
+    public ResponseEntity<WishlistProductDetailDTO> getWishlistItemByProductId(@PathVariable String productId) {
+        WishlistProductDetailDTO detail = wishlistService.getWishlistItemByProductId(productId);
+        return ResponseEntity.ok(detail);
     }
 
     /**
