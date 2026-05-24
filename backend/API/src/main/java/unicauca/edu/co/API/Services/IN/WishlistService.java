@@ -17,9 +17,9 @@ import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
 import unicauca.edu.co.API.Domain.Model.WishlistItem;
 import unicauca.edu.co.API.Exception.BusinessException;
-import unicauca.edu.co.API.Domain.Model.WishlistItem;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.WishlistItemDTO;
+import unicauca.edu.co.API.Presentation.DTO.OUT.WishlistProductDetailDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
 import unicauca.edu.co.API.Presentation.Mapper.WishlistMapper;
 import unicauca.edu.co.API.Services.Interfaces.IN.IUserService;
@@ -158,41 +158,64 @@ public class WishlistService implements IWishlistService {
     /**
      * {@inheritDoc}
      * <p>
-     * Valida que el item exista y pertenezca al usuario autenticado antes de eliminar.
+     * Busca por userId + productId, elimina y retorna el detalle con la info del producto.
      */
     @Override
-    public void removeProductFromWishlist(UUID wishlistItemId) {
+    public WishlistProductDetailDTO removeProductFromWishlist(String productId) {
         UUID userId = userService.getCurrentUserId();
-        WishlistItem item = wishlistPersistencePort.findById(wishlistItemId)
+        WishlistItem item = wishlistPersistencePort.findByUserIdAndProductId(userId, productId)
                 .orElseThrow(() -> new BusinessException(
-                        "El item de la lista de deseos no fue encontrado.",
+                        "El producto no se encuentra en la lista de deseos.",
                         ErrorType.WISHLIST_ITEM_NOT_FOUND));
-        if (!item.getUserId().equals(userId)) {
-            throw new BusinessException(
-                    "No tienes permiso para eliminar este item de la lista de deseos.",
-                    ErrorType.BUSINESS_ERROR);
-        }
-        wishlistPersistencePort.deleteById(wishlistItemId);
+
+        NormalizedProductEntity productEntity = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(
+                        "El producto asociado no fue encontrado.",
+                        ErrorType.BUSINESS_ERROR));
+
+        NormalizedProductDTO productDTO = buildProductDTO(productEntity);
+        WishlistItemDTO itemDTO = wishlistMapper.toDTO(item);
+
+        wishlistPersistencePort.deleteById(item.getId());
+
+        WishlistProductDetailDTO detail = new WishlistProductDetailDTO();
+        detail.setId(itemDTO.getId());
+        detail.setUserId(itemDTO.getUserId());
+        detail.setProductId(itemDTO.getProductId());
+        detail.setCreatedAt(itemDTO.getCreatedAt());
+        detail.setProduct(productDTO);
+        return detail;
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Valida que el item exista y pertenezca al usuario autenticado.
+     * Busca por userId + productId y retorna el DTO enriquecido con el producto.
      */
     @Override
-    public WishlistItemDTO getWishlistItemById(UUID wishlistItemId) {
+    @Transactional(readOnly = true)
+    public WishlistProductDetailDTO getWishlistItemByProductId(String productId) {
         UUID userId = userService.getCurrentUserId();
-        WishlistItem item = wishlistPersistencePort.findById(wishlistItemId)
+        WishlistItem item = wishlistPersistencePort.findByUserIdAndProductId(userId, productId)
                 .orElseThrow(() -> new BusinessException(
-                        "El item de la lista de deseos no fue encontrado.",
+                        "El producto no se encuentra en la lista de deseos.",
                         ErrorType.WISHLIST_ITEM_NOT_FOUND));
-        if (!item.getUserId().equals(userId)) {
-            throw new BusinessException(
-                    "No tienes permiso para acceder a este item de la lista de deseos.",
-                    ErrorType.BUSINESS_ERROR);
-        }
-        return wishlistMapper.toDTO(item);
+
+        NormalizedProductEntity productEntity = productRepository.findById(productId)
+                .orElseThrow(() -> new BusinessException(
+                        "El producto asociado no fue encontrado.",
+                        ErrorType.BUSINESS_ERROR));
+
+        NormalizedProductDTO productDTO = buildProductDTO(productEntity);
+        WishlistItemDTO itemDTO = wishlistMapper.toDTO(item);
+
+        WishlistProductDetailDTO detail = new WishlistProductDetailDTO();
+        detail.setId(itemDTO.getId());
+        detail.setUserId(itemDTO.getUserId());
+        detail.setProductId(itemDTO.getProductId());
+        detail.setCreatedAt(itemDTO.getCreatedAt());
+        detail.setProduct(productDTO);
+        return detail;
     }
 
     /**
