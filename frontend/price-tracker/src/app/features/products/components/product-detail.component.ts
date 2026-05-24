@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, forkJoin } from 'rxjs';
 import { finalize } from 'rxjs/operators';
@@ -33,7 +34,7 @@ interface GridLabel { y: number; label: string; }
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './product-detail.component.html',
   styleUrl: './product-detail.component.css'
 })
@@ -59,6 +60,28 @@ export class ProductDetailComponent implements OnInit {
 
   // ── Price comparison ──────────────────────────────────────────────────────
   priceComparison: ComparisonItem[] = [];
+
+  // ── Filters (HE-06) ───────────────────────────────────────────────────────
+  sortOrder: 'asc' | 'desc' = 'asc';
+  priceMin: number | null = null;
+  priceMax: number | null = null;
+
+  get filteredComparison(): ComparisonItem[] {
+    let items = [...this.priceComparison];
+
+    if (this.priceMin !== null) {
+      items = items.filter(i => i.price >= this.priceMin!);
+    }
+    if (this.priceMax !== null) {
+      items = items.filter(i => i.price <= this.priceMax!);
+    }
+
+    items.sort((a, b) =>
+      this.sortOrder === 'asc' ? a.price - b.price : b.price - a.price
+    );
+
+    return items;
+  }
 
   // ── Chart ─────────────────────────────────────────────────────────────────
   chartSeries:   ChartSeries[] = [];
@@ -162,13 +185,12 @@ export class ProductDetailComponent implements OnInit {
   // ── Price comparison ──────────────────────────────────────────────────────
 
   /**
-   * Construye la lista de comparación de tiendas a partir del producto.
-   * El backend devuelve múltiples entradas por producto (una por tienda) en el
-   * array `products` de la búsqueda — usamos los campos `source`, `currentPrice`, etc.
-   * Si el objeto Product tiene una sola tienda, se muestra sola.
+   * Construye priceComparison buscando todas las tiendas del mismo productRef.
+   * Si el producto ya viene con múltiples sources (campo `sources`), los usa directamente.
+   * Si no, hace getSearchFromDb(productRef) para traer todas las tiendas en paralelo.
    */
   private buildComparison(product: Product): void {
-    // Caso 1: el producto tiene fuentes múltiples en un campo `sources`
+    // Caso 1: el backend ya devolvió múltiples sources en el objeto
     const sources = (product as any).sources as ProductSource[] | undefined;
     if (sources?.length) {
       this.priceComparison = sources
@@ -181,12 +203,11 @@ export class ProductDetailComponent implements OnInit {
           logo:         (s as any).logo,
           availability: s.availability
         }))
-        .sort((a, b) => a.price - b.price)
-        .slice(0, 6);
+        .sort((a, b) => a.price - b.price);
       return;
     }
 
-    // Caso 2: un único source en el producto raíz
+    // Caso 2: construir desde el producto raíz con el resultado inicial
     if (product.source && product.currentPrice) {
       this.priceComparison = [{
         sourceName:   product.source,
@@ -196,6 +217,30 @@ export class ProductDetailComponent implements OnInit {
         availability: product.availability
       }];
     }
+
+    // Caso 3: enriquecer con todas las tiendas disponibles via búsqueda
+    const ref = product.productRef || this.productRef;
+    if (!ref) return;
+
+    this.productsService.getSearchFromDb(ref).subscribe({
+      next: (response) => {
+        const allProducts = response.products ?? [];
+        if (allProducts.length < 2) return;
+
+        this.priceComparison = allProducts
+          .filter(p => p.source && p.currentPrice)
+          .map(p => ({
+            sourceName:   p.source ?? '—',
+            price:        p.currentPrice ?? 0,
+            shippingCost: 0,
+            url:          (p as any).url || (p as any).source_url || '',
+            availability: p.availability ?? true
+          }))
+          .sort((a, b) => a.price - b.price);
+
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   // ── Best price helpers (usados en el template) ────────────────────────────

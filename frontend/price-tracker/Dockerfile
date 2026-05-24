@@ -8,4 +8,4 @@ RUN npm ci --legacy-peer-deps
 
 EXPOSE 4200
 
-CMD ["sh", "-c", "npm run build && npm start -- --host 0.0.0.0 --port 4200 --poll 2000"]
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200", "--poll", "2000"]

@@ -23,9 +23,10 @@
     let listeners = [];
     let fallbackInProgress = false;
     let backendStatus = null;
-    let expectedDisconnect = false; // Flag for graceful disconnections (e.g., PRODUCT_IN_BD)
+    let expectedDisconnect = false;
     let intentCheckPending = false;
-    let searchTimestamp = null; // Timestamp para cache expiry de 20 minutos
+    let searchTimestamp = null;
+    let cacheRefreshAttempted = false; // Evita reenvíos infinitos cuando hay desfase de reloj
     
     // Buffering: don't emit on every product, batch updates
     let statusUpdateInterval = null;
@@ -291,55 +292,57 @@
       }
 
       if (event.code === 'PRODUCT_IN_BD') {
-        // Checkea si el cache ha expirado usando el update_at del backend
-        if (isCacheExpired(event.updatedAt || event.update_at)) {
-          console.log(`${constants.LOG_PREFIX} [HANDLER] ⏰ Cache EXPIRED (>20 min) - relaunching WebSocket search to force scraping...`);
-          // El caché expiró → forzar nuevo scraping reenviando la búsqueda por WebSocket.
-          // No usamos REST fallback porque también filtraría por 20 min.
+        if (isCacheExpired(event.updatedAt || event.update_at) && !cacheRefreshAttempted) {
+          // Caché expirado → reconectar WebSocket para forzar nuevo scraping.
+          // No usamos sendSearch directamente porque el backend ya cerró la conexión.
+          // El handler onConnect enviará activeSearch.payload automáticamente.
+          console.log(`${constants.LOG_PREFIX} [HANDLER] ⏰ Cache EXPIRED (>20 min) - reconnecting WebSocket to force fresh scraping...`);
           if (activeSearch) {
-            try {
-              const payload = activeSearch.payload || { query: activeSearch.query, search_id: activeSearch.searchId };
-              client.sendSearch(payload);
-              console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ Re-sent search to force fresh scraping`);
-              return; // Esperar resultados del WebSocket
-            } catch (e) {
-              console.warn(`${constants.LOG_PREFIX} [HANDLER] Could not re-send search:`, e);
-            }
+            cacheRefreshAttempted = true;
+            expectedDisconnect = false;
+            // Limpiar productos del intento anterior para que el overlay muestre estado fresco
+            products = [];
+            dedupeSet = new Set();
+            updateStatus('connecting');
+            emit();
+            // Reconectar — onConnect enviará la búsqueda automáticamente
+            client.connect(buildConnectHeaders());
+            console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ Reconnecting WebSocket for fresh scraping`);
+            return;
           }
-          // No hacer return: dejar que el flujo continúe esperando resultados del WebSocket
+        }
+
+        // Cache fresco O ya se intentó el refresco → mostrar lo que hay en la BD
+        if (cacheRefreshAttempted) {
+          console.log(`${constants.LOG_PREFIX} [HANDLER] Cache refresh already attempted - loading cached products from BD`);
         } else {
           console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ PRODUCT_IN_BD detected - loading cached products`);
-          // Búsqueda existe en BD - traer resultados guardados
-          expectedDisconnect = true; // Mark disconnect as expected
-          
-          if (statusTracker && statusTracker.setBackendPhase) {
-            statusTracker.setBackendPhase('cached');
-          }
-          
-          if (statusTracker && statusTracker.setStatus) {
-            statusTracker.setStatus('streaming');
-          }
-          
-          await fetchCachedProducts(event.productRef);
+        }
 
-          // Si la BD no devolvió nada (filtro 20min), relanzar scraping por WebSocket
-          if (products.length === 0 && activeSearch) {
-            console.log(`${constants.LOG_PREFIX} [HANDLER] BD returned 0 products - relaunching WebSocket scraping`);
-            expectedDisconnect = false;
-            try {
-              const payload = activeSearch.payload || { query: activeSearch.query, search_id: activeSearch.searchId };
-              client.sendSearch(payload);
-              console.log(`${constants.LOG_PREFIX} [HANDLER] ✓ Re-sent search for fresh scraping`);
-              return; // Esperar resultados del WebSocket
-            } catch (e) {
-              console.warn(`${constants.LOG_PREFIX} [HANDLER] Could not re-send:`, e);
-            }
-          }
+        expectedDisconnect = true;
 
-          updateStatus('completed');
-          emit({ event });
+        if (statusTracker && statusTracker.setBackendPhase) {
+          statusTracker.setBackendPhase('cached');
+        }
+        if (statusTracker && statusTracker.setStatus) {
+          statusTracker.setStatus('streaming');
+        }
+
+        await fetchCachedProducts(event.productRef);
+
+        if (products.length === 0 && activeSearch && !cacheRefreshAttempted) {
+          console.log(`${constants.LOG_PREFIX} [HANDLER] BD returned 0 products - reconnecting WebSocket for fresh scraping`);
+          cacheRefreshAttempted = true;
+          expectedDisconnect = false;
+          updateStatus('connecting');
+          emit();
+          client.connect(buildConnectHeaders());
           return;
         }
+
+        updateStatus('completed');
+        emit({ event });
+        return;
       }
 
       // BACKEND ERROR: Close WebSocket and immediately fallback to REST
@@ -595,7 +598,8 @@
       status = 'idle';
       fallbackInProgress = false;
       expectedDisconnect = false;
-      searchTimestamp = Date.now(); // Inicia conteo de 20 minutos para cache
+      cacheRefreshAttempted = false;
+      searchTimestamp = Date.now();
       if (statusTracker && statusTracker.reset) {
         statusTracker.reset();
       }

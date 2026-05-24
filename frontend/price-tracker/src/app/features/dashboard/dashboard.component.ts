@@ -30,6 +30,24 @@ export class DashboardComponent implements OnInit {
   userRoleLabel = 'registered';
   bestDeals: Product[] = [];
   comparativeRows: Array<{ product: Product; trend: PriceTrendAnalysis['trend'] | null; percentageChange: number | null }> = [];
+  storeFilter = '';
+
+  get availableStores(): string[] {
+    const fromDeals   = this.bestDeals.map(p => p.source);
+    const fromTable   = this.comparativeRows.map(r => r.product.source);
+    const all = [...fromDeals, ...fromTable].filter((s): s is string => Boolean(s));
+    return [...new Set(all)].sort();
+  }
+
+  get filteredBestDeals(): Product[] {
+    if (!this.storeFilter) return this.bestDeals;
+    return this.bestDeals.filter(p => p.source === this.storeFilter);
+  }
+
+  get filteredComparativeRows() {
+    if (!this.storeFilter) return this.comparativeRows;
+    return this.comparativeRows.filter(r => r.product.source === this.storeFilter);
+  }
   
   // Modal inline de alerta
   alertModalOpen = false;
@@ -141,6 +159,7 @@ export class DashboardComponent implements OnInit {
                   trend: trendMap.get(product.id)?.trend ?? null,
                   percentageChange: trendMap.get(product.id)?.percentageChange ?? null
                 }));
+                this.storeFilter = '';
 
                 this.bestDeals    = this.buildBestDeals(allProducts);
                 this.totalSavings = this.computeTotalSavings(allProducts);

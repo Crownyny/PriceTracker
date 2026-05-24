@@ -257,3 +257,203 @@
   text-decoration: none; white-space: nowrap; transition: background .15s; flex-shrink: 0;
 }
 .pd-upgrade-cta:hover { background: #d97706; }
+/* ── Compare card (HE-06) ───────────────────────────────────────────────────── */
+.pd-compare-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  border: 1px solid #e8eaf0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pd-compare-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pd-compare-count {
+  font-size: .8125rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+
+/* ── Filters ─────────────────────────────────────────────────────────────────── */
+.pd-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pd-sort-btns {
+  display: flex;
+  gap: 6px;
+}
+.pd-sort-btn {
+  background: #f3f4f6;
+  border: 1.5px solid #e5e7eb;
+  color: #374151;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: .8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .13s;
+}
+.pd-sort-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+.pd-sort-active {
+  background: #eef2ff !important;
+  border-color: #4f46e5 !important;
+  color: #4f46e5 !important;
+}
+
+.pd-range-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.pd-range-label {
+  font-size: .8125rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.pd-range-input {
+  width: 90px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: .8125rem;
+  color: #111827;
+  outline: none;
+  transition: border-color .13s;
+}
+.pd-range-input:focus { border-color: #4f46e5; }
+.pd-range-input::placeholder { color: #9ca3af; }
+.pd-range-sep { color: #9ca3af; font-size: .875rem; }
+
+/* ── Stores table ────────────────────────────────────────────────────────────── */
+.pd-stores-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pd-store-row {
+  display: grid;
+  grid-template-columns: 100px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  transition: border-color .15s, background .15s;
+}
+.pd-store-row:hover {
+  border-color: #c7d2fe;
+  background: #f5f3ff;
+}
+.pd-store-row-best {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+.pd-store-row-best:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.pd-store-rank { display: flex; align-items: center; }
+.pd-store-badge-best {
+  background: #16a34a;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.pd-store-pos {
+  font-size: .8125rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.pd-store-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+.pd-store-icon { font-size: 1rem; }
+
+.pd-store-price {
+  font-size: .9375rem;
+  font-weight: 800;
+  color: #111827;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.pd-store-shipping {
+  font-size: .7rem;
+  font-weight: 400;
+  color: #6b7280;
+}
+.pd-store-free-ship {
+  font-size: .7rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.pd-store-link {
+  background: #4f46e5;
+  color: #fff;
+  text-decoration: none;
+  font-size: .8125rem;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.pd-store-link:hover { background: #4338ca; }
+
+.pd-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: #6b7280;
+  text-align: center;
+}
+.pd-no-results span { font-size: 1.75rem; }
+.pd-no-results p    { font-size: .875rem; margin: 0; }
+.pd-clear-filters {
+  background: transparent;
+  border: 1.5px solid #e5e7eb;
+  color: #4f46e5;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: .8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .13s;
+  margin-top: 4px;
+}
+.pd-clear-filters:hover { background: #eef2ff; border-color: #4f46e5; }
+
+@media (max-width: 600px) {
+  .pd-store-row { grid-template-columns: auto 1fr auto; }
+  .pd-store-rank { display: none; }
+  .pd-range-filter { margin-left: 0; width: 100%; }
+}

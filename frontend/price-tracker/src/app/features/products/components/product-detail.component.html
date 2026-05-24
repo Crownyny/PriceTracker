@@ -119,6 +119,90 @@
         <p *ngIf="product.description" class="pd-product-desc">{{ product.description }}</p>
       </div>
 
+      <!-- ── Comparar precios (HE-06) ──────────────────────────────────── -->
+      <div *ngIf="priceComparison.length > 0" class="pd-compare-card">
+
+        <div class="pd-compare-header">
+          <h3 class="pd-section-title">Comparar precios</h3>
+          <span class="pd-compare-count">{{ priceComparison.length }} tienda{{ priceComparison.length !== 1 ? 's' : '' }}</span>
+        </div>
+
+        <!-- Controles de filtro -->
+        <div class="pd-filters">
+          <div class="pd-sort-btns">
+            <button class="pd-sort-btn"
+                    [class.pd-sort-active]="sortOrder === 'asc'"
+                    (click)="sortOrder = 'asc'">
+              ↑ Menor precio
+            </button>
+            <button class="pd-sort-btn"
+                    [class.pd-sort-active]="sortOrder === 'desc'"
+                    (click)="sortOrder = 'desc'">
+              ↓ Mayor precio
+            </button>
+          </div>
+
+          <div class="pd-range-filter">
+            <span class="pd-range-label">Rango:</span>
+            <input type="number"
+                   class="pd-range-input"
+                   placeholder="Mín"
+                   [ngModel]="priceMin"
+                   (ngModelChange)="priceMin = $event ? +$event : null" />
+            <span class="pd-range-sep">—</span>
+            <input type="number"
+                   class="pd-range-input"
+                   placeholder="Máx"
+                   [ngModel]="priceMax"
+                   (ngModelChange)="priceMax = $event ? +$event : null" />
+          </div>
+        </div>
+
+        <!-- Tabla de tiendas -->
+        <div *ngIf="filteredComparison.length > 0" class="pd-stores-table">
+          <div *ngFor="let item of filteredComparison; let i = index"
+               class="pd-store-row"
+               [class.pd-store-row-best]="i === 0 && sortOrder === 'asc'">
+
+            <div class="pd-store-rank">
+              <span *ngIf="i === 0 && sortOrder === 'asc'" class="pd-store-badge-best">Mejor precio</span>
+              <span *ngIf="i !== 0 || sortOrder !== 'asc'" class="pd-store-pos">#{{ i + 1 }}</span>
+            </div>
+
+            <div class="pd-store-name">
+              <span class="pd-store-icon">🏪</span>
+              <span>{{ item.sourceName }}</span>
+            </div>
+
+            <div class="pd-store-price">
+              ${{ item.price | number:'1.0-0' }}
+              <span *ngIf="item.shippingCost > 0" class="pd-store-shipping">
+                + ${{ item.shippingCost | number:'1.0-0' }} envío
+              </span>
+              <span *ngIf="item.shippingCost === 0" class="pd-store-free-ship">
+                Envío gratis
+              </span>
+            </div>
+
+            <a *ngIf="item.url" [href]="item.url" target="_blank" rel="noopener"
+               class="pd-store-link">
+              Ir →
+            </a>
+          </div>
+        </div>
+
+        <!-- Sin resultados con filtros aplicados -->
+        <div *ngIf="filteredComparison.length === 0" class="pd-no-results">
+          <span>🔍</span>
+          <p>No se encontraron productos con estos criterios.</p>
+          <button class="pd-clear-filters"
+                  (click)="priceMin = null; priceMax = null; sortOrder = 'asc'">
+            Limpiar filtros
+          </button>
+        </div>
+
+      </div>
+
       <!-- Price History Chart — solo si el producto tiene alerta activa -->
       <div class="pd-chart-card" *ngIf="hasAlert">
         <div class="pd-chart-header">
