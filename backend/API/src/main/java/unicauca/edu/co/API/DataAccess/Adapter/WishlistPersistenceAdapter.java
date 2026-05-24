@@ -60,6 +60,22 @@ public class WishlistPersistenceAdapter implements IWishlistPersistencePort {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public Optional<WishlistItem> findById(UUID id) {
+        return wishlistItemRepository.findById(id).map(this::toDomain);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteById(UUID id) {
+        wishlistItemRepository.deleteById(id);
+    }
+
+    /**
+     * {@inheritDoc}
      * Delega la consulta al repositorio aplicando el orden seg&uacute;n el par&aacute;metro {@code sort}.
      */
     @Override

@@ -1,6 +1,7 @@
 package unicauca.edu.co.API.Services.Interfaces.IN;
 
 import java.util.List;
+import java.util.UUID;
 
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.WishlistItemDTO;
@@ -29,4 +30,21 @@ public interface IWishlistService {
      * @return lista de productos normalizados en la wishlist
      */
     List<NormalizedProductDTO> getNormalizedWishlistProducts(Integer limit, String sort);
+
+    /**
+     * Elimina un producto de la wishlist del usuario autenticado.
+     *
+     * @param wishlistItemId ID del wishlist item a eliminar
+     * @throws BusinessException si el item no existe o no pertenece al usuario
+     */
+    void removeProductFromWishlist(UUID wishlistItemId);
+
+    /**
+     * Obtiene un wishlist item por su ID.
+     *
+     * @param wishlistItemId ID del wishlist item
+     * @return DTO con los datos del wishlist item
+     * @throws BusinessException si el item no existe o no pertenece al usuario
+     */
+    WishlistItemDTO getWishlistItemById(UUID wishlistItemId);
 }

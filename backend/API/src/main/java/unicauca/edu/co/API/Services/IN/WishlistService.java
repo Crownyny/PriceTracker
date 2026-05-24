@@ -17,6 +17,7 @@ import unicauca.edu.co.API.Domain.Model.User;
 import unicauca.edu.co.API.Domain.Model.UserRole;
 import unicauca.edu.co.API.Domain.Model.WishlistItem;
 import unicauca.edu.co.API.Exception.BusinessException;
+import unicauca.edu.co.API.Domain.Model.WishlistItem;
 import unicauca.edu.co.API.Presentation.DTO.OUT.NormalizedProductDTO;
 import unicauca.edu.co.API.Presentation.DTO.OUT.WishlistItemDTO;
 import unicauca.edu.co.API.Presentation.Mapper.NormalizedProductMapper;
@@ -152,6 +153,46 @@ public class WishlistService implements IWishlistService {
         }
 
         return resultList;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Valida que el item exista y pertenezca al usuario autenticado antes de eliminar.
+     */
+    @Override
+    public void removeProductFromWishlist(UUID wishlistItemId) {
+        UUID userId = userService.getCurrentUserId();
+        WishlistItem item = wishlistPersistencePort.findById(wishlistItemId)
+                .orElseThrow(() -> new BusinessException(
+                        "El item de la lista de deseos no fue encontrado.",
+                        ErrorType.WISHLIST_ITEM_NOT_FOUND));
+        if (!item.getUserId().equals(userId)) {
+            throw new BusinessException(
+                    "No tienes permiso para eliminar este item de la lista de deseos.",
+                    ErrorType.BUSINESS_ERROR);
+        }
+        wishlistPersistencePort.deleteById(wishlistItemId);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Valida que el item exista y pertenezca al usuario autenticado.
+     */
+    @Override
+    public WishlistItemDTO getWishlistItemById(UUID wishlistItemId) {
+        UUID userId = userService.getCurrentUserId();
+        WishlistItem item = wishlistPersistencePort.findById(wishlistItemId)
+                .orElseThrow(() -> new BusinessException(
+                        "El item de la lista de deseos no fue encontrado.",
+                        ErrorType.WISHLIST_ITEM_NOT_FOUND));
+        if (!item.getUserId().equals(userId)) {
+            throw new BusinessException(
+                    "No tienes permiso para acceder a este item de la lista de deseos.",
+                    ErrorType.BUSINESS_ERROR);
+        }
+        return wishlistMapper.toDTO(item);
     }
 
     /**
