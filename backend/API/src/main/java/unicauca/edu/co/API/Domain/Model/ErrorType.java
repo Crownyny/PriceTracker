@@ -60,7 +60,12 @@ public enum ErrorType {
      * Error cuando un usuario registrado (no premium) intenta agregar un sexto producto
      * a su lista de deseos, que tiene un límite de 5.
      */
-    WISHLIST_LIMIT_REACHED("WISHLIST_LIMIT", "Has alcanzado el límite de 5 productos en tu lista de deseos. Actualiza a premium para agregar más.");
+    WISHLIST_LIMIT_REACHED("WISHLIST_LIMIT", "Has alcanzado el límite de 5 productos en tu lista de deseos. Actualiza a premium para agregar más."),
+
+    /**
+     * Error cuando no se encuentra un item en la lista de deseos por su ID.
+     */
+    WISHLIST_ITEM_NOT_FOUND("WISHLIST_ITEM_NOT_FOUND", "El item de la lista de deseos no fue encontrado.");
 
     private final String code;
     private final String description;

@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import unicauca.edu.co.API.Domain.Model.WishlistItem;
 
+import unicauca.edu.co.API.Domain.Model.WishlistItem;
+
 /**
  * Puerto de salida (outbound port) para la persistencia del m&oacute;dulo Wishlist.
  * Define las operaciones que el servicio de dominio necesita sobre el almacenamiento,
@@ -47,4 +49,19 @@ public interface IWishlistPersistencePort {
      * @return cantidad de productos en la wishlist
      */
     long countByUserId(UUID userId);
+
+    /**
+     * Busca un wishlist item por su ID.
+     *
+     * @param id ID del wishlist item
+     * @return Optional con el item si existe
+     */
+    Optional<WishlistItem> findById(UUID id);
+
+    /**
+     * Elimina un wishlist item por su ID.
+     *
+     * @param id ID del wishlist item a eliminar
+     */
+    void deleteById(UUID id);
 }

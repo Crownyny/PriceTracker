@@ -1,10 +1,12 @@
 package unicauca.edu.co.API.Presentation.Controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,6 +53,32 @@ public class WishlistController {
     public ResponseEntity<WishlistItemDTO> addProductToWishlist(@PathVariable String idProduct) {
         WishlistItemDTO wishlistItem = wishlistService.addProductToWishlist(idProduct);
         return ResponseEntity.status(HttpStatus.CREATED).body(wishlistItem);
+    }
+
+    /**
+     * Elimina un producto de la wishlist del usuario autenticado.
+     *
+     * @param id ID del wishlist item a eliminar
+     * @return {@code 204 No Content}
+     */
+    @DeleteMapping("/item/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> removeProductFromWishlist(@PathVariable UUID id) {
+        wishlistService.removeProductFromWishlist(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Obtiene un item de la wishlist por su ID.
+     *
+     * @param id ID del wishlist item
+     * @return {@code 200 OK} con el {@link WishlistItemDTO}
+     */
+    @GetMapping("/item/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<WishlistItemDTO> getWishlistItemById(@PathVariable UUID id) {
+        WishlistItemDTO item = wishlistService.getWishlistItemById(id);
+        return ResponseEntity.ok(item);
     }
 
     /**
