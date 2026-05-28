@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.DataAccess.Adapter;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +30,19 @@ public class WishlistPersistenceAdapter implements IWishlistPersistencePort {
     public Optional<WishlistItem> findByUserIdAndProductId(UUID userId, String productId) {
         return wishlistItemRepository.findByUserIdAndProductId(userId, productId)
                 .map(this::toDomain);
+    }
+
+    @Override
+    public List<WishlistItem> findAllByUserId(UUID userId) {
+        return wishlistItemRepository.findAllByUserId(userId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void deleteByUserIdAndProductId(UUID userId, String productId) {
+        wishlistItemRepository.deleteByUserIdAndProductId(userId, productId);
     }
 
     private WishlistItem toDomain(WishlistItemEntity entity) {

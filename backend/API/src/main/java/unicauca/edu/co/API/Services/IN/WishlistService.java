@@ -1,6 +1,7 @@
 package unicauca.edu.co.API.Services.IN;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -52,5 +53,27 @@ public class WishlistService implements IWishlistService {
 
         WishlistItem savedItem = wishlistPersistencePort.save(wishlistItem);
         return wishlistMapper.toDTO(savedItem);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<WishlistItemDTO> getWishlist() {
+        UUID userId = userService.getCurrentUserId();
+        return wishlistPersistencePort.findAllByUserId(userId)
+                .stream()
+                .map(wishlistMapper::toDTO)
+                .toList();
+    }
+
+    @Override
+    public void removeProductFromWishlist(String productId) {
+        UUID userId = userService.getCurrentUserId();
+
+        wishlistPersistencePort.findByUserIdAndProductId(userId, productId)
+                .orElseThrow(() -> new BusinessException(
+                        "El producto no se encuentra en la lista de deseos",
+                        ErrorType.WISHLIST_ITEM_NOT_FOUND));
+
+        wishlistPersistencePort.deleteByUserIdAndProductId(userId, productId);
     }
 }

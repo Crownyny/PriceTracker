@@ -25,7 +25,10 @@ export class DashboardComponent implements OnInit {
   error = '';
   totalSavings = 0;
   itemsCompared = 0;
-  savedProducts: Product[] = [];
+  savedProducts:       Product[] = [];
+  recentAlerts:        any[]    = [];  // últimas 4 alertas para el panel
+  productById: Record<string, any> = {};  // mapa productId → Product para el panel de alertas
+  isAuthenticated      = false;
   alertCount = 0;
   userRoleLabel = 'registered';
   bestDeals: Product[] = [];
@@ -70,7 +73,16 @@ export class DashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.isAuthenticated = this.tokenService.hasToken() && !!this.tokenService.getUserProfile();
     this.loadDashboardData();
+
+    // HE-03 HU-02 CA-02: refrescar dashboard cuando el usuario guarda/quita un producto
+    // Saltamos la primera emisión del BehaviorSubject (valor inicial) con un flag
+    let savedChangedFirst = true;
+    this.productsService.savedChanged$.subscribe(() => {
+      if (savedChangedFirst) { savedChangedFirst = false; return; }
+      this.loadDashboardData();
+    });
   }
 
   loadDashboardData() {
@@ -137,6 +149,15 @@ export class DashboardComponent implements OnInit {
 
             this.savedProducts = allProducts;
             this.itemsCompared = allProducts.length;
+            // Mapa productId → Product para resolver nombre/imagen en el panel de alertas
+            this.productById = {};
+            for (const p of allProducts) {
+              this.productById[p.id] = p;
+            }
+            // HE-03 HU-01 CA-03: últimas 4 alertas para el panel del dashboard
+            this.recentAlerts = allAlerts
+              .filter(a => a.isActive !== false)
+              .slice(0, 4);
 
             const forTable = allProducts.slice(0, 10);
             const trends$ = forTable.length

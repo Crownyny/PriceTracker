@@ -260,7 +260,19 @@ export class AlertsComponent implements OnInit {
 
     if (this.modalFrequency === 'weekly' && !this.isPremium) {
       this.modalError = 'La frecuencia semanal requiere plan Premium.';
+      this.cdr.markForCheck();
       return;
+    }
+
+    // Validación frontend del límite freemium (3 alertas activas)
+    if (!this.isPremium) {
+      const FREE_ALERT_LIMIT = 3;
+      const activeCount = this.alerts.filter(a => a.isActive !== false).length;
+      if (activeCount >= FREE_ALERT_LIMIT) {
+        this.modalError = 'UPGRADE_REQUIRED';
+        this.cdr.markForCheck();
+        return;
+      }
     }
 
     this.modalSubmitting = true;

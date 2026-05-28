@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, forkJoin, of } from 'rxjs';
+import { Observable, BehaviorSubject, forkJoin, of } from 'rxjs';
 import { filter, map, switchMap, timeout, take, catchError as rxCatchError } from 'rxjs/operators';
 import { HttpConfigService } from '../../../core/services/http-config.service';
 import { StompWebSocketService } from '../../../core/services/stomp-websocket.service';
@@ -8,9 +8,12 @@ import { Product, ProductSearchResponse } from '../../../shared/models/product.m
 
 @Injectable({ providedIn: 'root' })
 export class ProductsService {
-  private readonly SAVED_KEY       = 'saved_product_ids_';
-  private readonly SEARCHED_KEY    = 'searched_product_refs_';
+  private readonly SAVED_KEY        = 'saved_product_ids_';
+  private readonly SEARCHED_KEY     = 'searched_product_refs_';
   private readonly FREE_SAVED_LIMIT = 5;
+
+  /** Emite cuando el estado de guardado cambia — el dashboard puede suscribirse para refrescarse */
+  readonly savedChanged$ = new BehaviorSubject<void>(undefined);
 
   constructor(
     private http: HttpClient,
@@ -53,7 +56,7 @@ export class ProductsService {
     return localStorage.getItem('userId') ?? 'default-user';
   }
 
-  // ── Saved products (localStorage) ─────────────────────────────────────────
+  // ── Saved products (backend + localStorage cache) ──────────────────────────
 
   isProductSaved(productId: string): boolean {
     return this.readSavedIds().includes(productId);
@@ -63,22 +66,110 @@ export class ProductsService {
     return this.readSavedIds().length;
   }
 
-  trimSavedToFreeLimit(): void {
-    const ids = this.readSavedIds();
-    if (ids.length > this.FREE_SAVED_LIMIT) {
-      this.writeSavedIds(ids.slice(-this.FREE_SAVED_LIMIT));
-    }
+  /**
+   * Downgrade: recorta la wishlist al límite freemium (5).
+   * 1. Consulta el backend para obtener los items ordenados por createdAt
+   * 2. Conserva los 5 más recientes (por fecha real del backend)
+   * 3. Llama DELETE en el backend para cada item excedente
+   */
+  trimSavedToFreeLimit(): Observable<void> {
+    return this.http.get<{ id: string; productId: string; createdAt: string }[]>(
+      `${this.httpConfig.getApiUrl()}/wishlist`
+    ).pipe(
+      switchMap(items => {
+        if (items.length <= this.FREE_SAVED_LIMIT) {
+          // Ya está dentro del límite — solo sincronizar localStorage
+          this.writeSavedIds(items.map(i => i.productId));
+          return of(undefined as void);
+        }
+        // Ordenar por createdAt descendente y tomar los más recientes
+        const sorted  = [...items].sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const keep    = sorted.slice(0, this.FREE_SAVED_LIMIT);
+        const remove  = sorted.slice(this.FREE_SAVED_LIMIT);
+
+        this.writeSavedIds(keep.map(i => i.productId));
+
+        // Llamar DELETE en el backend para cada excedente
+        const deletes$ = remove.map(item =>
+          this.http.delete<void>(
+            `${this.httpConfig.getApiUrl()}/wishlist/product/${encodeURIComponent(item.productId)}`
+          ).pipe(rxCatchError(() => of(undefined as void)))
+        );
+
+        return forkJoin(deletes$).pipe(map(() => undefined as void));
+      }),
+      rxCatchError(() => {
+        // Fallback: recorte local si el backend no responde
+        const ids = this.readSavedIds();
+        if (ids.length > this.FREE_SAVED_LIMIT) {
+          this.writeSavedIds(ids.slice(0, this.FREE_SAVED_LIMIT));
+        }
+        return of(undefined as void);
+      })
+    );
   }
 
+  /**
+   * Guarda un producto en la wishlist del backend.
+   * También actualiza el caché local para que la UI sea inmediata.
+   * Si el producto ya estaba guardado (409), lo trata como éxito silencioso.
+   */
   saveProduct(productId: string): Observable<{ message: string }> {
     const ids = this.readSavedIds();
     if (!ids.includes(productId)) this.writeSavedIds([...ids, productId]);
-    return of({ message: 'OK' });
+    return this.http.post<{ message: string }>(
+      `${this.httpConfig.getApiUrl()}/wishlist/product/${encodeURIComponent(productId)}`,
+      {}
+    ).pipe(
+      map(() => { this.savedChanged$.next(); return { message: 'OK' }; }),
+      rxCatchError(err => {
+        // 409 = ya estaba guardado — tratar como éxito
+        if (err?.status === 409) { this.savedChanged$.next(); return of({ message: 'OK' }); }
+        // Si falla el backend, revertir el caché local
+        this.writeSavedIds(this.readSavedIds().filter(id => id !== productId));
+        throw err;
+      })
+    );
   }
 
+  /**
+   * Elimina un producto de la wishlist del backend.
+   * También actualiza el caché local inmediatamente.
+   */
   unsaveProduct(productId: string): Observable<{ message: string }> {
     this.writeSavedIds(this.readSavedIds().filter(id => id !== productId));
-    return of({ message: 'OK' });
+    return this.http.delete<void>(
+      `${this.httpConfig.getApiUrl()}/wishlist/product/${encodeURIComponent(productId)}`
+    ).pipe(
+      map(() => { this.savedChanged$.next(); return { message: 'OK' }; }),
+      rxCatchError(err => {
+        // 400 = no estaba en wishlist — tratar como éxito
+        if (err?.status === 400) { this.savedChanged$.next(); return of({ message: 'OK' }); }
+        // Si falla el backend, restaurar el caché local
+        const ids = this.readSavedIds();
+        if (!ids.includes(productId)) this.writeSavedIds([...ids, productId]);
+        throw err;
+      })
+    );
+  }
+
+  /**
+   * Sincroniza el caché local de IDs guardados desde el backend.
+   * Llamar en ngOnInit de componentes que muestren el estado de guardado.
+   */
+  syncSavedIds(): Observable<string[]> {
+    return this.http.get<{ id: string; productId: string }[]>(
+      `${this.httpConfig.getApiUrl()}/wishlist`
+    ).pipe(
+      map(items => {
+        const ids = items.map(item => item.productId);
+        this.writeSavedIds(ids);
+        return ids;
+      }),
+      rxCatchError(() => of(this.readSavedIds()))
+    );
   }
 
   private readSavedIds(): string[] {
@@ -291,24 +382,37 @@ export class ProductsService {
 
   // ── Saved products list ───────────────────────────────────────────────────
 
+  /**
+   * Obtiene los productos guardados del usuario desde el backend.
+   * GET /api/v1/wishlist → lista de WishlistItemDTO → resuelve cada productId a Product.
+   */
   getSavedProducts(userId: string, page = 0, pageSize = 10): Observable<ProductSearchResponse> {
-    const refs = this.searchedRefs();
-    if (!refs.length) return of({ productRef: '', products: [], totalResults: 0 });
-
-    return forkJoin(
-      refs.map(ref => this.getSearchFromDb(ref).pipe(rxCatchError(() => of({ productRef: ref, products: [], totalResults: 0 }))))
+    return this.http.get<{ id: string; productId: string }[]>(
+      `${this.httpConfig.getApiUrl()}/wishlist`
     ).pipe(
-      map(responses => {
-        const savedIds = new Set(this.readSavedIds());
-        const all      = responses.flatMap(r => r.products).filter(p => p?.id);
-        const unique   = Array.from(new Map(all.map(p => [p.id, p])).values());
-        unique.forEach((p: any) => { p.isSaved = savedIds.has(p.id); });
-        return {
-          productRef: '',
-          products: unique.slice(page * pageSize, (page + 1) * pageSize),
-          totalResults: unique.length
-        };
-      })
+      switchMap(items => {
+        if (!items.length) return of({ productRef: '', products: [], totalResults: 0 });
+        const ids = items.map(item => item.productId);
+        // Actualizar caché local con la lista real del backend
+        this.writeSavedIds(ids);
+        // Resolver cada productId a un Product completo
+        return forkJoin(
+          ids.map(id => this.getProduct(id).pipe(
+            map(p => { p.isSaved = true; return p; }),
+            rxCatchError(() => of(null as Product | null))
+          ))
+        ).pipe(
+          map(results => {
+            const valid = results.filter((p): p is Product => p !== null);
+            return {
+              productRef: '',
+              products:   valid.slice(page * pageSize, (page + 1) * pageSize),
+              totalResults: valid.length
+            };
+          })
+        );
+      }),
+      rxCatchError(() => of({ productRef: '', products: [], totalResults: 0 }))
     );
   }
 

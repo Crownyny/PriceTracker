@@ -1,137 +1,79 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { catchError, finalize, of } from 'rxjs';
 import { ProductsService } from '../products/services/products.service';
 import { Product } from '../../shared/models/product.model';
-import { catchError, of } from 'rxjs';
+import { TokenService } from '../../core/services/token.service';
 
 @Component({
   selector: 'app-saved-products',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  template: `
-    <div class="saved-products-container">
-      <h2>Productos Guardados</h2>
-
-      <div *ngIf="loading" class="loading">
-        Cargando productos guardados...
-      </div>
-
-      <div *ngIf="!loading && savedProducts.length > 0" class="products-list">
-        <div *ngFor="let product of savedProducts" class="product-item">
-          <div class="product-info">
-            <h3>{{ product.name }}</h3>
-            <p class="price">{{ product.currentPrice | currency }}</p>
-            <p class="category">{{ product.category }}</p>
-          </div>
-          <div class="actions">
-            <a [routerLink]="['/product', product.id]" [queryParams]="{ productRef: product.productRef }" class="view-btn">
-              Ver detalles
-            </a>
-            <button (click)="removeProduct(product.id)" class="remove-btn">
-              Eliminar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div *ngIf="!loading && savedProducts.length === 0" class="empty-state">
-        <p>No tienes productos guardados aún</p>
-        <a routerLink="/search" class="search-link">
-          Ir a buscar productos →
-        </a>
-      </div>
-
-      <div *ngIf="error" class="error-message">
-        {{ error }}
-      </div>
-    </div>
-  `,
-  styles: [`
-    .saved-products-container {
-      padding: 20px;
-    }
-    .products-list {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-top: 20px;
-    }
-    .product-item {
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .product-info h3 {
-      margin: 0;
-    }
-    .price {
-      font-size: 18px;
-      font-weight: bold;
-      color: #28a745;
-      margin: 5px 0;
-    }
-    .actions {
-      display: flex;
-      gap: 10px;
-    }
-    .view-btn, .remove-btn {
-      padding: 8px 15px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .view-btn {
-      background: #007bff;
-      color: white;
-    }
-    .remove-btn {
-      background: #dc3545;
-      color: white;
-      border: none;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: #999;
-    }
-  `]
+  templateUrl: './saved-products.component.html',
+  styleUrl: './saved-products.component.css'
 })
 export class SavedProductsComponent implements OnInit {
   savedProducts: Product[] = [];
-  loading = false;
-  error = '';
+  loading  = false;
+  removing: Set<string> = new Set();
+  error    = '';
 
-  constructor(private productsService: ProductsService) {}
+  constructor(
+    private productsService: ProductsService,
+    private tokenService:    TokenService,
+    private router:          Router,
+    private cdr:             ChangeDetectorRef
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadSavedProducts();
   }
 
-  loadSavedProducts() {
+  loadSavedProducts(): void {
     this.loading = true;
-    // Obtener userId del localStorage o usar uno por defecto
-    const userId = localStorage.getItem('userId') || 'default-user';
+    this.error   = '';
+    const userId = this.tokenService.getUserProfile()?.id ?? '';
+
     this.productsService.getSavedProducts(userId).pipe(
-      catchError(error => {
-        this.error = 'Error cargando productos guardados';
-        console.error(error);
+      catchError(() => {
+        this.error = 'No se pudieron cargar los productos guardados.';
         return of({ productRef: '', products: [], totalResults: 0 });
-      })
-    ).subscribe((response: any) => {
-      this.savedProducts = response.products || [];
-      this.loading = false;
+      }),
+      finalize(() => { this.loading = false; this.cdr.markForCheck(); })
+    ).subscribe(response => {
+      this.savedProducts = response.products ?? [];
+      this.cdr.markForCheck();
     });
   }
 
-  removeProduct(productId: string) {
-    this.productsService.unsaveProduct(productId).subscribe(() => {
-      this.savedProducts = this.savedProducts.filter(p => p.id !== productId);
+  goToProduct(product: Product): void {
+    this.router.navigate(['/product', product.id], {
+      queryParams: { productRef: product.productRef }
     });
+  }
+
+  removeProduct(productId: string): void {
+    this.removing.add(productId);
+    this.productsService.unsaveProduct(productId).pipe(
+      finalize(() => { this.removing.delete(productId); this.cdr.markForCheck(); })
+    ).subscribe({
+      next: () => {
+        this.savedProducts = this.savedProducts.filter(p => p.id !== productId);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.error = 'No se pudo eliminar el producto. Intenta de nuevo.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  isRemoving(productId: string): boolean {
+    return this.removing.has(productId);
+  }
+
+  fmtPrice(price: number): string {
+    return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(price);
   }
 }

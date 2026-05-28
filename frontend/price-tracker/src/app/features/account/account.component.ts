@@ -6,6 +6,7 @@ import { TokenService } from '../../core/services/token.service';
 import { UserRoleService } from '../../core/services/user-role.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ProductsService } from '../products/services/products.service';
+import { AlertService } from '../alerts/services/alert.service';
 import { UserRole } from '../../shared/models/auth.model';
 
 @Component({
@@ -31,6 +32,7 @@ export class AccountComponent implements OnInit {
     private userRoleService: UserRoleService,
     private authService:     AuthService,
     private productsService: ProductsService,
+    private alertService:    AlertService,
     private router:          Router,
     private cdr:             ChangeDetectorRef
   ) {}
@@ -83,7 +85,23 @@ export class AccountComponent implements OnInit {
         this.tokenService.setUserRole(this.currentRole);
 
         if (this.currentRole === 'registered') {
-          this.productsService.trimSavedToFreeLimit();
+          // Recortar wishlist: llama backend DELETE para los productos excedentes
+          this.productsService.trimSavedToFreeLimit().subscribe();
+
+          // Recortar alertas: desactivar las que excedan el límite de 3
+          const FREE_ALERT_LIMIT = 3;
+          this.alertService.getAlerts().subscribe(response => {
+            const alerts = (response.alerts ?? [])
+              .filter((a: any) => a.isActive !== false)
+              .sort((a: any, b: any) =>
+                new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+              );
+            const toDeactivate = alerts.slice(FREE_ALERT_LIMIT);
+            toDeactivate.forEach((a: any) => {
+              this.alertService.updateAlertStatus(a.id, { isActive: false }).subscribe();
+            });
+          });
+
           this.message = 'Cambiaste al plan gratuito. Se conservaron tus 5 productos guardados más recientes y tus últimas 3 alertas.';
         } else {
           this.message = '¡Bienvenido a Premium! Ya puedes guardar productos y alertas sin límite.';

@@ -48,7 +48,9 @@ export class ProductDetailComponent implements OnInit {
   // ── Save state ────────────────────────────────────────────────────────────
   isSaved      = false;
   savingProduct = false;
-  saveError: 'UPGRADE_REQUIRED' | null = null;
+  saveError:   'UPGRADE_REQUIRED' | null = null;
+  saveMessage: string | null = null;
+  private saveMessageTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly FREE_PRODUCT_LIMIT = 5;
 
@@ -132,6 +134,11 @@ export class ProductDetailComponent implements OnInit {
       this.productId  = params['id'];
       this.productRef = this.route.snapshot.queryParamMap.get('productRef') ?? '';
       this.isSaved    = this.productsService.isProductSaved(this.productId);
+      // Sincronizar estado real desde el backend (otro dispositivo puede haberlo guardado)
+      this.productsService.syncSavedIds().subscribe(ids => {
+        this.isSaved = ids.includes(this.productId);
+        this.cdr.markForCheck();
+      });
 
       // Si viene con el objeto completo desde open-product (history.state)
       const stateProduct = (history.state?.product as Product | undefined) ?? null;
@@ -279,14 +286,23 @@ export class ProductDetailComponent implements OnInit {
 
     const isPremium = this.userRoleService.canUsePremiumFeatures();
     if (!this.isSaved && !isPremium) {
-      const savedCount = this.productsService.getSavedCount();
-      if (savedCount >= this.FREE_PRODUCT_LIMIT) {
-        this.saveError = 'UPGRADE_REQUIRED';
-        this.cdr.markForCheck();
-        return;
-      }
+      // Verificar contra el backend para evitar contar con localStorage desactualizado
+      this.productsService.syncSavedIds().subscribe(ids => {
+        if (ids.length >= this.FREE_PRODUCT_LIMIT) {
+          this.saveError = 'UPGRADE_REQUIRED';
+          this.cdr.markForCheck();
+          return;
+        }
+        this.executeSave();
+      });
+      return;
     }
 
+    this.executeSave();
+  }
+
+  private executeSave(): void {
+    if (!this.product?.id || this.savingProduct) return;
     this.saveError = null;
     this.savingProduct = true;
 
@@ -296,7 +312,18 @@ export class ProductDetailComponent implements OnInit {
 
     action$.pipe(finalize(() => { this.savingProduct = false; this.cdr.markForCheck(); }))
       .subscribe({
-        next: () => { this.isSaved = !this.isSaved; this.cdr.markForCheck(); },
+        next: () => {
+          const wasUnsaved = !this.isSaved;
+          this.isSaved = !this.isSaved;
+          // Mostrar mensaje de confirmación — desaparece solo después de 3s
+          this.saveMessage = wasUnsaved ? '✓ Producto guardado' : '✓ Producto quitado de guardados';
+          if (this.saveMessageTimer) clearTimeout(this.saveMessageTimer);
+          this.saveMessageTimer = setTimeout(() => {
+            this.saveMessage = null;
+            this.cdr.markForCheck();
+          }, 3000);
+          this.cdr.markForCheck();
+        },
         error: (err) => {
           if (!this.isSaved && (err?.status === 409 || err?.status === 400)) this.isSaved = true;
           this.cdr.markForCheck();

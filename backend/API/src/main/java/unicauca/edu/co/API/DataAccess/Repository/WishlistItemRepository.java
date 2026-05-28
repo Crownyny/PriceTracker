@@ -1,5 +1,6 @@
 package unicauca.edu.co.API.DataAccess.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,5 +11,10 @@ import unicauca.edu.co.API.DataAccess.Entity.WishlistItemEntity;
 
 @Repository
 public interface WishlistItemRepository extends JpaRepository<WishlistItemEntity, UUID> {
+
     Optional<WishlistItemEntity> findByUserIdAndProductId(UUID userId, String productId);
+
+    List<WishlistItemEntity> findAllByUserId(UUID userId);
+
+    void deleteByUserIdAndProductId(UUID userId, String productId);
 }

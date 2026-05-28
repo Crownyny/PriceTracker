@@ -74,6 +74,87 @@
     </select>
   </div>
 
+  <!-- HE-03 HU-01 CA-01/02: Últimos 4 productos guardados -->
+  <div *ngIf="isAuthenticated" class="bg-white rounded-lg shadow p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-lg font-bold text-gray-900">Guardados recientemente</h3>
+        <p class="text-gray-500 text-sm">Tus últimos productos guardados</p>
+      </div>
+      <a routerLink="/saved" class="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1">
+        Ver todos →
+      </a>
+    </div>
+
+    <div *ngIf="savedProducts.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <a *ngFor="let product of savedProducts.slice(0, 4)"
+         [routerLink]="['/product', product.id]"
+         [queryParams]="{ productRef: product.productRef }"
+         class="block border border-gray-100 rounded-lg p-3 hover:shadow-md transition-shadow group">
+        <div class="w-full aspect-square bg-gray-50 rounded overflow-hidden mb-2">
+          <img *ngIf="product.image" [src]="product.image" [alt]="product.name"
+               class="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform" />
+          <div *ngIf="!product.image" class="w-full h-full flex items-center justify-center text-2xl opacity-30">📦</div>
+        </div>
+        <p class="text-xs font-medium text-gray-800 line-clamp-2 mb-1">{{ product.name }}</p>
+        <p class="text-sm font-bold text-blue-700">${{ product.currentPrice | number:'1.0-0' }}</p>
+      </a>
+    </div>
+
+    <div *ngIf="savedProducts.length === 0" class="py-8 text-center text-gray-500">
+      <p class="text-sm">Aún no tienes productos guardados.</p>
+      <a routerLink="/search" class="mt-2 inline-block text-blue-600 text-sm font-medium hover:underline">Buscar productos →</a>
+    </div>
+  </div>
+
+  <!-- HE-03 HU-01 CA-03/04/05: Últimas 4 alertas activas -->
+  <div *ngIf="isAuthenticated" class="bg-white rounded-lg shadow p-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h3 class="text-lg font-bold text-gray-900">Alertas activas</h3>
+        <p class="text-gray-500 text-sm">Seguimiento automático de precios</p>
+      </div>
+      <a routerLink="/alerts" class="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1">
+        Ver todas →
+      </a>
+    </div>
+
+    <!-- CA-03: Panel con últimas 4 alertas -->
+    <div *ngIf="recentAlerts.length > 0" class="flex flex-col gap-3">
+      <div *ngFor="let alert of recentAlerts"
+           class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+        <div class="flex items-center gap-3 min-w-0">
+          <!-- Imagen del producto -->
+          <div class="w-10 h-10 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0 flex items-center justify-center">
+            <img *ngIf="productById[alert.productId]?.image"
+                 [src]="productById[alert.productId].image"
+                 [alt]="productById[alert.productId].name"
+                 class="w-full h-full object-contain p-0.5" />
+            <span *ngIf="!productById[alert.productId]?.image" class="text-base opacity-30">📦</span>
+          </div>
+          <!-- Nombre y frecuencia -->
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate">
+              {{ productById[alert.productId]?.name || alert.productRef || (alert.productId | slice:0:12) + '…' }}
+            </p>
+            <p class="text-xs text-gray-500">
+              {{ alert.frequency === 'instant' ? 'Inmediata' : alert.frequency === 'daily' ? 'Diaria' : 'Semanal' }}
+            </p>
+          </div>
+        </div>
+        <a [routerLink]="['/product', alert.productId]"
+           [queryParams]="{ productRef: productById[alert.productId]?.productRef }"
+           class="text-xs text-blue-600 hover:underline flex-shrink-0 ml-3 font-medium">Ver →</a>
+      </div>
+    </div>
+
+    <!-- CA-05: Estado vacío de alertas -->
+    <div *ngIf="recentAlerts.length === 0" class="py-8 text-center text-gray-500">
+      <p class="text-sm">No tienes alertas configuradas.</p>
+      <a routerLink="/alerts" class="mt-2 inline-block text-blue-600 text-sm font-medium hover:underline">Crear una alerta →</a>
+    </div>
+  </div>
+
   <!-- Best Deals Section -->
   <div class="bg-white rounded-lg shadow p-8">
     <div class="flex items-center justify-between mb-6">

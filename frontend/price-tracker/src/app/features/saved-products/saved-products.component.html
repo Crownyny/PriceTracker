@@ -1,0 +1,63 @@
+<div class="sp-page">
+
+  <div class="sp-header">
+    <h1 class="sp-title">Productos guardados</h1>
+    <p class="sp-subtitle">{{ savedProducts.length }} producto{{ savedProducts.length !== 1 ? 's' : '' }}</p>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="sp-loading">
+    <span class="sp-spinner"></span>
+    Cargando productos guardados…
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error && !loading" class="sp-error">
+    ⚠️ {{ error }}
+  </div>
+
+  <!-- Lista -->
+  <div *ngIf="!loading && savedProducts.length > 0" class="sp-grid">
+    <div *ngFor="let product of savedProducts" class="sp-card">
+
+      <!-- Imagen -->
+      <div class="sp-card-img" (click)="goToProduct(product)">
+        <img *ngIf="product.image"
+             [src]="product.image"
+             [alt]="product.name"
+             class="sp-img" />
+        <span *ngIf="!product.image" class="sp-img-placeholder">📦</span>
+      </div>
+
+      <!-- Info -->
+      <div class="sp-card-body">
+        <div class="sp-card-name" (click)="goToProduct(product)">{{ product.name }}</div>
+        <div class="sp-card-source" *ngIf="product.source">en {{ product.source }}</div>
+        <div class="sp-card-price">${{ fmtPrice(product.currentPrice) }}</div>
+        <div class="sp-card-category" *ngIf="product.category">{{ product.category }}</div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="sp-card-actions">
+        <button class="sp-btn-view" (click)="goToProduct(product)">
+          Ver producto →
+        </button>
+        <button class="sp-btn-remove"
+                (click)="removeProduct(product.id)"
+                [disabled]="isRemoving(product.id)">
+          {{ isRemoving(product.id) ? 'Eliminando…' : '🗑 Quitar' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && !error && savedProducts.length === 0" class="sp-empty">
+    <span class="sp-empty-icon">🔖</span>
+    <h2>Aún no has guardado productos</h2>
+    <p>Busca productos y guárdalos para seguir su precio fácilmente.</p>
+    <a routerLink="/search" class="sp-btn-search">Buscar productos →</a>
+  </div>
+
+</div>

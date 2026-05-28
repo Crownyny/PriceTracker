@@ -54,7 +54,12 @@ public enum ErrorType {
     /**
      * Error cuando se intenta agregar un producto a la lista de deseos que ya existe
      */
-    PRODUCT_ALREADY_IN_WISHLIST("PRODUCT_IN_WISHLIST", "El producto ya se encuentra en la lista de deseos");
+    PRODUCT_ALREADY_IN_WISHLIST("PRODUCT_IN_WISHLIST", "El producto ya se encuentra en la lista de deseos"),
+
+    /**
+     * Error cuando un producto no se encuentra en la lista de deseos del usuario
+     */
+    WISHLIST_ITEM_NOT_FOUND("WISHLIST_ITEM_NOT_FOUND", "El producto no se encuentra en la lista de deseos");
 
     private final String code;
     private final String description;

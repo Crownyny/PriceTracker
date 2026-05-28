@@ -79,6 +79,11 @@
           </button>
         </div>
 
+        <!-- Mensaje de confirmación al guardar/quitar -->
+        <div *ngIf="saveMessage" class="pd-save-toast">
+          {{ saveMessage }}
+        </div>
+
         <!-- Banner límite de productos guardados (HE-03 HU-04) -->
         <div *ngIf="saveError === 'UPGRADE_REQUIRED'" class="pd-upgrade-banner">
           <div class="pd-upgrade-left">
