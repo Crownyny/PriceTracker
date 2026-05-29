@@ -188,13 +188,7 @@
                 </span>
                 <span *ngIf="isSaving(product.id)">…</span>
               </button>
-              <a
-                [routerLink]="['/product', product.id]"
-                [queryParams]="{ productRef: product.productRef }"
-                class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors text-center"
-              >
-                Historial →
-              </a>
+
             </div>
           </div>
         </div>
