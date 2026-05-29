@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Subject, merge, of } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { ProductsService } from '../products/services/products.service';
+import { UserRoleService } from '../../core/services/user-role.service';
 import { StompWebSocketService } from '../../core/services/stomp-websocket.service';
 import { Product, ProductSearchResponse } from '../../shared/models/product.model';
 
@@ -27,12 +28,16 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
   lastSearchRef     = '';
   uiState: 'idle' | 'loading' | 'in-progress' | 'found' | 'empty' | 'error' = 'idle';
 
+  savedProductIds: Set<string> = new Set();
+  savingProducts:  Set<string> = new Set();
+
   private destroy$       = new Subject<void>();
   private searchSession$ = new Subject<void>();
   private queryInput$    = new Subject<string>();
 
   constructor(
     private productsService: ProductsService,
+    private userRoleService: UserRoleService,
     private stompService:    StompWebSocketService,
     private router:          Router,
     private cdr:             ChangeDetectorRef
@@ -40,6 +45,12 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.stompService.connect();
+
+    // Sincronizar IDs guardados para mostrar estado correcto en tarjetas
+    this.productsService.syncSavedIds().subscribe(ids => {
+      this.savedProductIds = new Set(ids);
+      this.cdr.markForCheck();
+    });
 
     // Estado de conexión STOMP
     this.stompService.connected$
@@ -249,6 +260,62 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/product', product.id], {
       queryParams: { productRef: product.productRef || this.lastSearchRef },
       state:       { productResult: { best: product, all: this.filteredProducts } }
+    });
+  }
+
+  isProductSaved(productId: string): boolean {
+    return this.savedProductIds.has(productId);
+  }
+
+  isSaving(productId: string): boolean {
+    return this.savingProducts.has(productId);
+  }
+
+  toggleSave(product: Product): void {
+    if (this.savingProducts.has(product.id)) return;
+
+    const isPremium = this.userRoleService.canUsePremiumFeatures();
+    const isSaved   = this.savedProductIds.has(product.id);
+
+    if (!isSaved && !isPremium && this.savedProductIds.size >= 5) {
+      // Verificar contra backend antes de mostrar error
+      this.productsService.syncSavedIds().subscribe(ids => {
+        this.savedProductIds = new Set(ids);
+        if (ids.length >= 5) {
+          this.router.navigate(['/account']);  // llevar a Mi Cuenta para hacer upgrade
+        } else {
+          this.executeSave(product, false);
+        }
+        this.cdr.markForCheck();
+      });
+      return;
+    }
+
+    this.executeSave(product, isSaved);
+  }
+
+  private executeSave(product: Product, isSaved: boolean): void {
+    this.savingProducts.add(product.id);
+    this.cdr.markForCheck();
+
+    const action$ = isSaved
+      ? this.productsService.unsaveProduct(product.id)
+      : this.productsService.saveProduct(product.id);
+
+    action$.subscribe({
+      next: () => {
+        if (isSaved) {
+          this.savedProductIds.delete(product.id);
+        } else {
+          this.savedProductIds.add(product.id);
+        }
+        this.savingProducts.delete(product.id);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.savingProducts.delete(product.id);
+        this.cdr.markForCheck();
+      }
     });
   }
 
