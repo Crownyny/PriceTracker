@@ -102,6 +102,15 @@ export class AlertsComponent implements OnInit {
 
   // ── Carga de alertas ───────────────────────────────────────────────────────
 
+  goToSearch(): void {
+    this.closeModal();
+    this.router.navigate(['/search'], {
+      queryParams: this.productSearchQuery.trim()
+        ? { q: this.productSearchQuery.trim() }
+        : {}
+    });
+  }
+
   loadAlerts(): void {
     this.loading = true;
     this.error = null;

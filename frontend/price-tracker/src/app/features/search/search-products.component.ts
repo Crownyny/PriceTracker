@@ -1,9 +1,9 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, merge, of } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { catchError, debounceTime, distinctUntilChanged, filter, take, takeUntil } from 'rxjs/operators';
 import { ProductsService } from '../products/services/products.service';
 import { UserRoleService } from '../../core/services/user-role.service';
 import { StompWebSocketService } from '../../core/services/stomp-websocket.service';
@@ -31,6 +31,39 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
   savedProductIds: Set<string> = new Set();
   savingProducts:  Set<string> = new Set();
 
+  // ── Filtros ───────────────────────────────────────────────────────────────
+  selectedPriceRange   = 'all';
+  selectedAvailability = 'all';
+  selectedStore        = 'all';  // 'all' | nombre de tienda
+
+  /** Tiendas únicas disponibles en los resultados actuales */
+  get availableStores(): string[] {
+    const stores = this.filteredProducts
+      .map(p => p.source)
+      .filter((s): s is string => !!s);
+    return [...new Set(stores)].sort();
+  }
+
+  // Productos con filtros aplicados (computed sobre filteredProducts)
+  get displayedProducts(): Product[] {
+    return this.filteredProducts.filter(p => {
+      // Filtro de precio (valores en COP)
+      if (this.selectedPriceRange !== 'all') {
+        const price = p.currentPrice;
+        if (this.selectedPriceRange === 'lt100k'     && price >= 100_000)  return false;
+        if (this.selectedPriceRange === '100k-500k'  && (price < 100_000  || price > 500_000)) return false;
+        if (this.selectedPriceRange === '500k-1m'    && (price < 500_000  || price > 1_000_000)) return false;
+        if (this.selectedPriceRange === 'gt1m'       && price <= 1_000_000) return false;
+      }
+      // Filtro de disponibilidad
+      if (this.selectedAvailability === 'instock'    && !p.availability)  return false;
+      if (this.selectedAvailability === 'outofstock' &&  p.availability)  return false;
+      // Filtro por tienda
+      if (this.selectedStore !== 'all' && p.source !== this.selectedStore) return false;
+      return true;
+    });
+  }
+
   private destroy$       = new Subject<void>();
   private searchSession$ = new Subject<void>();
   private queryInput$    = new Subject<string>();
@@ -39,8 +72,9 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
     private productsService: ProductsService,
     private userRoleService: UserRoleService,
     private stompService:    StompWebSocketService,
-    private router:          Router,
-    private cdr:             ChangeDetectorRef
+    private route:  ActivatedRoute,
+    private router: Router,
+    private cdr:    ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -51,6 +85,22 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
       this.savedProductIds = new Set(ids);
       this.cdr.markForCheck();
     });
+
+    // Si viene con ?q= desde alertas, prellenar y ejecutar búsqueda automáticamente
+    const queryParam = this.route.snapshot.queryParamMap.get('q');
+    if (queryParam?.trim()) {
+      this.searchQuery = queryParam.trim();
+      // Esperar a que STOMP conecte antes de buscar
+      this.stompService.connected$.pipe(
+        filter((connected: boolean) => connected),
+        take(1),
+        takeUntil(this.destroy$)
+      ).subscribe(() => {
+        this.runSearch(this.searchQuery);
+      });
+      // También intentar búsqueda en BD inmediatamente (no necesita WebSocket)
+      this.runSearch(this.searchQuery);
+    }
 
     // Estado de conexión STOMP
     this.stompService.connected$
@@ -185,8 +235,9 @@ export class SearchProductsComponent implements OnInit, OnDestroy {
     this.searchSession$.next();
 
     const productRef    = trimmed.replace(/\s+/g, '').toLowerCase();
-    this.lastSearchRef  = productRef;
-    this.searching      = true;
+    this.lastSearchRef   = productRef;
+    this.selectedStore   = 'all';  // resetear filtro de tienda en nueva búsqueda
+    this.searching       = true;
     this.error          = '';
     this.searchStatus   = 'Buscando en la base de datos…';
     this.uiState        = 'loading';

@@ -88,7 +88,7 @@
 
         <div *ngIf="productSearchDone && productSearchResults.length === 0 && !productSearchLoading" class="search-empty">
           Sin resultados para <strong>"{{ productSearchQuery }}"</strong>.
-          <br />Prueba con otro término o busca primero el producto en <a href="/search">Buscar productos</a>.
+          <br />Prueba con otro término o <a (click)="goToSearch()" style="cursor:pointer;color:#2563eb;text-decoration:underline">búscalo en tiempo real aquí</a>.
         </div>
 
         <div *ngIf="productSearchError" class="modal-error">{{ productSearchError }}</div>
